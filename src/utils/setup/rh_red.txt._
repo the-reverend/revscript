@@ -1,0 +1,16 @@
+bot;      ^RUN=_bit.zrx
+[CONFIG]; ^RUN=_menu.zrx rh_config.txt
+[INFO];   ^RUN=_menu.zrx rh_info.txt
+[REPORTS];^RUN=_menu.zrx rh_reports.txt
+[BLUE];   ^RUN=_menu.zrx rh_blue.txt
+>RED<;    ^RUN=_menu.zrx rh_red.txt
+[WAR];    ^RUN=_menu.zrx rh_war.txt
+clear_bust;   ^RUN=_clear_bust.zrx
+megajet;      ^RUN=_megajet.zrx
+megarob;      ^RUN=_megarob.zrx
+planetbust;   ^RUN=_planetbust.zrx
+rob;          ^RUN=_rob.zrx
+rt;           ^RUN=_rt.zrx
+sdt;          ^RUN=_sdt_new.zrx
+ssm;          ^RUN=_ssm.zrx
+sst;          ^RUN=_sst_new.zrx

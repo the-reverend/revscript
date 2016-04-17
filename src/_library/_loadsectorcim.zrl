@@ -1,0 +1,33 @@
+/** _loadsectorcim v.6 **/
+_loadsectorcim: procedure expose (globals)
+ fname=arg(1)
+ _s.=""
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"reading "||fname||" "
+ if _fileopenr(fname) then do
+  mon=0
+  do while \_fileeof(fname)
+   parse value strip(linein(fname)) with row line
+   if line\="" & row\="" then do
+/*- 19 oct 2002                                    -*/
+/*- the space() command was causing a crash here:  -*/
+/*-    _s.row=space(line,1)                        -*/
+/*- this behavior is intermittent but seems to be  -*/
+/*- resolved with the removal of space().          -*/
+/*-                                                -*/
+/*- this code was used to solve the problem:       -*/
+/*-    _s.row=word(line,1)                         -*/
+/*-    do i=2 to words(line)                       -*/
+/*-     _s.row=_s.row word(line,i)                 -*/
+/*-    end /*do*/                                  -*/
+/*-                                                -*/
+/*- 06 nov 2002                                    -*/
+/*- wrote _space subroutine to replace builtin ver -*/
+    _s.row=_space(line,1)
+    mon=_spinner(mon,500)
+   end /*if*/
+  end /*do*/
+  call _fileclose fname
+ end /*if*/
+ else call zocwrite "x"
+return

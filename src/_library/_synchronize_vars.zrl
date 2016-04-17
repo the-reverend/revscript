@@ -1,0 +1,38 @@
+/** _synchronize_vars v.1 **/
+_synchronize_vars: procedure expose (globals)
+ select
+  when arg(1)="w" then rslt="Pausing",
+                          ||"|Command [",
+                          ||"|Citadel command",
+                          ||"|Planet command",
+                          ||"|<StarDock>",
+                          ||"|ship to sell",
+                          ||"|Still interested ?",
+                          ||"|wish to buy? (A,B,C,Q,?)",
+                          ||"|<Galactic Bank>",
+                          ||"|<Hardware Emporium>",
+                          ||"|<Shipyards>",
+                          ||"|<Tavern>",
+                          ||"|Enter your choice [T] ?",
+                          ||"|do you want to sell [",
+                          ||"|do you want to buy [",
+                          ||"|Computer command",
+                          ||"|Corporate command",
+                          ||"|Colonists? [T]",
+                          ||"|Stop in this sector (Y,N,E,I,R,S,D,P,?) (?=Help) [N]",
+                          ||"|`",
+                          ||"|F: ",
+                          ||"|'",
+                          ||"|S: ",
+                          ||"|M: ",
+                          ||"|P: "
+  when arg(1)="r" then rslt="unknown;command;citadel;planet;stardock;ship_sell;ship_sell_interested;class_0",
+                         ||";bank;hardware;shipyards;tavern;port_menu;port_haggle;port_haggle;computer",
+                         ||";corporate;terra;stop_in_this_sector?;fedcom_text_entry_1;fedcom_text_entry_2",
+                         ||";subspace_text_entry_1;subspace_text_entry_2;mail_text_entry;private_text_entry",
+                         ||";corporate_cit;computer_cit;unknown_text_entry" /* <-- these unmatched in the wait string above */
+  when arg(1)="command" then rslt=" ; ;qq;q;q;qqq;nqq;q;qq;qq;qq;qq;q;0^Mz0^Mz0^M;0^Mz0^Mz0^M;q;q;q;y;^H;^M;^H;^M;^M;^M;qqq;qqq; "
+  when arg(1)="computer" then rslt=" ;c;c;qc;qc;qqqc;nqqc;qc;qqc;qqc;qqc;qqc;qc;0^Mz0^Mz0^Mc;0^Mz0^Mz0^Mc; ;qc;qc;yc;^Hc;^Mc;^Hc;^Mc;^Mc;^Mc;qc;qc; "
+  otherwise call _error "unknown argument in _synchronize_vars"
+ end /*select*/
+return rslt

@@ -1,0 +1,27 @@
+/** _list_sort_by_length v.1 **/
+_list_sort_by_length: procedure expose (globals)
+ list=arg(1)
+ if arg(2,"E") then delim=arg(2)
+               else delim=";"
+ a.=""
+ do i=1 to _dwords(list,delim)
+  a.i=_dword(list,i,delim)
+ end /*do*/
+ do k=i-1 to 1 by -1
+  do j= 1 to k
+   j2=j+1
+   if length(a.j)<length(a.j2) then do
+    temp=a.j
+    a.j=a.j2
+    a.j2=temp
+   end /*if*/
+  end /*do*/
+ end /*do*/
+ list=a.1
+ i=2
+ do while a.i\=""
+  if list="" then list=a.i
+  else list=list||delim||a.i
+  i=i+1
+ end /*do*/
+return list

@@ -1,0 +1,29 @@
+/** _get_planet_list v.1 **/
+_get_planet_list: procedure expose (globals)
+ rslt=""
+ if _sendwait("l","<Preparing ship")=640 then call _error "timeout"
+ ans=_waitmux("isn't a planet|stress of landing|blocks your attempt|[Pause]|Planet command|Registry#")
+ select
+  when ans=0 then nop
+  when ans<=2 then rslt=0
+  when ans=3 then do; rslt=0; call zocsend "^M^Mzr^M"; end /* COMBAT */
+  when ans=4 then do; rslt=_get_planet_number("planet"); call zocsend "q"; end
+  when ans=5 then do
+   ans2=_waitmux("> |Q to abort")
+   do while ans2=0
+    n=strip(_lastline())
+    if _wait("^M")=640 then call _error "timeout"
+    if left(n,9)\="Owned by:" then do /* p-scanner e.g. "owned by: < dr who >" */
+     n=_stripint(n)
+     if n>0 then rslt=rslt||" "||n
+    end /*if*/
+    ans2=_waitmux("> |Q to abort")
+   end
+   call zocsend "q^M"
+   if ans2=640 then call _error "timeout"
+   rslt=translate(_space(rslt),";"," ")
+  end /*when*/
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+return rslt

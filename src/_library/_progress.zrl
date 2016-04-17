@@ -1,0 +1,35 @@
+/** _progress v.3 **/
+_progress: procedure expose (globals)
+ count=arg(1)
+ max=arg(2)
+ select
+  when count=0 then call zocwrite "[     0%   ]"
+  when count=max then call zocwrite d2c(27)||"[12D[***100%***]"
+  otherwise do
+   if trunc(count*100/max)>trunc((count-1)*100/max) then do
+    i=(count*100)%max
+    call zocwrite d2c(27)||"[12D["
+    select
+     when i>=30 then call zocwrite "***"
+     when i>=20 then call zocwrite "** "
+     when i>=10 then call zocwrite "*  "
+     otherwise call zocwrite "   "
+    end /*select*/
+    select
+     when i=100 then call zocwrite i||"%"
+     when i>=40 then call zocwrite "*"||i||"%"
+     when i>=10 then call zocwrite " "||i||"%"
+     otherwise call zocwrite "  "||i||"%"
+    end /*select*/
+    select
+     when i=100 then call zocwrite "***"
+     when i>=90 then call zocwrite "** "
+     when i>=80 then call zocwrite "*  "
+     otherwise call zocwrite "   "
+    end /*select*/
+    call zocwrite "]"
+   end /*if*/
+  end /*otherwise*/
+ end /*select*/
+ count=count+1
+return count

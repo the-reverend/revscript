@@ -1,0 +1,11 @@
+/** _roundup v.2 **/
+/*- _roundup num [, digits] -*/
+/*- v.2 tested -*/
+_roundup: procedure expose (globals)
+ if arg(1,"E") then num=arg(1); else call _error "missing parameter in _roundup"
+ if arg(2,"E") then digits=arg(2); else digits=0
+ num=num*(10**digits)
+ if num>trunc(num) then num=trunc(num)+1
+ else num=trunc(num)
+ num=num/(10**digits)
+return num

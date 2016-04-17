@@ -1,0 +1,12 @@
+/** _send255 v.2 **/
+_send255: procedure expose (globals)
+ str=arg(1)
+ do while length(str)>255
+  w=255 /* note: dont split in the middle of ^M */
+  i=lastpos("^",str,w)
+  do while i=w & i>0; w=w-1; i=lastpos("^",str,w); end;
+  call zocsend left(str,w)
+  str=substr(str,w+1)
+ end /*do*/
+ call zocsend str
+return

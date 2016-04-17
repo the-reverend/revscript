@@ -1,0 +1,45 @@
+/* REXX */
+
+/* This program lets the user enter a value.  This time we do it      */
+/* in a function that returns the entered number.                     */
+/* Then another function checks if the value can be divided by any    */
+/* other number.                      */
+
+number= ENTERIT()
+
+IF HAS_DIVIDERS(number)=0 THEN DO 
+    SAY number||" is a prime number!"
+END
+ELSE DO 
+    SAY number||" is not a prime number!"
+END
+
+EXIT
+
+/* Below is a subroutine.  It has access to the varibale pool of the  */
+/* calling program.  Of course, this could be done in a more elegant  */
+/* way.                                                               */
+ENTERIT: PROCEDURE
+    SAY "Please enter a number (up to 1000)"
+    PULL n
+    RETURN n
+
+
+/* Below is a function.  The word PROCEDURE was added, to give it a   */
+/* local variable pool.  Exchange of data with the calling program is */
+/* done through argument passing and zocresult return mechanism.         */
+HAS_DIVIDERS: PROCEDURE 
+    /* Pick up first (and only) argument */
+    z= ARG(1)
+    zocresult= 0
+
+    DO i=2 TO z-1
+        IF (z//i)=0 THEN DO
+            /* leave loop if i is a divider of z */
+            zocresult= 1
+            LEAVE i
+        END 
+    END
+
+    RETURN zocresult
+

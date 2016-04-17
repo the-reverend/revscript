@@ -1,0 +1,142 @@
+/** _attackplayer v.2 **/
+_attackplayer: procedure expose (globals)
+ name=arg(1)
+ amount=arg(2)
+ if amount="cap" then cap=1
+ else cap=0
+ offodds=arg(3)
+ dname=arg(4)
+ game=arg(5)
+
+ call _waitforseq 1
+ call zocreceivebuf 3*1024
+ call zocsend "d"
+ if _wait("Command [")=640 then call _error "timeout"
+ buff=zocreceivebuf(2*1024)
+ buff1=_stripansi(buff)
+ buff=_striplf(buff)
+
+ fedspace=0
+ if pos("Beacon  : FedSpace, FedLaw Enforced",buff1)>0 then fedspace=1
+
+ targetlock=0
+ i=pos("Traders "||d2c(27)||"[1m: "||d2c(27)||"[36m",buff)
+ cr=pos(d2c(13),buff,i)
+ line1=_stripesc(substr(buff,i,cr-i))
+ i=cr+1
+ cr=pos(d2c(13),buff,i)
+ line2=_stripansi(substr(buff,i,cr-i))
+ parse var line1 "Traders [1m: [36m" rankname "[0;34m" . "w/ [1;33m" theirfigs "[0;32m ftrs" .
+ theirfigs=_stripint(theirfigs)
+ parse var line2 . "(" shiptype ")" .
+ if pos(name,rankname)>0 then targetlock=1
+ if targetlock then done=1
+ else done=0
+ k=1
+ do while \done
+  i=cr+1
+  cr=pos(d2c(13),buff,i)
+  line1=_stripesc(substr(buff,i,cr-i))
+  if left(line1,13)\="[0m          " then done=1
+  else do
+   i=cr+1
+   cr=pos(d2c(13),buff,i)
+   line2=_stripansi(substr(buff,i,cr-i))
+   parse var line1 . "[1;36m" rankname "[0;34m" . "w/ [1;33m" theirfigs "[0;32m ftrs" .
+   theirfigs=_stripint(theirfigs)
+   parse var line2 . "(" shiptype ")" .
+   if pos(name,rankname)>0 then targetlock=1
+   if targetlock then done=1
+   k=k+1
+  end /*else*/
+ end /*do*/
+
+ /* check if player is fedsafe */
+ fedsafe=0
+ if fedspace & targetlock then do
+  fedsaferanks=_ini_askstr("##DEFAULT##","Civilian;Private;Corporal;Sergeant",dname,"settings","fedsaferanks")
+  do i=1 to _dwords(fedsaferanks, ";")
+   if pos(_dword(fedsaferanks,i,";"),rankname)>0 then fedsafe=1
+  end /*do*/
+ end /*if*/
+
+ if targetlock & \fedsafe then do
+  shipcat=_ini_askstr("##DEFAULT##","##NA##",dname,"settings","ship."||shiptype)
+  if shipcat="##NA##" then do
+   eshlds=0
+   defodds=1
+  end /*if*/
+  else do
+   eshlds=_dword(shipcat,11,";")
+   defodds=_dword(shipcat,13,";")
+  end /*else*/
+  call zocsend "aznznznznznznznznznzn@"
+  ans=0
+  do while ans=0
+   ans=_waitmux("Average Interval Lag:|Do you want instructions (Y/N) [N]?")
+   select
+    when ans=0 then call zocsend "znznznznznznznznznzn@"
+    when ans=1 then nop
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*while*/
+  if _wait("Command [")=640 then call _error "timeout"
+  buff2=_stripansi(zocreceivebuf(2*1024))
+  i=pos("Attack ",buff2)
+  j=pos("(Y/N) [N]? No",buff2,i)
+  k=0
+  do while (j>0) & (pos(name,substr(buff2,i,j-i))=0 | pos("unmanned",substr(buff2,i,j-i))>0)
+   i=pos("Attack ",buff2,j)
+   j=pos("(Y/N) [N]? No",buff2,i)
+   k=k+1
+  end /*do*/
+  if j=0 then targetlock=0
+ end /*if*/
+
+ if targetlock & \fedsafe then do
+  parse value substr(buff2,i,j-i) with . "'s " . " (" yourfigs "-" theirfigs ")" .
+  yourfigs=_stripint(yourfigs)
+  theirfigs=_stripint(theirfigs)
+call zocwriteln yourfigs theirfigs defodds offodds
+  if cap then amount=min(yourfigs,trunc(theirfigs*defodds/offodds)-1)
+  if yourfigs=amount then cap=0
+call zocwriteln k
+  call zocsend "a"||copies("n",k)||"y"||amount||"^M"
+  if _wait("Command [")=640 then call _error "timeout"
+  buff=_stripansi(zocreceivebuf(0))
+  call _waitforseq 0
+  select
+   when pos("SAFETY OVERRIDE ENGAGED!",buff)>0 then apr="##CORPIE##"
+   when pos("The ship is abandoned! Its all yours!",buff)>0 then apr="##CAP##"
+   when pos("warps out of the sector!",buff)>0 then apr="##FLEE##"
+   when pos("tried to warp out of the sector but failed!",buff)>0 then apr="##NOFLEE##"
+   otherwise apr="##FAILED##"
+  end /*select*/
+  if cap & apr="##NOFLEE##" then do
+   i=pos("fighter(s),",buff)+12
+   j=pos(" remain.",buff,i)
+   yourfigs=_stripint(substr(buff,i,j-i))
+   i=pos("fighters,",buff,j)+10
+   j=pos(" remain.",buff,i)
+   theirfigs=_stripint(substr(buff,i,j-i))
+   amount=min(yourfigs,trunc(theirfigs*defodds/offodds)-1)
+   call _waitforseq 1
+   call zocreceivebuf 2*1024
+   call zocsend "a"||copies("n",k)||"y"||amount||"^M"
+   if _wait("Command [")=640 then call _error "timeout"
+   buff=zocreceivebuf(0)
+   call _waitforseq 0
+   select
+    when pos("SAFETY OVERRIDE ENGAGED!",buff)>0 then apr="##CORPIE##"
+    when pos("The ship is abandoned! Its all yours!",buff)>0 then apr="##CAP##"
+    when pos("warps out of the sector!",buff)>0 then apr="##FLEE##"
+    when pos("tried to warp out of the sector but failed!",buff)>0 then apr="##NOFLEE##"
+    otherwise apr="##FAILED##"
+   end /*select*/
+  end /*if*/
+
+ end /*if*/
+ else apr="##FAILED##"
+
+return apr

@@ -1,0 +1,6 @@
+/** _dwordindex v.2 **/
+/*- _dwordindex string, index, delimiter =*/
+/*- v.2 tested -*/
+_dwordindex: procedure expose (globals)
+ rslt=wordindex(translate(arg(1),arg(3)||" "," "||arg(3)),arg(2))
+return rslt

@@ -1,0 +1,45 @@
+/** _scancode_to_abc123 v.2 **/
+/*- _scancode_to_abc123 code -*/
+/*- v.2 tested -*/
+_scancode_to_abc123: procedure expose (globals)
+ code=arg(1)
+ select
+  when code=30 then rslt="a"
+  when code=48 then rslt="b"
+  when code=46 then rslt="c"
+  when code=32 then rslt="d"
+  when code=18 then rslt="e"
+  when code=33 then rslt="f"
+  when code=34 then rslt="g"
+  when code=35 then rslt="h"
+  when code=23 then rslt="i"
+  when code=36 then rslt="j"
+  when code=37 then rslt="k"
+  when code=38 then rslt="l"
+  when code=50 then rslt="m"
+  when code=49 then rslt="n"
+  when code=24 then rslt="o"
+  when code=25 then rslt="p"
+  when code=16 then rslt="q"
+  when code=19 then rslt="r"
+  when code=31 then rslt="s"
+  when code=20 then rslt="t"
+  when code=22 then rslt="u"
+  when code=33 then rslt="v"
+  when code=17 then rslt="w"
+  when code=45 then rslt="x"
+  when code=21 then rslt="y"
+  when code=44 then rslt="z"
+  when code=2  then rslt="1"
+  when code=3  then rslt="2"
+  when code=4  then rslt="3"
+  when code=5  then rslt="4"
+  when code=6  then rslt="5"
+  when code=7  then rslt="6"
+  when code=8  then rslt="7"
+  when code=9  then rslt="8"
+  when code=10 then rslt="9"
+  when code=11 then rslt="0"
+  otherwise rslt=""
+ end /*when*/
+return rslt

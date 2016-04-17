@@ -1,0 +1,1010 @@
+/* Planet Maintenance Script 2.0 */
+/* October 2000 - Written By The Founder */
+/* Made More Automations */
+/* All Rights Reserved */
+
+exitflag=0
+runflag= 0
+pltmain=ZocRequest("Run Which Maintenance Task?", "Colonist Mover", "Product Mover", "Buy Down")
+if pltmain="Colonist Mover" then do
+   runflag= 1
+   call getcol 
+end
+if exitflag= 0 then do
+   if pltmain="Product Mover" then do
+      runflag= 1
+      call getrm
+   end
+end
+if exitflag= 0 then do
+   if pltmain="Buy Down" then do
+      runflag= 1
+      call getbd
+   end
+end
+if exitflag= 0 then do
+   if pltmain="##CANCEL##" then do
+      cancelflag=1
+      exitflag=1
+   end
+end
+if runflag=0 then do
+   cancelflag=1
+   exitflag=1
+end
+
+
+/* Leave Program Routine - Adds Error Message If Not Sucessfully Run */
+leave:
+if planeterr= 1 then do
+   going= ZocMsgBox("Invalid Planet Number - Aborting!", 0)
+end
+if going= "##OK##" then do
+   exit
+end
+if proderr= 1 then do
+   going= ZocMsgBox("Invalid Product Type - Aborting!", 0)
+end
+if going= "##OK##" then do
+   exit
+end
+if pctflag= 1 then do
+   going= ZocMsgBox("Invalid Overbid Percentage - Aborting!", 0)
+end
+if going= "##OK##" then do
+   exit
+end
+
+if cancelflag= 1 then do
+   going= ZocMsgBox("Script Cancelled!", 0)
+end
+if going= "##OK##" then do
+   exit
+end
+exit
+
+
+getbd:
+
+   /* Planet Buydown */
+
+if exitflag= 0 then do
+   runit=ZocMsgBox("Run the Planet Buydown?", 2)
+   if runit="##NO##" then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   if runit="##YES##" then do
+      call getplanet
+      call emptyship
+   end
+   if runit="##CANCEL##" then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   if exitflag= 0 then do
+      call getproduct
+   end
+
+   if exitflag= 0 then do
+      call gethaggle
+   end
+
+   if exitflag= 0 then do
+      if haggleflag=1 then do
+         call gettype
+      end
+   end
+
+   if exitflag= 0 then do
+      if evilflag=1 then do
+         call getpct
+      end
+   end
+
+   if exitflag= 0 then do
+      call main
+   end
+end
+return
+
+ 
+   /* ------------------------------------------------------------------- */
+   GETPRICE:
+   holdfinal= ""
+   ZocWait "]"
+   holds= ZocLastLine()
+   DO addchar=1 to 23
+      holdsit=substr(holds,addchar,1)
+      if holdsit<>"]" then DO
+         if holdsit<>"," then holdfinal=holdfinal||holdsit
+      end
+   END
+   RETURN holdfinal
+
+
+   /* --------------------------------------------------------------- */
+   BUYHAGGLEG:
+               
+   offer1=arg(1)
+   haggle106=offer1*91/100-1
+   haggle106=trunc(haggle106,0)
+   haggle105=offer1*92/100-1
+   haggle105=trunc(haggle105,0)
+   haggle104=offer1*93/100-1
+   haggle104=trunc(haggle104,0)
+   haggle103=offer1*94/100-1
+   haggle103=trunc(haggle103,0)
+   haggle102=offer1*95/100-1
+   haggle102=trunc(haggle102,0)
+   haggle101=offer1*96/100-1
+   haggle101=trunc(haggle101,0)
+
+   a=5
+
+   call ZocSend haggle106
+   call ZocSend "^M"
+
+   DO WHILE a>0
+      result= ZocWaitMux("We'll sell them", "You have", "We're not int", "Our final", "Command")
+      SELECT
+         WHEN result=0 THEN x="1"
+         WHEN result=1 THEN x="2"
+         WHEN result=2 THEN x="3"
+         WHEN result=3 THEN x="4"
+         WHEN result=4 THEN x="2"
+      end
+      if x=1 then DO
+         if a=5 then do
+            call zocsend haggle105
+            call zocsend "^M"
+         end
+         if a=4 then do
+            call zocsend haggle104
+            call zocsend "^M"
+         end
+         if a=3 then do
+            call zocsend haggle103
+            call zocsend "^M"
+         end
+         if a=2 then do
+            call zocsend haggle102
+            call zocsend "^M"
+         end
+         if a=1 then do
+            call zocsend haggle101
+            call zocsend "^M"
+         end
+         a=a-1
+      end
+      if x=2 then do
+         a=0
+         return(1)
+      end
+      if x=3 then do
+         a=0
+         return(2)
+      end
+      if x=4 then do
+         call zocsend haggle102
+         call zocsend "^M"
+         return(2)
+      end
+   END
+   call ZocBeep 1
+   RETURN(0) 
+
+
+   /* --------------------------------------------------------------- */
+   BUYHAGGLEE:
+               
+   offer1=arg(1)
+   haggle107=offer1*pct/100
+   haggle107=trunc(haggle107,0)
+   haggle108=haggle107
+   call ZocSend haggle108
+   call ZocSend "^M"
+
+   RETURN(1) 
+
+
+   /* ---------------------------------------------------------- */
+   
+   getplanet:
+   ZocSend "L"
+   ZocSend "Q^M"
+   planet= 0
+   planet= ZocAsk("What is the planet number to drop product?", "0")
+   if planet< "2" then do
+      planeterr= 1
+      exitflag= 1
+   end
+   return
+
+   emptyship:
+
+   ZocSend "~L"
+   ZocWait "<Q to abort> ?"
+   ZocSend planet
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~1"
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~2"
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~3"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~1"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~2"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~3"
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return
+
+   /* ---------------------------------------------------------- */
+   getproduct:
+   prodflag= 0
+   product= ZocRequest("What do you wish to buy down?", "Fuel Ore", "Organics", "Equipment")
+   if product= "Fuel Ore" then do
+      buy= 1
+      prodflag= 1
+   end
+   if product= "Organics" then do
+      buy= 2
+      prodflag= 1
+   end
+   if product= "Equipment" then do
+      buy= 3
+      prodflag= 1
+   end
+   if prodflag= 0 then do
+      exitflag= 1
+      proderr= 1
+   end
+
+   return
+
+
+   /* ---------------------------------------------------------- */
+   gethaggle:
+   hagglecheck=0
+   haggle=ZocRequest("Haggle port prices?", "Yes", "No")
+   if haggle= "No" then do
+      haggleflag= 0
+      hagglecheck= 1
+   end
+   if haggle= "Yes" then do
+      haggleflag= 1
+      hagglecheck= 1
+   end
+   if hagglecheck= 0 then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   return
+
+
+   /* ---------------------------------------------------------- */
+   gettype:
+   typecheck=0
+   goodflag=0
+   evilflag=0
+   type=ZocRequest("Which type of offer to haggle for?", "Best", "Worst")
+   if type= "Best" then do
+      goodflag= 1
+      typecheck= 1
+   end
+   if type= "Worst" then do
+      evilflag= 1
+      typecheck= 1
+   end
+   if typecheck= 0 then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   return
+
+
+   /* ---------------------------------------------------------- */
+   getpct:
+   pctcheck= 0
+   pct=ZocAsk("Percent to overbid the port price?", "45")
+   if pct= "0" then do
+      pctflag=1
+      exitflag=1
+   end
+   if pct > "50" then do
+      pctflag=1
+      exitflag=1
+   end
+   pct= pct+100
+   return
+
+
+   /* ---------------------------------------------------------- */
+   GOBUY:
+ 
+   ZocSend "P"
+   ZocSend "T"
+
+   if buy= 1 then do
+      x=0
+      CALL ZocRespond "How many holds of Fuel Ore do you want to buy", "^M"
+      timeout= ZocWait("How many holds of Fuel Ore do you want to buy")
+      CALL ZocRespond "How many holds of Fuel Ore do you want to buy"
+
+      if haggleflag= 1 then do
+         if goodflag=1 then do
+            ZocWait "Your offer ["
+            offer1=GETPRICE(0,0)
+            DO until z<>0
+               z=BUYHAGGLEG(offer1)
+            end
+         end
+         if evilflag=1 then do
+            ZocWait "Your offer ["
+            offer1=GETPRICE(0,0)
+            DO until z<>0
+               z=BUYHAGGLEE(offer1)
+            end
+         end
+      end
+
+      if haggleflag= 0 then do
+         ZocSend "^M"
+      end
+
+      CALL ZocRespond "How many holds of Organics do you want to buy", "0^M"
+      CALL ZocRespond "How many holds of Equipment do you want to buy", "0^M"
+      timeout= ZocWait("Command [TL=")
+      CALL ZocRespond "How many holds of Organics do you want to buy"
+      CALL ZocRespond "How many holds of Equipment do you want to buy"
+   end      
+
+   if buy= 2 then do
+      x=0
+      CALL ZocRespond "How many holds of Fuel Ore do you want to buy", "0^M"
+      CALL ZocRespond "How many holds of Organics do you want to buy", "^M"
+      timeout= ZocWait("How many holds of Organics do you want to buy")
+      CALL ZocRespond "How many holds of Fuel Ore do you want to buy"
+      CALL ZocRespond "How many holds of Organics do you want to buy"
+
+      if haggleflag= 1 then do
+         if goodflag=1 then do
+            ZocWait "Your offer ["
+            offer1=GETPRICE(0,0)
+            DO until z<>0
+               z=BUYHAGGLEG(offer1)
+            end
+         end
+         if evilflag=1 then do
+            ZocWait "Your offer ["
+            offer1=GETPRICE(0,0)
+            DO until z<>0
+               z=BUYHAGGLEE(offer1)
+            end
+         end
+      end
+
+      if haggleflag= 0 then do
+         ZocSend "^M"
+      end
+
+      CALL ZocRespond "How many holds of Equipment do you want to buy", "0^M"
+      timeout= ZocWait("Command [TL=")
+      CALL ZocRespond "How many holds of Equipment do you want to buy"
+   end
+
+   if buy= 3 then do
+      x=0
+      CALL ZocRespond "How many holds of Fuel Ore do you want to buy", "0^M"
+      CALL ZocRespond "How many holds of Organics do you want to buy", "0^M"
+      CALL ZocRespond "How many holds of Equipment do you want to buy", "^M"
+      timeout= ZocWait("How many holds of Equipment do you want to buy")
+      CALL ZocRespond "How many holds of Fuel Ore do you want to buy"
+      CALL ZocRespond "How many holds of Organics do you want to buy"
+      CALL ZocRespond "How many holds of Equipment do you want to buy"
+
+      if haggleflag= 1 then do
+         if goodflag=1 then do
+            ZocWait "Your offer ["
+            offer1=GETPRICE(0,0)
+            DO until z<>0
+               z=BUYHAGGLEG(offer1)
+            end
+         end
+         if evilflag=1 then do
+            ZocWait "Your offer ["
+            offer1=GETPRICE(0,0)
+            DO until z<>0
+               z=BUYHAGGLEE(offer1)
+            end
+         end
+      end
+
+      if haggleflag= 0 then do
+         ZocSend "^M"
+      end
+
+   end
+   if x=3 then do
+      signal gobuy
+   end
+   return
+
+   /* ---------------------------------------------------------- */
+   DUMP:
+
+   ZocSend "~^M"
+   ZocWait ":"
+   ZocSend "~L"
+   ZocSend planet"^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend buy
+   ZocSend "~^M"
+   ZocSend "~Q"
+  
+
+   return
+
+
+   /* ------------------------------------------------------------ */
+   MAIN:
+
+   ZocSend "D"
+   do while exitflag= 0
+      call gobuy
+      call dump
+   end
+   return
+
+
+
+
+
+getrm:
+
+   /* REXX Resource Mover */
+   cycle=0
+   runmover= "exit"
+   runmover= ZocRequest("Do you wish to run the Resource Mover?","Yes","No")
+   if runmover= "No" then do
+      exitflag= 1
+   end
+   if runmover= "exit" then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   if runmover= "##CANCEL##" then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   CALL ZocTimeout 60
+   if exitflag= 0 then do
+      cycles= ZocAsk("How much product do you wish to move?", "0")
+   end
+   if cycles="0" then do
+      exitflag=1
+      cancelflag=1   
+   end
+   if cycles="##CANCEL##" then do
+      exitflag=1
+      cancelflag=1
+   end
+   
+   if exitflag= 0 then do
+      ZocSend "L"
+      ZocSend "Q^M"
+      planet1= ZocAsk("Planet to Move From?", "0")
+   end
+   if planet1= "##CANCEL##" then do
+      exitflag=1
+      cancelflag=1
+   end
+   if planet1= 0 then do
+      exitflag=1
+      cancelflag=1
+   end
+   
+   if planet1<3 then do
+      exitflag=1
+      cancelflag=1
+   end
+   if exitflag= 0 then do
+      planet2= ZocAsk("Planet to Move To?", "0")
+   end
+   if planet2= "##CANCEL##" then do
+      exitflag=1
+      cancelflag=1
+   end
+   if planet2= 0 then do
+      exitflag=1
+      cancelflag=1
+   end
+   
+   if planet2<3 then do
+      exitflag=1
+      cancelflag=1
+   end
+   if planet2=planet1 then do
+      planeterr= 1
+   end
+   if planeterr= 1 then do
+      going= ZocMsgBox("Cannot Move It to the Same Planet!", 0)
+   end
+   if going= "##OK##" then do   
+      exitflag=1
+      cancelfalg=1
+   end   
+   if exitflag= 0 then do
+      prod= "exit"
+      prod= ZocRequest("And What are we moving?", "Fuel Ore", "Organics", "Equipment")
+      if prod= "Fuel Ore" then do
+         resource= 1
+      end
+      if prod= "Fuel Ore" then do
+         resource= 1
+      end
+      if prod= "Organics" then do
+         resource= 2
+      end
+      if prod= "Equipment" then do
+         resource= 3
+      end
+      if prod= "exit" then do
+         cancelflag= 1
+         exitflag= 1
+      end
+      if exitflag= 0 then do
+         call emptyship1
+      end
+      if exitflag= 0 then do
+         call getholds
+      end
+      if cycle=circle then do
+         exitflag=1
+         cancelflag=1
+      end
+
+   /* Start Moving */
+      x=0
+      circle=cycles/gholdsa
+      circle=trunc(cycles/gholdsa)
+         x=0
+         DO WHILE x<circle
+            x=x+1
+            call getres
+            call dumpres
+         end
+      end
+      EXIT
+      return
+   
+   /* Get Product */
+   getres:
+   ZocSend "~L"
+   ZocSend planet1
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~T"
+   ZocSend resource
+   ZocSend gholdsa
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return
+
+   /* Dump Product */
+   dumpres:
+   ZocSend "~L"
+   ZocSend planet2
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend resource
+   ZocSend gholdsa
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return
+   
+   /* Get Holds */
+   getholds:
+   Call ZocSend "I"
+   Call ZocWait("Total Holds    :")
+   dc=ZocGetLine()
+   line1= ZocLastLine()
+   parse1=SUBSTR(line1,1,4)
+   holds1=LEFT(parse1,4)
+
+   gholdsa=""
+   do chara=1 to 4
+      if Substr(holds1,chara,1)="0" then do
+         gholdsa=gholdsa||0
+      end
+      if Substr(holds1,chara,1)="1" then do
+         gholdsa=gholdsa||1
+      end
+      if Substr(holds1,chara,1)="2" then do
+         gholdsa=gholdsa||2
+      end
+      if Substr(holds1,chara,1)="3" then do
+         gholdsa=gholdsa||3
+      end
+      if Substr(holds1,chara,1)="4" then do
+         gholdsa=gholdsa||4
+      end
+      if Substr(holds1,chara,1)="5" then do
+         gholdsa=gholdsa||5
+      end   
+      if Substr(holds1,chara,1)="6" then do
+         gholdsa=gholdsa||6
+      end   
+      if Substr(holds1,chara,1)="7" then do
+         gholdsa=gholdsa||7
+      end   
+      if Substr(holds1,chara,1)="8" then do
+         gholdsa=gholdsa||8
+      end   
+      if Substr(holds1,chara,1)="9" then do
+         gholdsa=gholdsa||9
+      end
+   end
+   return
+   
+   emptyship1:
+
+   ZocSend "~L"
+   ZocWait "<Q to abort> ?"
+   ZocSend planet2
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~1"
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~2"
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~3"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~1"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~2"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~3"
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return
+
+getcol:
+
+   /* REXX Colonist Mover */
+   /* Written by The Founder February 2000 */
+   /* All Rights Reserved */
+
+   CALL ZocTimeout 60
+   exitflag=0
+   fuelc=0
+   colmover= "exit"
+   colmover= ZocRequest("Do you wish to run the Colonist  Mover?","YES","NO")
+   if colmover= "NO" then do
+      exitflag= 1
+      cancelflag= 1
+   end
+   if colmover= "exit" then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   if colmover= "##CANCEL##" then do
+      cancelflag= 1
+      exitflag= 1
+   end
+   CALL ZocTimeout 60
+   cyclesb="exit"
+   if exitflag= 0 then do
+      cyclesb= ZocAsk("How many Colonists do you want to Move?", "0")
+      if cyclesb= "##CANCEL##" then do
+         cancelflag= 1
+         exitflag= 1
+         signal leave
+      end
+   end
+   if cyclesb= "0" then do
+      coloflag1=1
+   end
+   if coloflag1=1 then do
+      leaveflag2=ZocMsgBox("Can't Move 0 Colonists!", 0)
+      if leaveflag2= "##OK##" then do
+         exitflag=1
+         cancelflag=1
+      end
+   end
+   if coloflag1=1 then do
+      exitflag=1
+   end
+   if exitflag= 0 then do
+      ZocSend "L"
+      ZocSend "Q^M"
+      planet1c= ZocAsk("Planet to Move From?", "0")
+   end
+   if planet1c= "##CANCEL##" then do
+      exitflag=1
+      cancelflag=1
+   end
+   if planet1c= 0 then do
+      exitflag=1
+      cancelflag=1
+   end
+   
+   if planet1c<2 then do
+      exitflag=1
+      cancelflag=1
+   end
+   if exitflag= 0 then do
+      planet2c= ZocAsk("Planet to Move To?", "0")
+   end
+   if planet2c= "##CANCEL##" then do
+      exitflag=1
+      cancelflag=1
+   end
+   if planet2c= 0 then do
+      exitflag=1
+      cancelflag=1
+   end
+   
+   if planet2c<2 then do
+      exitflag=1
+      cancelflag=1
+   end
+   if planet2c=planet1c then do
+      planeterr= 1
+   end
+   if planeterr= 1 then do
+      going= ZocMsgBox("Cannot Move It to the Same Planet!", 0)
+   end
+   if going= "##OK##" then do   
+      exitflag=1
+      cancelfalg=1
+   end
+   if exitflag= 0 then do
+      prodc= ZocRequest("Colonists from What Category?", "Fuel Ore", "Organics", "Equipment")
+   end
+   if prodc= "Fuel Ore" then do
+       resourcec= 1
+   end
+   if prodc= "Organics" then do
+       resourcec= 2
+   end
+   if prodc= "Equipment" then do
+       resourcec= 3
+   end
+   if resourcec < 1 then do
+      fuelc=1
+   end
+   if resourcec > 3 then do
+      fuelc=1
+   end
+   if fuelc=1 then do
+      exitflag= 1
+   end
+   if exitflag= 0 then do
+      prod2c= ZocRequest("Place Colonists in What Category?", "Fuel Ore", "Organics", "Equipment")
+      if prod2c= "Fuel Ore" then do
+         dumpsourcec=1
+      end
+      if prod2c= "Fuel Ore" then do
+         dumpsourcec= 1
+      end
+      if prod2c= "Organics" then do
+         dumpsourcec= 2
+      end
+      if prod2c= "Equipment" then do
+         dumpsourcec= 3
+      end
+      if dumpsourcec < 1 then do
+         fuelc=1
+      end
+      if dumpsourcec > 3 then do
+         fuelc=1
+      end
+      if fuelc=1 then do
+         leaveflag=1
+      end
+   end
+   if leaveflag=1 then do
+      leaveflag= ZocMsgBox("Must Choose a Category in order to run this script!" , 0)
+      if leaveflag="##OK##" then do
+         exitflag=1
+       end
+   end
+   if exitflag= 0 then do
+      call emptyship3
+   end
+   if exitflag= 0 then do
+      call getholdsb   
+   end
+    
+   if cycleb=circleb then do
+      exitflag=1
+      cancelflag=1
+   end
+   if exitflag= 1 then do
+      ZocBeep 1
+      leaveflag3= ZocMsgBox("Col-Mover Finished", 0)
+      if leaveflag3= "##OK##" then do
+         exit
+      end
+   end
+
+   /* Start Moving */
+   circleb=cyclesb/gholdsb
+   circleb=trunc(cyclesb/gholdsb)
+   x=0
+   DO WHILE x<circleb
+      x=x+1
+      call getresc
+      call dumpresc
+   end
+   EXIT
+   return
+
+
+   Exit:
+
+   if exitflag= 1 then do
+      ZocBeep 1
+      leaveflag= ZocMsgBox("Colonist Mover Finished", 0)
+   end
+   if leaveflag= "##OK##" then do
+      exit
+   end
+   return
+
+
+   /* Get Product */
+   getresc:
+
+   ZocSend "~L"
+   ZocSend planet1c
+   ZocSend "~^M"
+   ZocSend "~s"
+   ZocSend "~N"
+   ZocSend "~T"
+   ZocSend resourcec
+   ZocSend gholdsb
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return
+
+   /* Dump Product */
+   dumpresc:
+
+   ZocSend "~L"
+   ZocSend planet2c
+   ZocSend "~^M"
+   ZocSend "~s"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend dumpsourcec
+   ZocSend gholdsb
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return
+
+   /* Get Holds */
+   getholdsb:
+   Call ZocSend "I"
+   Call ZocWait("Total Holds    :")
+   db=ZocGetLine()
+   lineb= ZocLastLine()
+   parseb=SUBSTR(lineb,1,4)
+   holdsb=LEFT(parseb,4)
+
+   gholdsb=""
+   do charb=1 to 4
+      if Substr(holdsb,charb,1)="0" then do
+         gholdsb=gholdsb||0
+      end
+      if Substr(holdsb,charb,1)="1" then do
+         gholdsb=gholdsb||1
+      end
+      if Substr(holdsb,charb,1)="2" then do
+         gholdsb=gholdsb||2
+      end
+      if Substr(holdsb,charb,1)="3" then do
+         gholdsb=gholdsb||3
+      end
+      if Substr(holdsb,charb,1)="4" then do
+         gholdsb=gholdsb||4
+      end
+      if Substr(holdsb,charb,1)="5" then do
+         gholdsb=gholdsb||5
+      end   
+      if Substr(holdsb,charb,1)="6" then do
+         gholdsb=gholdsb||6
+      end   
+      if Substr(holdsb,charb,1)="7" then do
+         gholdsb=gholdsb||7
+      end   
+      if Substr(holdsb,charb,1)="8" then do
+         gholdsb=gholdsb||8
+      end   
+      if Substr(holdsb,charb,1)="9" then do
+         gholdsb=gholdsb||9
+      end
+   end
+   return
+
+   emptyship3:
+
+   ZocSend "~L"
+   ZocSend planet2c
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~1"
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~2"
+   ZocSend "~^M"
+   ZocSend "~T"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~3"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~1"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~2"
+   ZocSend "~^M"
+   ZocSend "~S"
+   ZocSend "~N"
+   ZocSend "~L"
+   ZocSend "~3"
+   ZocSend "~^M"
+   ZocSend "~Q"
+   return

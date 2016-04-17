@@ -1,0 +1,6 @@
+/** _cleanup v.1 **/
+_cleanup: procedure expose (globals)
+ /* put code here to do custom cleanup
+    for specific scripts and override
+    it in your main program */
+return 1

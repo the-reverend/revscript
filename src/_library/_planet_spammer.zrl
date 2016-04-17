@@ -1,0 +1,28 @@
+_planet_spammer: procedure expose (globals)
+ spamtext="@uyznuyznuyznuyznuyznuyznuyznuyznuyznuyzn.z^Mzc^M" /* works for any case, but slower??? */
+ call zocsend "uyzn.z^Mzc^M@"
+ ans=_waitmux("wish to abort?|Average Interval Lag")
+ select
+  when ans=0 then spamtext="@uynuynuynuynuynuynuynuynuynuyn.z^Mzc^M"
+  when ans=1 then spamtext="@uyuyuyuyuyuyuyuyuyuy.z^Mzc^M"
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+ call zocsend spamtext
+ c=0
+ do forever
+  ans=_waitmux("::|Average Interval|don't have any Genesis Torpedoes|For building this planet|]:[")
+  if ans=0 then parse value _bot_parse_command(_lastline()) with name ";" cmd ";" args 
+  select
+   when ans=0 & cmd="stop" then leave
+   when ans=0 then do; call zocsend "'type 'stop :; to stop the planet lock spammer^M"; c=0; end
+   when ans=1 then do; call zocsend spamtext; c=c+1; end
+   when ans=2 then do; call zocsend "'out of genesis torpedoes^M"; leave; end
+   when ans=3 then do; call zocsend "'made a planet!^M"; c=0; end
+   when ans=4 then nop
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+  if c=200 then do; call zocsend "'type 'stop :; to stop the planet lock spammer^M"; c=0; end
+ end /*do*/
+return

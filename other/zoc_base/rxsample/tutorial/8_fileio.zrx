@@ -1,0 +1,68 @@
+/* REXX 
+** 
+**  This example demonstrates the basic file functions:
+**
+**  - check for existence of file
+**
+**  - open file for writing 
+**  - write data to file
+**  - close file
+**
+**  - open file for reading 
+**  - read data and check for end of file
+**  - close file
+**
+*/
+
+/* ------------------------------------------------------------------ */
+
+/* the STREAM(,"C","QUERY EXISTS") function call can be used to check */
+/* if a file for exists.                                              */
+
+IF STREAM("SOME.TXT", "C", "QUERY EXISTS")\="" THEN DO
+    /* file exists, so delete it */
+    ADDRESS CMD "DEL SOME.TXT"
+END
+
+/* ------------------------------------------------------------------ */
+
+/* the STREAM(,"C","OPEN WRITE") call is used to open a file.         */
+CALL STREAM "SOME.TXT", "C", "OPEN WRITE"
+
+/* the LINEOUT call writes data to a file.  Instead of a file handle, */
+/* the file name is used.                                             */
+
+CALL LINEOUT "SOME.TXT", "THIS IS A LINE OF TEXT"
+CALL LINEOUT "SOME.TXT", "THIS IS SOME MORE TEXT"
+CALL LINEOUT "SOME.TXT", ""
+CALL LINEOUT "SOME.TXT", "MORE STUFF AFTER AN EMPTY LINE"
+
+/* the STREAM call can be used to close a file.                       */
+CALL STREAM "SOME.TXT", "C", "CLOSE"
+
+/* ------------------------------------------------------------------ */
+
+/* now we open the file again and read the data back in via LINEIN    */
+/* function.  End-Of-File is detected via STREAM(,"S") function       */
+
+CALL STREAM "SOME.TXT", "C", "OPEN READ"
+
+DO FOREVER 
+    /* read one line of text */
+    line= LINEIN("SOME.TXT")
+
+    /* leave if EOF was reached (stream no longer READY) */
+    IF STREAM("SOME.TXT", "S")\="READY" THEN DO
+        LEAVE
+    END
+
+    /* print line */
+    SAY "->"line
+END
+
+CALL STREAM "SOME.TXT", "C", "CLOSE"
+
+/* ------------------------------------------------------------------ */
+
+EXIT
+

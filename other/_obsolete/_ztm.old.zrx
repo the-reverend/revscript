@@ -1,0 +1,850 @@
+/* REXX _ztm.zrx by the reverend (build 24)                                   */
+/*----------------------------------------------------------------------------*/
+/*-                       Copyright (C) 2001 Ron Wilson                      -*/
+/*-                                                                          -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the expressed permission of the author. Your use of  -*/
+/*- this script is governed by the terms of the REV-LICENSE.                 -*/
+/*-                                                                          -*/
+/*- This program is provided to you WITHOUT ANY WARRANTY, even the implied   -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the -*/
+/*- REV-LICENSE for more details.                                            -*/
+/*-                                                                          -*/
+/*-                A copy of the REV-LICENSE is available at:                -*/
+/*-            http://thereverend.coastgames.com/rev-license.html            -*/
+/*----------------------------------------------------------------------------*/
+/* rev. 0 - initial release      */
+/* rev. 1 - improved file naming */
+/* rev. 2 - improved script halt */
+
+call zoctimeout 300
+call zocsynctime 500
+globals=_setglobals()
+call on halt name _halt
+call _rseed
+
+call _newline _ansi("b", "green")
+parse value _getgameinfo() with spath ";" iname ";" game
+parse value zocgetoption("CaptDefaultName") with . '="' logdefault '"'
+
+ns=_ini_askint("how many sectors in this game?", 5000, iname, game, "ns")
+if ns<1 | ns>20000 then call _error "number out of range"
+fname=_ini_askstr("enter ztm filename (no extension):", "cim", iname, game, "cim")
+if fname="" then call _error "script cancelled by user"
+parse value _get_log_info() with lpath ";" ldefault
+fname=lpath||fname
+
+if _fileexists(fname||".ztm") then if \_yesno("append to "||fname||".ztm? (no to overwrite)") then call dosdel fname||".ztm"
+
+call _info
+method=_chooselist("ztm method?", "1-2,3-4,...;1-5000,2-4999,...;random pairs;from terra;one-ways;smart pairs", ";", "c")
+select
+ when method="1-2,3-4,..."       then m="(pass1)"
+ when method="1-5000,2-4999,..." then m="(pass2)"
+ when method="random pairs"      then m="(random)"
+ when method="from terra"        then m="(terra)"
+ when method="one-ways"          then m="(oneways)"
+ when method="smart pairs"       then m="(smart)"
+ otherwise nop
+end /* select */
+
+if zocgetinfo("VERSION")>=4.03 then call zoclogging 0, 1
+else call zoclogging 0
+call zoclogname fname||m||".ztm"
+if zocgetinfo("VERSION")>=4.03 then call zoclogging 1, 1
+else call zoclogging 1
+
+call zocrespond "[Pause]", " "
+
+select
+
+ when method="1-2,3-4,..." then do
+  start=_asknum("start at what sector?", 1, "c")
+  finish=ns
+  if start//2=0 then start=start+1
+  if finish//2=0 then finish=finish-1
+  text=""
+  call zocsend "^^"
+  if zocwait(":")=640 then call _error "timeout"
+  do sector=start to finish by 2
+   call zocwriteln _ansi("b","green")||"<< mapping pair #"||sector%2+sector//2||": "||sector||"<->"||sector+1||" >> "||_ansi("b","white")
+   text=text||"f"||sector||"^M"||sector+1||"^M"
+   text=text||"f"||sector+1||"^M"||sector||"^M"
+   twait="FM > "||sector+1
+   if length(text)>220 then call _sendtext
+  end /* do */
+  if text\="" then call _sendtext
+ end /* when */
+
+ when method="1-5000,2-4999,..." then do
+  start=_asknum("start at what sector?", 1, "c")
+  finish=ns-start+1
+  text=""
+  call zocsend "^^"
+  if zocwait(":")=640 then call _error "timeout"
+  do offset=0 to (finish-start)%2
+   call zocwriteln _ansi("b","green")||"<< mapping pair #"||start+offset||": "||start+offset||"<->"||finish-offset||" >> "||_ansi("b","white")
+   text=text||"f"||start+offset||"^M"||finish-offset||"^M"
+   text=text||"f"||finish-offset||"^M"||start+offset||"^M"
+   twait="FM > "||finish-offset
+   if length(text)>220 then call _sendtext
+  end /* do */
+  if text\="" then call _sendtext
+ end /* when */
+
+ when method="random pairs" then do
+  iter=_asknum("how many pairs?",ns%10)
+  text=""
+  call zocsend "^^"
+  if zocwait(":")=640 then call _error "timeout"
+  do i=1 to iter
+   sector1=random(1,ns)
+   sector2=random(1,ns)
+   do while sector1=sector2
+    call _debug "random number problem:  sector1=sector2="||sector1
+    call _beep
+    sector1=random(1,_rseed(ns))
+    sector2=random(1,ns)
+   end /* do */
+   call zocwriteln _ansi("b","green")||"<< mapping pair #"||i||": "||sector1||"<->"||sector2||" >> "||_ansi("b","white")
+   text=text||"f"||sector1||"^M"||sector2||"^M"
+   text=text||"f"||sector2||"^M"||sector1||"^M"
+   twait="FM > "||sector2
+   if  length(text)>220 then call _sendtext
+  end /* do */
+  if text\="" then call _sendtext
+ end /* when */
+
+ when method="one-ways" then do
+  start=_asknum("start at what sector?", 1, "c")
+  if _fileexists(fname||"_ref.sct") then call _loadsectorcim fname||"_ref.sct"
+  else call _loadsectorcim fname||".sct"
+  text=""
+  count=0
+  call zocsend "^^"
+  if zocwait(":")=640 then call _error "timeout"
+  do i=start to ns
+   list=s.i
+   do while list\=""
+    parse var list sector ";" list
+    if \_listin(i,s.sector) then do
+     count=count+1
+     call zocwriteln _ansi("b","green")||"<< mapping one-way #"||count||": "||sector||"-->"||i||" >> "||_ansi("b","white")
+     text=text||"f"||sector||"^M"||i||"^M"
+     twait="FM > "||sector
+    end /* if */
+    if length(text)>235 then call _sendtext
+   end /* do */
+  end /* do */
+  if text\="" then call _sendtext
+ end /* when */
+
+ when method="from terra" then do
+  start=_asknum("start at what sector?", 2, "c")
+  finish=ns
+  text=""
+  call zocsend "^^"
+  if zocwait(":")=640 then call _error "timeout"
+  do i=start to finish
+   call zocwriteln _ansi("b","green")||"<< mapping pair #"||i-start+1||": 1-->"||i||" >> "||_ansi("b","white")
+   text=text||"f1^M"||i||"^M"
+   twait="  TO > "||i
+   if length(text)>220 then call _sendtext
+  end /* do */
+  if text\="" then call _sendtext
+ end /* when */
+
+ when method="smart pairs" then do
+  call _loadsectorcim fname||".sct"
+  start=_asknum("start at what sector?", 1, "c")
+  finish=ns
+  text=""
+  count=1
+  call zocsend "^^"
+  if zocwait(":")=640 then call _error "timeout"
+  sector1=_getnextunexpl(start)
+  sector3=_getnextunexpl(sector1+1)
+  sector2=_getnextunexpl(sector3+1)
+  do while sector2<=finish
+
+   call zocwriteln _ansi("b","green")||"<< mapping pair #"||count||": "||sector1||"<->"||sector2||" >> "||_ansi("b","white")
+   text=text||"f"||sector1||"^M"||sector2||"^M"
+   text=text||"f"||sector2||"^M"||sector1||"^M"
+   twait="FM > "||sector2
+   if length(text)>220 then call _sendtext
+
+   count=count+1
+   sector1=sector3
+   sector3=_getnextunexpl(sector3+1)
+   sector2=_getnextunexpl(sector3+1)
+
+  end /* do */
+  if text\="" then call _sendtext
+ end /* when */
+
+ otherwise nop
+
+end /* select */
+
+call zocsend "q"
+if zocwait("ENDINTERROG")=640 then call _error "timeout"
+
+if zocgetinfo("VERSION")>=4.03 then call zoclogging 0, 1
+else call zoclogging 0
+call zoclogname logdefault
+if zocgetinfo("VERSION")>=4.03 then call zoclogging 1, 1
+else call zoclogging 1
+
+call _quit
+
+exit
+
+_halt: /* custom version of halt */
+ call zocsend "q"
+ if zocwait("ENDINTERROG")=640 then call _error "timeout"
+ if zocgetinfo("VERSION")>=4.03 then call zoclogging 0, 1
+ else call zoclogging 0
+ call zoclogname logdefault
+ if zocgetinfo("VERSION")>=4.03 then call zoclogging 1, 1
+ else call zoclogging 1
+ call _newline
+ call zocwriteln "^[[1;33m<< script aborted by user. >>^[[0;35m "
+ exit
+return
+
+_info:
+ msg0="there are 6 modes of ZTM available in this script.  i suggest you run them in the following order:"
+ msg1="1) 1-2,3-4,...       (pass1)"
+ msg2="2) 1-5000,2-4999,... (pass2)"
+ msg3="3) random pairs"
+ msg4="4) from terra        (optional for accurate terra distances)"
+ msg5="5) one-ways          (run _cimtool.zrx BEFORE you run this pass)"
+ msg6="6) smart pairs       (this mode is overkill, but what the heck)"
+
+ call zocwriteln _ansi("b", "yellow")
+ call _notice 70, msg0
+ call zocwrite _ansi("b", "cyan")
+ call _notice 70, msg1
+ call _notice 70, msg2
+ call _notice 70, msg3
+ call _notice 70, msg4
+ call _notice 70, msg5
+ call _notice 70, msg6
+return
+
+_getnextunexpl:
+ gni=arg(1)
+ do while s.gni\=""
+  gni=gni+1
+ end /* do */
+return gni
+
+_sendtext:
+ call zocsend text
+ ans=zocwaitmux(twait,"Clear Avoids?")
+ select
+  when ans=0 then if zocwait(":")=640 then call _error "timeout"
+  when ans=1 then do
+   call zocsend "q"
+   if zocwait("ENDINTERROG")=640 then call _error "timeout"
+   call zocsend "^^"
+/* call _error "please clear your avoids." */
+  end /* when */
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /* select */
+ text=""
+ call zocwriteln
+return
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*     last updated: 1 Dec 2001, 20:54:40     */
+
+/** _ansi v.3 **/
+    _ansi: procedure expose (globals)
+     b=0
+     if arg(1)="b" then do
+      b=1
+      c=arg(2)
+     end /* if */
+     else c=arg(1)
+     select
+      when c="gray" then ansi=30
+      when c="red" then ansi=31
+      when c="green" then ansi=32
+      when c="yellow" then ansi=33
+      when c="blue" then ansi=34
+      when c="magenta" then ansi=35
+      when c="cyan" then ansi=36
+      when c="white" then ansi=37
+      otherwise ansi=37
+     end /* select */
+     rslt="^[["||b||";"||ansi||"m"
+    return rslt
+
+/** _ini_askint v.3 **/
+    _ini_askint: procedure expose (globals)
+     pmt=arg(1)
+     default=arg(2)
+     fname=arg(3)
+     section=arg(4)
+     vr=arg(5)
+     mode=arg(6)
+     flag=0
+     if section="##EOF##" then flag=1
+     if \flag then rslt=_getinivar(fname, section, vr)
+     if rslt="##EOF##" then flag=1
+     rslt=_stripint(rslt)
+     if rslt="" then flag=1
+     if flag then do
+      if pmt="##DEFAULT##" then rslt=default
+      else rslt=_askint(pmt||" ("||vr||"=)",default)
+     end /* if */
+     else if mode="" then call zocwriteln "<< using "||fname||" - "||vr||"="||rslt||" >>"
+     if rslt="##CANCEL##" then call _quit "script cancelled by user."
+    return rslt
+
+/** _ini_askstr v.4 **/
+    _ini_askstr: procedure expose (globals)
+     pmt=arg(1)
+     default=arg(2)
+     fname=arg(3)
+     section=arg(4)
+     vr=arg(5)
+     mode=arg(6)
+     flag=0
+
+     if game="##EOF##" then flag=1
+     if \flag then rslt=_getinivar(fname, section, vr)
+     if rslt="##EOF##" then flag=1
+     if flag then do
+      if pmt="##DEFAULT##" then rslt=default
+      else rslt=zocask(pmt||" ("||vr||"=)",default)
+     end /* if */
+     else do
+      parse var rslt temp "^" .
+      if length(temp)>17 then temp=left(temp,20)
+      if temp\=rslt then temp=temp||"..."
+      if mode="" then call zocwriteln "<< using "||fname||" - "||vr||"="||temp||" >>"
+     end /* else */
+     if rslt="##CANCEL##" then call _quit "script cancelled by user."
+    return rslt
+
+/** _askint v.1 **/
+    _askint: procedure expose (globals)
+     default=arg(2)
+     do while space(translate(rslt,"          ","0123456789"),0)\="" | rslt=""
+      rslt=space(zocask(arg(1), default),0)
+      default=rslt||" [please enter an integer or ESC to cancel.]"
+      if rslt="##CANCEL##" then leave
+     end /* do */
+     if lower(arg(3))="c" & rslt="##CANCEL##" then call _quit "script cancelled by user."
+    return rslt
+
+/** _asknum v.4 **/
+    _asknum: procedure expose (globals)
+     default=arg(2)
+     done=0
+     do while \done
+      rslt=zocask(arg(1), default)
+      if rslt="##CANCEL##" then done=1
+      else do
+       rslt=_stripint(rslt)
+       if rslt\="" then done=1
+      end /* else */
+      if \done then default="please enter a number or ESC to cancel."
+     end /* do */
+     if lower(arg(3))="c" & rslt="##CANCEL##" then call _quit "script cancelled by user."
+    return rslt
+
+/** _beep v.2 **/
+    _beep: procedure expose (globals)
+     fname=arg(1)
+     if fname\="" then if \_fileexists(fname) then fname=""
+     if fname="" then call zocwrite d2c(7)
+     else call zocplaysound fname
+    return
+
+/** _chooselist v.6 **/
+    _chooselist: procedure expose (globals)
+     prompt=arg(1)
+     list=arg(2)
+     if list="" then call _error "no list"
+     delim=arg(3)
+     if delim="" then delim=" "
+     if length(delim)>1 then call _error "long delimiter"
+
+     ch.=""
+     i=_dwords(list,delim)
+     do j=1 to i
+      ch.j=_dword(list,j,delim)
+     end /* do */
+
+     if i<7 then max=1
+     if i<5 then max=0
+     if i>=7 then max=(i-5)%2+1
+
+     done=0
+     loc=0
+     do while \done
+      if loc<0 then loc=0
+      if loc>max then loc=max
+
+      select
+       when loc=0 then do
+        if max=0 then rslt=zocrequest(prompt, ch.1, ch.2, ch.3, ch.4)
+        else rslt=zocrequest(prompt, ch.1, ch.2, ch.3, "next")
+       end /* when */
+       when loc=max then do
+        p1=(loc-1)*2+4
+        p2=p1+1
+        p3=p1+2
+        rslt=zocrequest(prompt, "back", ch.p1, ch.p2, ch.p3)
+       end /* when */
+       otherwise do
+        p1=(loc-1)*2+4
+        p2=p1+1
+        rslt=zocrequest(prompt, "back", ch.p1, ch.p2, "next")
+       end /* otherwise */
+      end /* select */
+
+      select
+       when rslt="next" then loc=loc+1
+       when rslt="back" then loc=loc-1
+       when rslt="##CANCEL##" then done=1
+       when rslt="" then nop
+       otherwise done=1
+      end /* select */
+
+     end /* do */
+
+     if lower(arg(4))="c" & rslt="##CANCEL##" then call _quit "script cancelled by user."
+
+    return rslt
+
+/** _debug v.3 **/
+    _debug: procedure expose (globals)
+     i=1
+     call zocwrite "^[[1;34mDEBUG <"
+     do while arg(i)\=""
+      call zocwrite arg(i)
+      i=i+1
+     end
+     call zocwriteln ">^[[0;35m"
+    return
+
+/** _dword v.2 **/
+    _dword: procedure expose (globals)
+    /* _dword(string, index, delimiter) */
+     rslt=translate(word(translate(arg(1),arg(3)||" "," "||arg(3)),arg(2))," "||arg(3),arg(3)||" ")
+    return rslt
+
+/** _dwords v.2 **/
+    _dwords: procedure expose (globals)
+    /* _dwords(string, delimiter) */
+     rslt=words(translate(arg(1),arg(2)||" "," "||arg(2)))
+    return rslt
+
+/** _error v.4 **/
+    _error: procedure expose (globals)
+     if arg(1)="" then call zocterminate
+     else msg="<< script error:  "||arg(1)||" >>"
+     mail="<< if this is a serious problem, email me at: the.reverend@coastgames.com >> "
+
+     eline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(eline)>0 then call zocwriteln
+     call zocwriteln "^[[1;31m"||msg||"^[[0;35m"
+     if arg(1)\="timeout" then call zocwriteln "^[[1;33m"||mail||"^[[0;35m"
+     if length(eline)>0 then call zocwrite eline
+     call _beep "error.wav"
+     exit
+    return
+
+/** _fileclose v.2 **/
+    _fileclose: procedure expose (globals)
+     call stream arg(1), "C", "CLOSE"
+    return
+
+/** _fileeof v.3 **/
+    _fileeof: procedure expose (globals)
+     if stream(arg(1), "S")="READY" & chars(arg(1))>0 then rslt=0
+     else rslt=1
+    return rslt
+
+/** _fileexists v.2 **/
+    _fileexists: procedure expose (globals)
+     if stream(arg(1), "C", "QUERY EXISTS")="" then rslt=0
+     else rslt=1
+    return rslt
+
+/** _filenew v.2 **/
+    _filenew: procedure expose (globals)
+     rslt=1
+     fname=arg(1)
+     if fname="" then call _error "no filename"
+     if \_fileexists(fname) then call stream fname, "C", "OPEN WRITE"
+     else do
+      if lower(arg(2))="delete" then do
+       call dosdel fname
+       if \_fileexists(fname) then call stream fname, "C", "OPEN WRITE"
+       else rslt=0
+      end /* if */
+      else rslt=0
+     end /* else */
+    return rslt
+
+/** _fileopenr v.2 **/
+    _fileopenr: procedure expose (globals)
+     rslt=1
+     fname=arg(1)
+     if fname="" then call _error "no filename"
+     rslt=_fileexists(fname)
+     if rslt then do
+      call stream fname, "C", "OPEN READ"
+      rslt=\_fileeof(fname)
+      if \rslt then call _fileclose fname
+     end /* if */
+    return rslt
+
+/** _getgameinfo v.3 **/
+    _getgameinfo: procedure expose (globals)
+     parse value zocgetglobaloption("ScriptPath") with . '="' path '"'
+     path=path||"\"
+     ini=path||"script.ini"
+
+     parse value zocgetglobaloption("WindowTitle") with . '="' game '"'
+     if game="" | game="%ZOCORHOST% %OPTIONS%" then do
+      list=_getiniheadings(ini)
+      if list="##EOF##" then game="##EOF##"
+      else game=_chooselist("select a game:", list, ";", "c")
+     end /* do */
+
+     call zocwriteln "<< using "||ini||" - ["||game||"] >>"
+
+     rslt=path||";"||ini||";"||game
+    return rslt
+
+/** _getiniheadings v.3 **/
+    _getiniheadings: procedure expose (globals)
+     fname=arg(1)
+     if fname="" then call _error "no filename"
+     if stream(fname, "C", "QUERY EXISTS")="" then list="##EOF##"
+     else do
+      call stream fname, "C", "OPEN READ"
+
+      list=""
+      eof=0
+      if stream(fname, "S")\="READY" then eof=1
+
+      do while \eof
+       line=linein(fname)
+       if left(line,1)=="[" then do
+        if list="" then list=substr(line,2,length(line)-2)
+        else list=list||";"||substr(line,2,length(line)-2)
+       end /* if */
+       if stream(fname, "S")\="READY" then eof=1
+      end /* do */
+
+      if length(list)=0 then list="##EOF##"
+      call stream fname, "C", "CLOSE"
+     end /* else */
+    return list
+
+/** _getinivar v.2 **/
+    _getinivar: procedure expose (globals)
+     fname=arg(1)
+     head=arg(2)
+     vr=arg(3)
+
+     if fname="" then call _error "no filename"
+     if head="" then call _error "no heading"
+     if vr="" then call _error "no variable"
+
+     if stream(fname, "C", "QUERY EXISTS")="" then vl="##EOF##"
+     else do
+      call stream fname, "C", "OPEN READ"
+
+      done=0
+      eof=0
+      if stream(fname, "S")\="READY" then eof=1
+
+      do while \(done | eof)
+       line=linein(fname)
+       if left(line,1)=="[" then do
+        if substr(line,2,length(line)-2)==head then done=1
+       end /* if */
+       if stream(fname, "S")\="READY" then eof=1
+      end /* do */
+
+      done=0
+
+      do while \(done | eof)
+       line=linein(fname)
+       if left(line,1)="[" then eof=1
+       eq=pos("=",line)
+       if eq>0 then do
+        if left(line,eq-1)==vr then done=1
+       end /* if */
+       if stream(fname, "S")\="READY" then eof=1
+      end /* do */
+
+      call stream fname, "C", "CLOSE"
+
+      if eof then vl="##EOF##"
+      else vl=substr(line,eq+1)
+     end /* else */
+
+    return vl
+
+/** _get_log_info v.2 **/
+    _get_log_info: procedure expose (globals)
+     parse value zocgetoption("CaptDefaultName") with . '="' default '"'
+     parse value zocgetglobaloption("CapturePath") with . '="' path '"'
+     path=path||"\"
+     rslt=path||";"||default
+    return rslt
+
+/** _listadd v.3 **/
+    _listadd: procedure expose (globals)
+     add=arg(1)
+     list=arg(2)
+     sort=arg(3)
+     if sort="" then sort=0
+     temp1=list
+     found=0
+     if list="" then list=add
+     else do
+      do while temp1\=""
+       parse var temp1 temp2 ";" temp1
+       if temp2=add then found=1
+       if found then temp1=""
+      end /* do */
+      if \found then list=list||";"||add
+      if \found & sort then list=_listsort(list)
+     end /* else */
+    return list
+
+/** _listin v.2 **/
+    _listin: procedure expose (globals)
+     list=arg(2)
+     rslt=0
+     do i=1 to _dwords(list,";")
+      if _dword(list,i,";")==arg(1) then do
+       rslt=1
+       leave
+      end /* if */
+     end /* do */
+    return rslt
+
+/** _listinstr v.2 **/
+    _listinstr: procedure expose (globals)
+     list=arg(1)
+     listr=arg(2)
+     if listr="" then rslt=1
+     mode=arg(3)
+     if mode\="cs" then do
+      list=lower(list)
+      listr=lower(listr)
+     end /* if */
+     rslt=0
+     if listr="" then rslt=1
+     else do
+      do i=1 to _dwords(list,";")
+       if pos(_dword(list,i,";"), listr)>0 then do
+        rslt=1
+        leave
+       end /* if */
+      end /* do */
+     end /* else */
+    return rslt
+
+/** _listsort v.2 **/
+    _listsort: procedure expose (globals)
+     list=arg(1)
+     a.=""
+     do i=1 to _dwords(list,";")
+      a.i=_word(list,i,";")
+     end /* do */
+     do k=i-1 to 1 by -1
+      do j= 1 to k
+       j2=j+1
+       if a.j>a.j2 then do
+        temp=a.j
+        a.j=a.j2
+        a.j2=temp
+       end /* if */
+      end /* do */
+     end /* do */
+     list=a.1
+     i=2
+     do while a.i\=""
+      list=list||";"||a.i
+      i=i+1
+     end /* do */
+    return list
+
+/** _loadsectorcim v.3 **/
+    _loadsectorcim: procedure expose (globals)
+     fname=arg(1)
+     if s.1="S.1" then s.=""
+
+     call _newline
+     call zocwrite _ansi("b", "cyan")||"reading "||fname||" "
+     if _fileopenr(fname) then do
+
+      eof=_fileeof(fname)
+
+      s.=""
+      mon=0
+      do while \eof
+
+       line=linein(fname)
+       parse var line row line
+       row=strip(row)
+       if line\="" & row\="" then do
+
+        parse var line s.row line
+        s.row=_stripint(s.row)
+
+        do while line\=""
+         parse var line temp line
+         temp=_stripint(temp)
+         s.row=s.row||";"||temp
+        end /* do */
+
+        mon=_spinner(mon,500)
+       end /* if */
+
+       eof=_fileeof(fname)
+
+      end /* do */
+
+      call _fileclose fname
+
+     end /* if */
+     else call zocwrite "x"
+
+    return
+
+/** _newline v.2 **/
+    _newline: procedure expose (globals)
+     if zocgetinfo("CURSOR-X")>0 then call zocwriteln arg(1)
+     else call zocwrite arg(1)
+    return
+
+/** _notice v.3 **/
+    _notice: procedure expose (globals)
+     width=arg(1)
+     if width>75 then width=75
+     line=arg(2)
+
+     i=3
+     do while arg(i)\=""
+      nw1=length(arg(i))
+      if nw1+width>250 then width=250-nw1
+      i=i+1
+     end /* do */
+     if width<20 then call _error "notice error"
+
+     i=3
+     do while length(line)>0
+      if length(line)<=width & arg(i)\="" then do
+       line=line||arg(i)
+       i=i+1
+      end /* if */
+      if length(line)<=width then do
+       call zocwriteln "<< "||line||copies(" ",width-length(line))||">>"
+       line=""
+      end /* if */
+      else do
+       np=width
+       do while substr(line,np,1)\=" "
+        np=np-1
+       end /* do */
+       call zocwriteln "<< "||left(line,np)||copies(" ",width-np)||">>"
+       line=substr(line,np+1)
+      end /* else */
+     end /* do */
+    return
+
+/** _quit v.5 **/
+    _quit: procedure expose (globals)
+     select
+      when arg(1)="" then msg="<< script ended. >>"
+      when lower(arg(1))="nocopy" then msg="<< script ended. >>"
+      otherwise msg="<< script ended:  "||arg(1)||" >>"
+     end /* select */
+     line=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(line)>0 then call zocwriteln
+     call zocwriteln "^[[1;32m"||msg||"^[[0;35m"
+     if length(line)>0 & lower(arg(1))\="nocopy" & lower(arg(2))\="nocopy" then call zocwrite line
+     if arg(1)="script cancelled by user." then call _beep "cancel.wav"
+     else call _beep "quit.wav"
+     exit
+    return 1
+
+/** _rseed v.5 **/
+    _rseed: procedure expose (globals)
+     r=arg(1)
+     if r="" then r=1000
+     if r<2 then r=2
+     if r>86400 then r=86400
+     parse value time("N") with r1 ":" r2 ":" r3
+     rslt=r1*3600+r2*60+r3
+     call random 1, 89999, rslt
+     rslt=rslt//r
+    return rslt
+
+/** _setglobals v.1 **/
+    _setglobals: procedure
+     rslt=space("s. p. d. v. f. m. q. dtomsl. dfrmsl. bg. nwi. od. sv. pv. olist1. olist2. "||arg(1))
+    return rslt
+
+/** _spinner v.2 **/
+    _spinner: procedure expose (globals)
+     count=arg(1)
+     if arg(2)="" then width=50
+     else width=arg(2)
+     select
+      when count=0         then call zocwrite "-"
+      when count=width     then call zocwrite d2c(27)||"[1D\"
+      when count=(width*2) then call zocwrite d2c(27)||"[1D|"
+      when count=(width*3) then call zocwrite d2c(27)||"[1D/"
+      when count=(width*4) then do
+       call zocwrite d2c(27)||"[1D-"
+       count=0
+      end /* when */
+      otherwise nop
+     end /* select */
+     count=count+1
+    return count
+
+/** _stripint v.3 **/
+    _stripint: procedure expose (globals)
+     rslt=""
+     temp=strip(arg(1))
+     if bdflag=1 then call _error
+     do i=1 to length(temp)
+      ch=substr(temp,i,1)
+      if length(rslt)=0 then do
+       if verify(ch,"1234567890-")=0 then rslt=rslt||ch
+      end /* if */
+      else if verify(ch,"1234567890")=0 then rslt=rslt||ch
+     end /* do */
+     if \datatype(rslt,"W") then rslt=""
+    return rslt
+
+/** _yesno v.3 **/
+    _yesno: procedure expose (globals)
+     select
+      when arg(2)="yn" then rslt=zocrequest(arg(1)||" (ESC=no)", "yes", "no")
+      otherwise rslt=zocrequest(arg(1), "yes", "no", "cancel")
+     end /* select */
+     select
+      when rslt="cancel" then call _quit "script cancelled by user."
+      when rslt="##CANCEL##" & arg(2)\="yn" then call _quit "script cancelled by user."
+      when rslt="yes" then rslt=1
+      otherwise rslt=0
+     end /* select */
+    return rslt

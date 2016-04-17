@@ -1,0 +1,81 @@
+/** _mrequestlist v.3 **/
+/*- _mrequestlist msg, list, delim, mode, default -*/
+_mrequestlist: procedure expose (globals)
+ do i=1 to 2
+  if \arg(i,"E") then call _error "missing parameter in _mrequestlist"
+ end /*do*/
+ msg=arg(1)
+ list=arg(2)
+ if list="" then call _error "empty list in _mrequestlist"
+ if arg(3,"E") then delim=arg(3); else delim=";"
+ if arg(4,"E") then mode=arg(4); else mode=""
+ if arg(5,"E") then default=arg(5); else default=""
+
+ yes="> "
+ no="   "
+
+ if default="" then do
+  rslt=0
+  menu="   DONE"||delim||no||_dword(list,1,delim)
+  count=_dwords(list,delim)
+ end /*if*/
+ else do
+  rslt=_dword(default,1,delim)
+  if rslt then menu="   DONE"||delim||yes||_dword(list,1,delim)
+  else menu="   DONE"||delim||no||_dword(list,1,delim)
+  count=min(_dwords(list,delim),_dwords(default,delim))
+ end /*else*/
+
+ if count>1 then do
+  do i=2 to count
+   if default="" then flag=no
+   else do
+    if _dword(default,i,delim) then flag=yes
+    else flag=no
+   end /*else*/
+   menu=menu||delim||flag||_dword(list,i,delim)
+   if default="" then rslt=rslt||delim||0
+   else rslt=rslt||delim||_dword(default,i,delim)
+  end /*do*/
+ end /*if*/
+
+ i=_drequestlisti(msg,menu,delim)
+
+ do while i>1
+  menu="   DONE"
+  temp=""
+  do j=1 to _dwords(list,delim)
+   if j=(i-1) then do
+    if _dword(rslt,j,delim) then do
+     menu=menu||delim||no||_dword(list,j,delim)
+     if temp="" then temp=0
+     else temp=temp||delim||0
+    end /*if*/
+    else do
+     menu=menu||delim||yes||_dword(list,j,delim)
+     if temp="" then temp=1
+     else temp=temp||delim||1
+    end /*else*/
+   end /*if*/
+   else do
+    if temp="" then temp=_dword(rslt,j,delim)
+    else temp=temp||delim||_dword(rslt,j,delim)
+    if _dword(rslt,j,delim) then menu=menu||delim||yes||_dword(list,j,delim)
+    else menu=menu||delim||no||_dword(list,j,delim)
+   end /*else*/
+  end /*do*/
+  rslt=temp
+  i=_drequestlisti(msg,menu,delim)
+ end /*do*/
+
+ if lower(mode)="c" & i=0 then call _quit "script cancelled by user."
+
+ dmax=_dwords(default,";")
+ lmax=_dwords(list,";")
+ if dmax>lmax then do
+  do i=dmax+1 to lmax
+   rslt=rslt||delim||_dword(default,i,";")
+  end /*do*/
+ end /*if*/
+
+return rslt

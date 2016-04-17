@@ -1,0 +1,37 @@
+/** _bot_validate_user v.1 **/
+_bot_validate_user: procedure expose (globals)
+ user=arg(1)
+ list=arg(2)
+ if user="##OWNER##" then return 1
+ user=left(user,6)
+ n=_dwords(list,";")
+ do i=1 to n
+  if user=left(_dword(list,i,";"),6) then leave
+ end /*do*/
+ if i=n+1 then return 0
+ fullname=_dword(list,i,";")
+ if fullname="" then return 0
+ if _sendwait("="||fullname||"^M","Hailing frequencies:")=640 then call _error "timeout"
+ ans=_waitmux("incoherent mumbling|not responding|Unknown Trader!|Do you mean|comm-link established")
+ select
+  when ans=0 then return 0
+  when ans=1 then do; call zocsend "^M"; return 0; end
+  when ans=2 then return 0
+  when ans=3 then do
+   call zocsend "^M"
+   do while _waitmux("Do you mean|Unknown Trader!")=0; call zocsend "^M"; end;
+   return 0
+  end /*when*/
+  when ans=4 then do
+   pwd=_random_pwd(3)
+  end /*when*/
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+ call zocsend "validate "||pwd||" ::^M"||pwd||" : type "||pwd||" on subspace within eight seconds to validate yourself.^M^M"
+ t=_timeout(10)
+ ans=_wait("R "||user||" "||pwd)
+ call _timeout t
+ if ans=640 then return 0
+ call zocsend "'user "||strip(fullname)||" ("||strip(user)||") has been validated.^M"
+return 1

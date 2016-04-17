@@ -1,0 +1,44 @@
+/** _negotiate_get_mcic v.2 **/
+_negotiate_get_mcic: procedure expose (globals)
+
+ product=arg(1)
+ percent=arg(2)
+ perunitoffer=arg(3)
+ tradepercent=arg(4)
+
+ mcic_list=_mcic.product.101
+ n=words(mcic_list)
+
+ select
+  when percent>100 then mcic=word(mcic_list,1)
+  when percent=100 then do
+   puo_list=_mcic.product.100
+   mcic=word(mcic_list,n)
+   do i=1 to n
+    if perunitoffer<=word(puo_list,i)*100/tradepercent then do
+     mcic=word(mcic_list,i)
+     leave
+    end /*if*/
+   end /*do*/
+  end /*when*/
+
+  when percent>0 then do
+   x=percent+1
+   puo_list1=_mcic.product.x
+   puo_list2=_mcic.product.percent
+   if perunitoffer<word(puo_list2,1)*100/tradepercent then mcic=word(mcic_list,1)
+   else do
+    mcic=word(mcic_list,n)
+    do i=1 to n
+     if perunitoffer<=word(puo_list1,i)*100/tradepercent then do
+      mcic=word(mcic_list,i)
+      leave
+     end /*if*/
+    end /*do*/
+   end /*else*/
+  end /*when*/
+
+  otherwise mcic=word(mcic_list,1)
+ end /*select*/
+
+return mcic

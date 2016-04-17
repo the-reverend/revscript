@@ -1,0 +1,58 @@
+REV-SCRIPT tutorial
+
+A REV-SCRIPTS
+    INTRODUCTION
+    USING REV-SCRIPTS
+    SCRIPT.INI AND _SETGAME.ZRX
+B CIM DATA
+    BASICS OF CIM DATA
+    GETTING THE MOST OUT OF CIM DATA
+C BEHIND THE SCENES
+
+A USING REV-SCRIPTS
+
+    INTRODUCTION
+
+ZOC is an excellent communications client for windows.  it has all the basic parts needed to play tradewars:  1) a telnet protocol, 2) ansibbs emulation, 3) a phone book, and 4) a script language.  that is not all that ZOC can do; the rest is just icing on the cake.  if you download ZOC today, it comes with a free 30-day trial.  technically it's shareware, so after 30 days you need to register it to continue using it.  trust me, its worth the price.  if you buy direct from EMTEC, you will pay $69, but if you order through Founder, you can take advantage of the group discount.
+
+REV-SCRIPTS are very simple to install.  just download them from my webage and unzip the scripts to your SCRIPT folder.  that's all there is to installation.  figure 1 is an example screen shot of the ZOC folder.  notice the SCRIPT folder and the LOG folder under the ZOC folder.  these two folders are the main locations where scripts and cim data are stored.  keep this in mind as you continue reading this tutorial.  all data will be stored in the LOG folder, and all scripts will be kept in the SCRIPT folder.
+
+once you log into a game (i'll assume you can do that much), just run the script you want from ZOC.  you can either hit the "play" button on the toolbar, or use the ZOC menu.  figure 2 shows the ZOC menu; just hit Script->Start REXX Script to run any script in your SCRIPT folder.  its as simple as that.
+
+    USING REV-SCRIPTS
+
+most of my scripts re quite simple to use.  for example, if you would like to trade two adjacent ports, run the _paitrade.zrx script from your ship, starting in the sector where the first port is located.  the script will ask you what adjacent sector you would like to trade with, what products you would like to trade, and what type of haggle you would like to use when trading.  after that, you are off to the races.  the script will trade until one of the ports is dry, or until you stop the script.  you can stop a script at any time by hitting the stop button on the toolbar in ZOC, or by pressing ALT-<minus> on the keyboard.
+
+    SCRIPT.INI AND _SETGAME.ZRX
+
+some of my scripts require a lot of user input initially in order to perform their tasks.  to reduce the amount of questions that a script will ask, i have devised a way to store this information and make it accessible to scripts.  for simplicity, all this information is stored in a single file called SCRIPT.INI.  i used the standard windows format for initialization files because it is simple to understand and tested over time.  here is an example SCRIPT.INI file for two games:
+
+[game A]
+sf=21
+rf=3
+sd=66
+rylos=1243
+alpha=4429
+cr=600
+ns=5000
+cim=game_A
+
+[game B]
+sf=30
+rf=6
+sd=432
+cr=10001
+ns=10000
+cim=game_B
+
+[MANUAL ENTRY]
+
+this is a very simple example just to illustrate some of the values that you can store in SCRIPT.INI.  click here for a complete explanation of game variables that you can define in SCRIPT.INI.
+
+here's how it works:  say for example you are playing in "game A" and you want to run my _SDT.ZRX script.  the script needs to know what the steal factor is and what the cim name is.  it needs to know the steal factor, sf, so that it can properly calculate a safe number of holds to attempt to steal at your current experience level.  it needs to know the cim name "game_A" because the script will store your busts in a file named "game_A.bst".  (this is not entirely true yet... i have not included bust recording in _SDT.ZRX yet.)  when you run the _SDT.ZRX script, it will first check for the SCRIPT.INI file.  if it does not find the file, it will ask you for sf and cim.  if it finds SCRIPT.INI, it will read all the headers (a header is in brackets like [game A]) and then allow you to choose which game you are currently playing.  in this example, it would ask you to choose between "game A", "game B", and "MANUAL ENTRY."  once you choose the game you are playing, it will check under the header for sf and cim.  if it still does not find the value it is looking for, it will ask you, otherwise, you are off to the races!
+
+so far i have explained a little bit how SCRIPT.INI can simplify script use.  if you setup your SCRIPT.INI file correctly, you should not have to answer as many questions before a script begins to do it's work.  in most cases, you will just have to choose the game you are in, and then the script will take off because it knows what to do from reading the SCRIPT.INI file.
+
+well, you know me - i even got tired of doing that.  i thought, why can't ZOC just remember what game i'm for every script?  that is why i wrote _SETGAME.ZRX.  all you do is run _SETGAME.ZRX, and it will ask you what game you are in.  once you select a game, the title bar of ZOC will change to match the game you selected.  so in this example, the title bar of ZOC would read, "game A".  now that the game is 'set', each script doesn't ask you what game you are in ... it just reads the title bar and automatically knows to use the information in SCRIPT.INI under "game A".
+
+so that's SCRIPT.INI and _SETGAME.ZRX in a nutshell!

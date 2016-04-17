@@ -1,0 +1,492 @@
+/* REXX _setup.zrx by rev (build 50)                                          */
+/*-       built by rev-builder version 1.3a on 31 Dec 2012 at 23:39:17       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author.                -*/
+/*-                                                                          -*/
+/*- This script is provided to you WITHOUT ANY WARRANTY, even the implied    -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         -*/
+/*-                                                                          -*/
+/*-                       Copyright (C) 2009 Ron Wilson                      -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ----------------------*/ _g.!sname="_setup.zrx" /*---------------------- -*/
+/*- --------------*/ _g.!sbuild=50; _g.!sdate="2012-12-31" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+/* rev. 0 - initial release                                                   */
+/* rev. 1 - minor bug fixes in file handling                                  */
+
+globals=_setglobals()
+call on halt name _halt
+spath=_get_script_path()
+lpath=_get_log_path()
+dpath=_get_download_path()
+
+call zoccommand "CLS"
+call zocwriteln _ansi("bt;frd")||"WELCOME TO REV-HELPER SETUP"
+call zocwriteln _ansi("bt;fwh")
+
+/* program settings */
+   call zocwrite "SETTING PROGRAM OPTIONS : "
+   call zocsetprogramoption 'AutoOptsSave=no'
+   call zocsetprogramoption 'NoQuitWhenOnline=yes'
+   call zocsetprogramoption 'NoClickSend=yes'
+   call zocsetprogramoption 'ClipQuick=no'
+   call zocsetprogramoption 'ClipNoAddCR=yes'
+   call zocsetprogramoption 'ClipIndent=no'
+   call zocsetprogramoption 'ClipRmbPaste=no'
+   call zocsetprogramoption 'ScrollbackLines=9999'
+   call zocsetprogramoption 'BrBufSize=4096'
+   call zocsetprogramoption 'WindowTitle="%ZOCORHOST% %OPTIONS%"'
+   call zocwriteln "DONE"
+
+/* session settings */
+   call zocwrite "SETTING SESSION OPTIONS : "
+   call zocsetoption 'CaptDefaultName="zoc_log_^3^2^1_^8.txt"'
+   call zocsetoption 'ColorBack=0'
+   call zocsetoption 'ColorFore=15'
+   call zocsetoption 'JumpScroll=2'
+   call zocwriteln "DONE"
+
+/* overwrite menu system? */
+   call zocwrite "PREPARING MENU FILES    : "
+   parse value zoclistfiles(spath||"rh*.txt._", ";") with count names
+   do i=1 to count
+    name1=_dword(names,i,";")
+    name2=left(name1,length(name1)-2)
+    if _fileexists(spath||name2) then do
+     if _yesno("reset your "||name2||" menu settings?") then do
+      if dosdel(spath||name2) then call dosrename spath||name1, spath||name2
+     end /*if*/
+     else call dosdel spath||name1
+    end /*if*/
+    else call dosrename spath||name1, spath||name2
+   end /*do*/
+   call zocwriteln "DONE"
+
+/* setup menu system */
+   call zocwrite "SETTING MENU BUTTONS    : "
+   call _loadmenu spath||"rh_config.txt", spath, lpath, dpath, ""
+   call zocwriteln "DONE"
+
+/* setup auto-replies */
+   call zocwrite "SETTING AUTOREPLIES     : "
+   call _add_autoreply "Play Trade Wars 2002", "^RUN=_login.zrx"
+   call _add_autoreply "INACTIVITY WARNING", "^["
+   call _add_autoreply "Loading and compiling script:", "^RUN=_waitfor.zrx Script terminated:"
+   call _add_autoreply "Loading script:", "^RUN=_waitfor.zrx Script terminated:"
+   call zocwriteln "DONE"
+
+call zocwriteln
+call zocwriteln _ansi("bt;fye")||"TO COMPLETE THE SETUP, PLEASE DO THE FOLLOWING: "
+call zocwriteln _ansi("bt;fye")||"   CHOOSE "||_ansi("bt;fgr")||"OPTIONS->PROGRAM SETTINGS->SAVE"
+call zocwriteln _ansi("bt;fye")||"   CHOOSE "||_ansi("bt;fgr")||"OPTIONS->EDIT SESSION PROFILE->SAVE"
+
+exit
+
+/***                     REV'S TW LIBRARY FOR ZOC/REXX                      ***/
+
+/** _setglobals v.5 **/
+    _setglobals: procedure expose _verbose _monthdays _monthnames _baseday. _g. _msg. _debug (globals)
+
+     _debug=0
+     _verbose=0
+     _msg.=""; _msg.0=0
+     _monthdays="31;28;31;30;31;30;31;31;30;31;30;31"
+     _monthnames="jan;feb;mar;apr;may;jun;jul;aug;sep;oct;nov;dec"
+     _baseday.2000=730118 + 1 /* +1 added 6/23/2008 */
+     _baseday.2001=_baseday.2000+365+1
+     _baseday.2002=_baseday.2001+365
+     _baseday.2003=_baseday.2002+365
+     _baseday.2004=_baseday.2003+365
+     _baseday.2005=_baseday.2004+365+1
+     _baseday.2006=_baseday.2005+365
+     _baseday.2007=_baseday.2006+365
+     _baseday.2008=_baseday.2007+365
+     _baseday.2009=_baseday.2008+365+1
+     _baseday.2010=_baseday.2009+365
+     _baseday.2011=_baseday.2010+365
+     _baseday.2012=_baseday.2011+365
+     _baseday.2013=_baseday.2012+365+1
+     _baseday.2014=_baseday.2013+365
+     _baseday.2015=_baseday.2014+365
+     _baseday.2016=_baseday.2015+365
+     _baseday.2017=_baseday.2016+365+1
+
+     i=lastpos(".",_g.!sname)
+     if i=0 then _g.!sname1=_g.!sname
+            else _g.!sname1=left(_g.!sname,i-1)
+
+     rslt="_g. _ini. _s. _p. _d. _v. _f. _m. _l. _q. _sl. _ex. _qs. "
+     rslt=rslt||"_ef. _efc. _es. _et. _ep. _fc. "
+     rslt=rslt||"_path. _dist. _dtomsl. _dfrmsl. "
+     rslt=rslt||"_bg. _bd. _nwi. _nwo. _nw. _nwt. _od. _sv. _pv. _vs. _vn. _vi. _mcic. _fh. _fhp. "
+     rslt=rslt||"_clv. _online. _msg _msg. _debug "
+     rslt=rslt||"_verbose _monthdays _monthnames _baseday. "
+     rslt=rslt||"globals "
+     if arg(1,"E") then rslt=rslt||arg(1)
+
+     rslt=_space(rslt)
+    return rslt
+
+/** _halt v.4 **/
+    _halt: procedure expose (globals)
+     call off halt
+     call _cleanup
+     call zocwriteln "^[[1;33m< user abort >^[[0m "
+     exit
+    return
+
+/** _get_script_path v.1 **/
+    _get_script_path: procedure expose (globals)
+     parse value zocgetglobaloption("ScriptPath") with . '="' spath '"'
+     if left(zocgetinfo("VERSION"),1)>4 then spath = zocfilename("RESOLV", spath)
+     spath=dosfname(spath)
+     if right(spath,1)\="\" then spath=spath||"\"
+     if \dosisdir(spath) then call _error "invalid path in _get_script_path"
+    return spath
+
+/** _get_log_path v.2 **/
+    _get_log_path: procedure expose (globals)
+     parse value zocgetglobaloption("CapturePath") with . '="' lpath '"'
+     if left(zocgetinfo("VERSION"),1)>4 then lpath = zocfilename("RESOLV", lpath)
+     lpath=dosfname(lpath)
+     if right(lpath,1)\="\" then lpath=lpath||"\"
+     if \dosisdir(lpath) then call _error "invalid path in _get_log_path"
+    return lpath
+
+/** _get_download_path v.2 **/
+    _get_download_path: procedure expose (globals)
+     parse value zocgetglobaloption("DownloadAltPath") with . '="' dpath '"'
+     if left(zocgetinfo("VERSION"),1)>4 then dpath = zocfilename("RESOLV", dpath)
+     dpath=dosfname(dpath)
+     if right(dpath,1)\="\" then dpath=dpath||"\"
+     if \dosisdir(dpath) then call _error "invalid path in _get_download_path"
+    return dpath
+
+/** _ansi v.3 **/
+    _ansi: procedure expose (globals)
+     rslt="0"
+     pre=""
+     do i=1 to _dwords(arg(1),";")
+      w=_dword(arg(1),i,";")
+      select
+       when w="clearline" then pre=pre||"^[[100D^[[K"
+       when w="dl"  then rslt=rslt||";"||0  /* dull               */
+       when w="bt"  then rslt=rslt||";"||1  /* bright             */
+       when w="ul"  then rslt=rslt||";"||4  /* underlined         */
+       when w="blk" then rslt=rslt||";"||5  /* blinking           */
+       when w="fbk" then rslt=rslt||";"||30 /* black foreground   */
+       when w="frd" then rslt=rslt||";"||31 /* red foreground     */
+       when w="fgr" then rslt=rslt||";"||32 /* green foreground   */
+       when w="fye" then rslt=rslt||";"||33 /* yellow foreground  */
+       when w="fbl" then rslt=rslt||";"||34 /* blue foreground    */
+       when w="fmg" then rslt=rslt||";"||35 /* magenta foreground */
+       when w="fcy" then rslt=rslt||";"||36 /* cyan foreground    */
+       when w="fwh" then rslt=rslt||";"||37 /* white foreground   */
+       when w="bbk" then rslt=rslt||";"||40 /* black background   */
+       when w="brd" then rslt=rslt||";"||41 /* red background     */
+       when w="bgr" then rslt=rslt||";"||42 /* green background   */
+       when w="bye" then rslt=rslt||";"||43 /* yellow background  */
+       when w="bbl" then rslt=rslt||";"||44 /* blue background    */
+       when w="bmg" then rslt=rslt||";"||45 /* magenta background */
+       when w="bcy" then rslt=rslt||";"||46 /* cyan background    */
+       when w="bwh" then rslt=rslt||";"||47 /* white background   */
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     rslt=pre||"^[["||rslt||"m"
+    return rslt
+
+/** _dword v.2 **/
+    _dword: procedure expose (globals)
+     rslt=translate(word(translate(arg(1),arg(3)||" "," "||arg(3)),arg(2))," "||arg(3),arg(3)||" ")
+    return rslt
+
+/** _fileexists v.4 **/
+    _fileexists: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileexists"
+      when arg(1)="" then rslt=0
+      when stream(arg(1), "C", "QUERY EXISTS")="" then rslt=0
+      otherwise rslt=1
+     end /*select*/
+    return rslt
+
+/** _yesno v.3 **/
+    _yesno: procedure expose (globals)
+     if arg(1,"E") then msg=arg(1)
+     else msg="yes or no"
+     if arg(2)="yn" then rslt=zocrequest(msg||" (ESC=no)", "yes", "no")
+                    else rslt=zocrequest(msg, "yes", "no", "cancel")
+     select
+      when rslt="cancel" then call _quit "script cancelled by user.", "nocopy"
+      when rslt="##CANCEL##" & arg(2)\="yn" then call _quit "script cancelled by user.", "nocopy"
+      when rslt="yes" then rslt=1
+      otherwise rslt=0
+     end /*select*/
+    return rslt
+
+/** _loadmenu v.3 **/
+    _loadmenu: procedure expose (globals)
+     menufile=arg(1)
+     spath=arg(2)
+     lpath=arg(3)
+     dpath=arg(4)
+     gname=arg(5)
+
+     if right(spath,1)="\" then spath=reverse(substr(reverse(spath),2))
+     if right(lpath,1)="\" then lpath=reverse(substr(reverse(lpath),2))
+     if right(dpath,1)="\" then dpath=reverse(substr(reverse(dpath),2))
+
+     if _fileopenr(menufile) then do
+      call zocsetoption("ShowUserbar=no")
+      i=0
+      do while \_fileeof(menufile)
+       parse value linein(menufile) with label ";" macro
+       if label = "" then iterate /* blank line */
+       if left(label,1) = "#" then iterate /* comment */
+       if gname="" & (pos("%GNAME%",label)>0 | pos("%GNAME%",macro)>0) then label=""
+       else do
+        label=zocstring("REPLACE", label, "%SPATH%", spath)
+        label=zocstring("REPLACE", label, "%LPATH%", lpath)
+        label=zocstring("REPLACE", label, "%DPATH%", dpath)
+        label=zocstring("REPLACE", label, "%GNAME%", gname)
+        macro=zocstring("REPLACE", macro, "%SPATH%", spath)
+        macro=zocstring("REPLACE", macro, "%LPATH%", lpath)
+        macro=zocstring("REPLACE", macro, "%DPATH%", dpath)
+        macro=zocstring("REPLACE", macro, "%GNAME%", gname)
+        macro=zocstring("REPLACE", macro, "%LABEL%", label)
+       end /*if*/
+       if i<10 then do
+        vr1='UserDesc#0'||i||'="'||strip(label)||'"'
+        vr2='UserValue#0'||i||'="'||strip(macro)||'"'
+       end /*if*/
+       else do
+        vr1='UserDesc#'||i||'="'||strip(label)||'"'
+        vr2='UserValue#'||i||'="'||strip(macro)||'"'
+       end /*else*/
+       call zocsetoption(vr1)
+       call zocsetoption(vr2)
+       i=i+1
+       if i>31 then leave
+      end /*do*/
+      call _fileclose(menufile)
+      do j=i to 31
+       if j<10 then do
+        vr1='UserDesc#0'||j||'=""'
+        vr2='UserValue#0'||j||'=""'
+        test='UserValue#0'||j
+       end /*if*/
+       else do
+        vr1='UserDesc#'||j||'=""'
+        vr2='UserValue#'||j||'=""'
+        test='UserValue#'||j
+       end /*else*/
+       parse value zocgetoption(test) with . '="' test '"'
+       if test="" then leave
+       else do
+        call zocsetoption(vr1)
+        call zocsetoption(vr2)
+       end /*else*/
+      end /*do*/
+      call zocsetoption("ShowUserbar=yes")
+     end /*if*/
+    return
+
+/** _add_autoreply v.2 **/
+    _add_autoreply: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _add_autoreply"
+     trigger=arg(1)
+     reply=arg(2)
+     found=0
+     do i=0 to 31
+      ar_in="AutoReplyIn#"||copies("0",2-length(i))||i
+      ar_out="AutoReplyOut#"||copies("0",2-length(i))||i
+      parse value zocgetoption(ar_in) with . '="' ar_in_ '"'
+      parse value zocgetoption(ar_out) with . '="' ar_out_ '"'
+      if ar_in="" | abbrev(trigger,ar_in_) then do; found=1; leave; end
+     end /*do*/
+     if found then do
+      call zocsetoption(ar_in'="'||trigger||'"')
+      call zocsetoption(ar_out'="'||reply||'"')
+      rslt=1
+     end /*if*/
+     else rslt=0
+    return rslt
+
+/** _debug v.5 **/
+    _debug: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _debug"
+     mode=strip(left(lower(arg(1)),3))
+     msg=arg(2)
+     if arg(3,"E") then logname=strip(arg(3))
+     else logname="_debug.txt"
+     select
+      when mode="scr" then call zocwriteln "^[[1;34mREV-DEBUG <"||msg||">^[[0m"
+      when mode="fed" then call zocsend "`REV-DEBUG <"||msg||">^M"
+      when mode="sub" then call zocsend "'REV-DEBUG <"||msg||">^M"
+      when mode="log" then do
+       if _fileopenw(logname) then do
+        call lineout logname, msg
+        call _fileclose logname
+       end /*if*/
+       else call _error "unable to open rev-log.txt."
+      end /*when*/
+      otherwise nop
+     end /*select*/
+    return
+
+/** _space v.1 **/
+    _space: procedure expose (globals)
+     str=strip(arg(1))
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then pad=arg(3); else pad=" "
+     rslt=word(str,1)
+     do i=2 to words(str)
+      rslt=rslt||copies(pad,n)||word(str,i)
+     end /*do*/
+    return rslt
+
+/** _cleanup v.1 **/
+    _cleanup: procedure expose (globals)
+     /* put code here to do custom cleanup
+        for specific scripts and override
+        it in your main program */
+    return 1
+
+/** _error v.9 **/
+    _error: procedure expose (globals)
+     call off halt
+     call _cleanup
+     call zocwrite _ansi("clearline;bt;frd")||"< script error ("||_g.!sname||" b."||_g.!sbuild||")"
+     if arg(1,"E") then call zocwrite " : "||arg(1)
+     call zocwriteln " >"
+     call zocwriteln _ansi("bt;fye")||"< if this is a serious problem, email me at: revhelper_at_thereverend_dot_org > "
+     call zocwriteln "< SCRIPT "||_g.!sname||", BUILD "||_g.!sbuild||", DATE "||_g.!sdate||" > "
+     call zocwriteln "< ZOC VERSION '"||zocgetinfo("VERSION")||"', OS '"||zocgetinfo("OSYS")||"', LOCATION '"||zocgetinfo("CONNECTEDTO")||"' >"
+     if arg(2,"E") then call zocwriteln _ansi("bt;fgr")||"< "||arg(2)||" >"
+     call _beep "error.wav"
+    exit
+
+/** _dwords v.2 **/
+    _dwords: procedure expose (globals)
+     rslt=words(translate(arg(1),arg(2)||" "," "||arg(2)))
+    return rslt
+
+/** _quit v.7 **/
+    _quit: procedure expose (globals)
+     lcpy=1
+     arg1=""
+     do i=1 to 2 /* manage arguments */
+      select
+       when arg(i,"E") & lower(arg(i))="nocopy" then lcpy=0
+       when arg(i,"E") & arg1="" then arg1=arg(i)
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     line=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     select /* define message */
+      when  lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m^M^J"||line
+      when \lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m "
+      when  lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m^M^J"||line
+      when \lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m "
+      otherwise nop
+     end /*select*/
+     call zocwrite msg
+     select /* choose a beep */
+      when lower(arg1)="script cancelled by user." then call _beep "cancel.wav"
+      otherwise call _beep "quit.wav"
+     end /*select*/
+     exit
+    return 1
+
+/** _fileopenr v.4 **/
+    _fileopenr: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileopenr"
+      when arg(1)="" then rslt=0
+      when _fileexists(arg(1)) then do
+       call stream arg(1), "C", "OPEN READ"
+       rslt=_fileready(arg(1))
+       if \rslt then call _fileclose arg(1)
+      end /*when*/
+      otherwise rslt=_filenew(arg(1))
+     end /*select*/
+    return rslt
+
+/** _fileeof v.4 **/
+    _fileeof: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileeof"
+      when arg(1)="" then rslt=0
+      otherwise rslt=\lines(arg(1))
+     end /*select*/
+    return rslt
+
+/** _fileclose v.3 **/
+    _fileclose: procedure expose (globals)
+     if \arg(1,"E") then call _error "missing argument in _fileclose"
+     select
+      when arg(1)="" then nop
+      otherwise call stream arg(1), "C", "CLOSE"
+     end /*select*/
+    return
+
+/** _fileopenw v.3 **/
+    _fileopenw: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileopenw"
+      when arg(1)="" then rslt=0
+      when _fileexists(arg(1)) then do
+       call stream arg(1), "C", "OPEN WRITE"
+       call stream arg(1), "C", "SEEK <0"
+       rslt=_fileready(arg(1))
+       if \rslt then call _fileclose arg(1)
+      end /*when*/
+      otherwise rslt=_filenew(arg(1))
+     end /*select*/
+    return rslt
+
+/** _beep v.2 **/
+    _beep: procedure expose (globals)
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then d=arg(3); else d=0
+     select
+      when arg(1,"O") then call zocwrite copies(d2c(7),n)
+      when _fileexists(arg(1)) then do
+       do i=1 to n
+        call zocplaysound arg(1)
+        if i\=n & d>0 then call zocdelay d
+       end /*do*/
+      end /*when*/
+      otherwise call zocwrite copies(d2c(7),n)
+     end /*select*/
+    return
+
+/** _fileready v.2 **/
+    _fileready: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileready"
+      when arg(1)="" then rslt=0
+      when stream(arg(1), "S")\="NOTREADY" then rslt=1
+      otherwise rslt=0
+     end /*select*/
+    return rslt
+
+/** _filenew v.4 **/
+    _filenew: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _filenew"
+      when arg(1)="" then rslt=0
+      otherwise do
+       if arg(2,"E") & lower(arg(2))="delete" then call dosdel arg(1)
+       if _fileexists(arg(1)) then rslt=0
+       else do
+        call stream arg(1), "C", "OPEN WRITE"
+        rslt=_fileready(arg(1))
+        if \rslt then call _fileclose arg(1)
+       end /*else*/
+      end /*otherwise*/
+     end /*select*/
+    return rslt

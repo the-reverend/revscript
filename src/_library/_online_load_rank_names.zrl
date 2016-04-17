@@ -1,0 +1,99 @@
+/** _online_load_rank_names v.1 **/
+_online_load_rank_names: procedure expose (globals)
+ _online.!red.0="12 10 7 8 9 11 22 13 1 2 3 15 4 5 6 14 21 17 18 19 20 16"
+ _online.!red.1="Nuisance 3rd Class"
+ _online.!red.2="Nuisance 2nd Class"
+ _online.!red.3="Nuisance 1st Class"
+ _online.!red.4="Menace 3rd Class"
+ _online.!red.5="Menace 2nd Class"
+ _online.!red.6="Menace 1st Class"
+ _online.!red.7="Smuggler 3rd Class"
+ _online.!red.8="Smuggler 2nd Class"
+ _online.!red.9="Smuggler 1st Class"
+ _online.!red.10="Smuggler Savant"
+ _online.!red.11="Robber"
+ _online.!red.12="Terrorist"
+ _online.!red.13="Pirate"
+ _online.!red.14="Infamous Pirate"
+ _online.!red.15="Notorious Pirate"
+ _online.!red.16="Dread Pirate"
+ _online.!red.17="Galactic Scourge"
+ _online.!red.18="Enemy of the State"
+ _online.!red.19="Enemy of the People"
+ _online.!red.20="Enemy of Humankind"
+ _online.!red.21="Heinous Overlord"
+ _online.!red.22="Prime Evil"
+
+ _online.!blue.0="11 21 7 10 6 20 3 2 14 16 15 4 8 23 13 5 19 17 1 12 18 22 9"
+ _online.!blue.1="Civilian"
+ _online.!blue.2="Private"            /* match 2 */
+ _online.!blue.3="Private 1st Class"  /* match 1 */
+ _online.!blue.4="Lance Corporal"
+ _online.!blue.5="Corporal"
+ _online.!blue.6="Sergeant"           /* match 9 */
+ _online.!blue.7="Staff Sergeant"
+ _online.!blue.8="Gunnery Sergeant"
+ _online.!blue.9="1st Sergeant"
+ _online.!blue.10="Sergeant Major"     /* match 5 */
+ _online.!blue.11="Warrant Officer"
+ _online.!blue.12="Chief Warrant Officer"
+ _online.!blue.13="Ensign"
+ _online.!blue.14="Lieutenant J.G."      /* match 14 */
+ _online.!blue.15="Lieutenant"           /* match 13,15 */
+ _online.!blue.16="Lieutenant Commander" /* match 14 */
+ _online.!blue.17="Commander"
+ _online.!blue.18="Captain"
+ _online.!blue.19="Commodore"
+ _online.!blue.20="Rear Admiral"
+ _online.!blue.21="Vice Admiral"
+ _online.!blue.22="Admiral"
+ _online.!blue.23="Fleet Admiral"
+return
+
+/*
+Nuisance 3rd Class
+Nuisance 2nd Class
+Nuisance 1st Class
+Menace 3rd Class
+Menace 2nd Class
+Menace 1st Class
+Smuggler 3rd Class
+Smuggler 2nd Class
+Smuggler 1st Class
+Smuggler Savant
+Robber
+Terrorist
+Pirate
+Infamous Pirate
+Notorious Pirate
+Dread Pirate
+Galactic Scourge
+Enemy of the State
+Enemy of the People
+Enemy of Humankind
+Heinous Overlord
+Prime Evil
+
+Private
+Private 1st Class
+Lance Corporal
+Corporal
+Sergeant
+Staff Sergeant
+Gunnery Sergeant
+1st Sergeant
+Sergeant Major
+Warrant Officer
+Chief Warrant Officer
+Ensign
+Lieutenant J.G.
+Lieutenant
+Lieutenant Commander
+Commander
+Captain
+Commodore
+Rear Admiral
+Vice Admiral
+Admiral
+Fleet Admiral
+*/

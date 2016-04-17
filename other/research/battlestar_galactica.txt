@@ -1,0 +1,28 @@
+Battlestar Galactica
+
+In a far off Galaxy the 12 Colonies of Man have come together to end a 1000 year war with the machine race known as the Cylons. The peace mission is a trap concocted by the Cylon’s Imperious Leader and a power hungry human by the name of Baltar. An armada of Cylon ships catch the Human’s unprepared fleet of Battlestars off guard. Only the Battlestar Galactica, under the command of Commander Adama, is able to launch it’s fighters in time to defend the fleet. 
+
+As the battle between the Colonial fleet and the Cylons rage, Adama’s son Apollo informs his father that there were no Cylon Base-Ships to be seen. Fearing the worst, Adama sets course for their Home worlds, which the Cylons Base-Ships now orbit. 
+
+When the Galacitca arrives within the solar system of the 12 Colonies, Adama and his crew find all of their planets laid to waste. News only grows worse, when the Galactica discovers that it alone survived the Cylon ambush. Knowing full well that the Glactica alone could not protect mankind from the incoming fleet of Cylon ships, Commander Adama sends word for every man, woman, and child to set to space in whatever ship could carry them. In all, 220 ships containing the last remnants of the once proud 12 Colonies of Man set course to deep space. Lead by the last Battlestar Galactica, Commander Adama announces to his people that they would go in search of a long lost 13th colony of man, on a small blue world known as Earth. 
+
+Tradewars Version:
+
+3000 turns, 20k sectors
+TWGS classic combat penalties, sf 100%, rf 10%
+no colonists, fast cit times, upgrade costs are geometric
+100% port regen, 20k max products
+capital ships have high tpw (5+)
+
+Cylon ships have no shields, no pods, better tech, require fed+exp
+Colonial Viper has no pod
+only one ship class has cloaks
+some Cylon tech has been reverse engineered in the Electronics Ship
+Colonial Defender is tholian
+Colonial Guardian is tholian + idc
+most ships have twarp, minimum 10 hop transport range
+
+its a red-fest with big ships and big planets... some different strategy... enjoy!
+
+http://www.battlestargalactica.com/
+http://www.tecr.com/galactica/

@@ -1,0 +1,68 @@
+/** _twarp v.4 **/
+_twarp: procedure expose (globals)
+ success=0
+ sector=arg(1)
+ cr=arg(2)
+
+ if cr="" then call zocsend "m"||sector||"^M"
+ else do
+  if sector<cr then call zocsend sector||"^M"
+  else call zocsend sector
+ end /*else*/
+ if _wait("<Move>")=640 then call _error "timeout"
+
+ ans=_waitmux("Command [",
+           ||"|(ADR) (Y/N)",
+           ||"|Avoid this sector in the future? (Y/N)",
+           ||"|already in that sector!",
+           ||"|Engage the Autopilot?",
+           ||"|engage the TransWarp drive?")
+ select
+  when ans=0 then do
+   if _wait("(?=Help)?")=640 then call _error "timeout"
+   parse value _lastline() with . "]:[" check "] (?=Help)?" .
+   if check=sector then success=1
+  end /*when*/
+  when ans=1 then do /* twarping next door can hit figs */
+   call zocsend "a999^M ^M ^M "
+   if _wait("(?=Help)?")=640 then call _error "timeout"
+   parse value _lastline() with . "]:[" check "] (?=Help)?" .
+   if check=sector then success=1
+  end /*when*/
+  when ans=2 then do /* twarping next door can hit mines */
+   call zocsend "^M ^M "
+   if _wait("(?=Help)?")=640 then call _error "timeout"
+   parse value _lastline() with . "]:[" check "] (?=Help)?" .
+   if check=sector then success=1
+  end /*when*/
+  when ans=3 then nop
+  when ans=4 then do
+   call zocsend "n"
+   if _wait("Command [")=640 then call _error "timeout"
+   success=0
+  end /*when*/
+  when ans=5 then do
+   call zocsend "y"
+   ans2=_waitmux("not have enough Fuel Ore",
+              ||"|make this jump blind?",
+              ||"|shall we engage?")
+   select
+    when ans2=0 then if _wait("Command [")=640 then call _error "timeout"
+    when ans2=1 then do
+     call zocsend "n"
+     if _wait("Command [")=640 then call _error "timeout"
+    end /*when*/
+    when ans2=2 then do
+     call zocsend "y ^M za999^M ^M ^M "
+     if _wait("Command [")=640 then call _error "timeout"
+     success=1
+    end /*when*/
+    when ans2=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+
+return success

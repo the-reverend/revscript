@@ -1,0 +1,22 @@
+/** _listadd v.4 **/
+_listadd: procedure expose (globals)
+ add=arg(1)
+ list=arg(2)
+ if arg(3,"E") then sort=arg(3)
+               else sort=0
+ if arg(4,"E") then delim=arg(4)
+               else delim=";"
+ if list="" then list=add
+ else do
+  found=0
+  do i=1 to _dwords(add,delim)
+   found=0
+   do j=1 to _dwords(list,delim)
+    if _dword(add,i,delim)=_dword(list,j,delim) then found=1
+    if found then leave
+   end /*do*/
+   if \found then list=list||delim||_dword(add,i,delim)
+  end /*do*/
+  if \found & sort then list=_listsort(list)
+ end /*else*/
+return list

@@ -1,0 +1,303 @@
+/** _get_info_i v.1 **/
+_get_info_i: procedure expose (globals)
+ if arg(1,"E") then pmt=arg(1); else pmt=_synchronize()
+ if arg(2,"E") then shiplist=arg(2); else shiplist=_iniv(!settings,"!shiplist")
+
+ if \_listin(pmt,"command;citadel",";") then return "##UNDEF##"
+
+ /* load ranks */
+ if \_undef(_online.!reset) then do
+  _online.="##UNDEF##"
+  call _online_load_rank_names
+ end /*if*/
+
+ buflen=16*1024
+ call zocreceivebuf buflen
+ if _sendwait("i","<Info>")=640 then call _error "timeout"
+ if _waitmux("Command [|Citadel command (")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"   ",d2c(0)||d2c(7)||d2c(10))
+ if length(buff)=buflen then call _error "buffer overflow"
+ cr=d2c(13)
+
+ i=pos("Trader Name    : ",buff)
+ if i=0 then name="##UNDEF##"
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  name=substr(buff,i,j-i)
+  parse value _online_split_rank_name(name) with rank ";" name
+ end /*else*/
+
+ i=pos("Rank and Exp   : ",buff)
+ if i=0 then do; exp=0; aln=0; end
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value _stripcomma(substr(buff,i,j-i)) with exp " points Alignment=" aln " " .
+ end /*else*/
+
+ i=pos("Corp           # ",buff)
+ if i=0 then do; corpnum=0; corpname="##UNDEF##"; end
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with corpnum ", " corpname .
+ end /*else*/
+
+ i=pos("Ship Name      : ",buff)
+ if i=0 then shipname="##UNDEF##"
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  shipname=substr(buff,i,j-i)
+ end /*else*/
+
+ i=pos("Ship Info      : ",buff)
+ if i=0 then do; shiptype="##UNDEF##"; ported=0; kills=0; end
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with shiptype " Ported=" ported " Kills=" kills
+  shiptype=_attack_strip_manufacturer(translate(shiptype,"____","|;=."), shiplist)
+ end /*else*/
+
+ i=pos("Date Built     : ",buff)
+ if i=0 then datebuilt="##UNDEF##"
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  datebuilt=substr(buff,i,j-i)
+ end /*else*/
+
+ i=pos("Turns to Warp  : ",buff)
+ if i=0 then tpw=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  tpw=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Current Sector : ",buff)
+ if i=0 then csec=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  csec=substr(buff,i,j-i)
+ end /*else*/
+
+ i=pos("Turns left     : ",buff)
+ if i=0 then turns=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  turns=strip(substr(buff,i,j-i))
+  if turns="Unlimited" then turns=0
+ end /*else*/
+
+ i=pos("Total Holds    : ",buff)
+ if i=0 then do; holds=0; ore=0; org=0; equ=0; colos=0; end
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  line=substr(buff,i,j-i)
+  parse var line holds .                ; if holds="" then holds=0
+  parse var line . "Fuel Ore=" ore .    ; if ore=""   then ore=0
+  parse var line . "Organics=" org .    ; if org=""   then org=0
+  parse var line . "Equipment=" equ .   ; if equ=""   then equ=0
+  parse var line . "Colonists=" colos . ; if colos="" then colos=0
+ end /*else*/
+
+ i=pos("Fighters       : ",buff)
+ if i=0 then figs=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  figs=_stripcomma(strip(substr(buff,i,j-i)))
+ end /*else*/
+
+ i=pos("Shield points  : ",buff)
+ if i=0 then shields=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  shields=_stripcomma(strip(substr(buff,i,j-i)))
+ end /*else*/
+
+ i=pos("Armid Mines  T1: ",buff)
+ if i=0 then armids=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with armids .
+ end /*else*/
+
+ i=pos("Limpet Mines T2: ",buff)
+ if i=0 then limpets=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  limpets=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Marker Beacons : ",buff)
+ if i=0 then beacons=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  beacons=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Photon Missiles: ",buff)
+ if i=0 then photons=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with photons .
+ end /*else*/
+
+ i=pos("Genesis Torps  : ",buff)
+ if i=0 then gens=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  gens=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Atomic Detn.   : ",buff)
+ if i=0 then adets=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with adets .
+ end /*else*/
+
+ i=pos("Corbomite Level: ",buff)
+ if i=0 then corb=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  corb=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Cloaking Device: ",buff)
+ if i=0 then cloaks=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with cloaks .
+ end /*else*/
+
+ i=pos("Ether Probes   : ",buff)
+ if i=0 then probes=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  probes=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Mine Disruptors: ",buff)
+ if i=0 then mdis=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  mdis=strip(substr(buff,i,j-i))
+ end /*else*/
+
+ i=pos("Psychic Probe  : ",buff)
+ if i=0 then pspr=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with line .
+  pspr=(line="Yes")
+ end /*else*/
+
+ i=pos("Planet Scanner : ",buff)
+ if i=0 then pscanner=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  line=strip(substr(buff,i,j-i))
+  pscanner=(line="Yes")
+ end /*else*/
+
+ i=pos("LongRange Scan : ",buff)
+ if i=0 then do; dens=0; holo=0; end
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  line=strip(substr(buff,i,j-i))
+  holo=(line="Holographic Scanner")
+  dens=(line="Density Scanner") | holo
+ end /*else*/
+
+ i=pos("  (Type 1 Jump): ",buff)
+ if i=0 then t1j=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with t1j .
+ end /*else*/
+
+ i=pos("  (Type 2 Jump): ",buff)
+ if i=0 then t2j=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  parse value substr(buff,i,j-i) with t2j .
+ end /*else*/
+
+ i=pos("Credits        : ",buff)
+ if i=0 then creds=0
+ else do
+  i=i+17
+  j=pos(cr,buff,i)
+  creds=_stripcomma(strip(substr(buff,i,j-i)))
+ end /*else*/
+
+ rslt=name||";"||rank||";"||exp||";"||aln||";"||corpnum||";"||corpname||";"||shipnamae||";"||shiptype||";"||ported,
+          ||";"||kills||";"||datebuilt||";"||tpw||";"||csec||";"||turns||";"||holds||";"||ore||";"||org,
+          ||";"||equ||";"||colos||";"||figs||";"||shields||";"||armids||";"||limpets||";"||beacons,
+          ||";"||photons||";"||gens||";"||adets||";"||corb||";"||cloaks||";"||probes||";"||mdis||";"||pspr,
+          ||";"||pscanner||";"||dens||";"||holo||";"||t1j||";"||t2j||";"||creds
+return rslt
+/*
+1=name
+2=rank
+3=exp
+4=aln
+5=corpnum
+6-corpname
+7=shipname
+8=shiptype
+9=ported
+10=kills
+11=datebuild
+12=tpw
+13=csec
+14=turns
+15=holds
+16=ore
+17=org
+18=equ
+19=colos
+20=figs
+21=shields
+22=armids
+23=limpets
+24=beacons
+25=photons
+26=gens
+27=adets
+28=corb
+29=cloaks
+30=probes
+31=mdis
+32=psprobe
+33=pscanner
+34=dens
+35=holo
+36=t1j
+37=t2j
+38=creds
+*/

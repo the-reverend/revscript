@@ -1,0 +1,7 @@
+/** _newline v.3 **/
+/*- _newline [msg] -*/
+/*- v.3 tested -*/
+_newline: procedure expose (globals)
+ if zocgetinfo("CURSOR-X")>0 then call zocwriteln
+ if arg(1,"E") then call zocwrite arg(1)
+return

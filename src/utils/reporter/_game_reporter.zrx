@@ -1,0 +1,2462 @@
+/* REXX _game_reporter.zrx by rev (build 110)                                 */
+/*-       built by rev-builder version 1.3a on 31 Dec 2012 at 23:39:17       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author.                -*/
+/*-                                                                          -*/
+/*- This script is provided to you WITHOUT ANY WARRANTY, even the implied    -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         -*/
+/*-                                                                          -*/
+/*-                       Copyright (C) 2009 Ron Wilson                      -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ------------------*/ _g.!sname="_game_reporter.zrx" /*------------------ -*/
+/*- --------------*/ _g.!sbuild=110; _g.!sdate="2012-12-31" /*-------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+/* description:  this script will monitor game information like the CD log,   */
+/*               CLV screen, V screen, and # screen. it can do this at        */
+/*               regular intervals, convert the information to html, and send */
+/*               the html to your webserver by ftp.                           */
+/* rev. 0 - initial release                                                   */
+/* rev. 1 - added html title                                                  */
+/* rev. 2 - added the copyright notice, and made the header smaller           */
+/* rev. 3 - added TDL and TDR options, ansi converter upgrade                 */
+/* rev. 4 - ansi converter bug fix, re-ordered log with V/CLV on top          */
+/* rev. 5 - added auto-relogin                                                */
+
+globals=_setglobals()
+call _timeout 60
+call zocsynctime 500
+call on halt name _halt
+call zockeyboard "LOCK"
+
+parse value arg(1) with arg.1 arg.2 arg.3 arg.4 .
+do i=1 to 4
+ arg.i=translate(arg.i," ","?")
+end
+
+if \arg(1,"E") then do
+ if \_pcheck("Command [") then call _error "please start at the command prompt."
+end /*if*/
+
+/* GET LOG INFO */
+parse value _get_log_info() with lpath ";" ldefault
+parse value zocgetoption("VTStripSeq") with . '="' emulation '"'
+spath=_get_script_path()
+
+/* CHECK FOR OBSERVER MODE */
+observer=0
+call zocsend "r"
+ans=zocwaitmux("This command not available to an Observer.",,
+               "Marker Beacon here? (Y/N)",,
+               "You do not have any Marker Beacons.",,
+               "The Federation does not allow beacons")
+select
+ when ans=0 then observer=1
+ when ans=1 then call zocsend "n"
+ when ans=2 then nop
+ when ans=3 then nop
+ otherwise nop
+end /*select*/
+
+/* REPORTING OPTIONS */
+menu="timestamp (CD screen);player list (CLV screen);game status (V screen)"
+if \observer then menu=menu||";who's online (# screen);corp list (TDL screen);corp rank (TDR screen)"
+if \arg(1,"E") then optlist=_mrequestlist("pick one or more option:",menu,";","c")
+else optlist=arg.1
+if optlist="##CANCEL##" then call _quit "script cancelled by user."
+
+timestamp=_dword(optlist,1,";")
+clvscreen=_dword(optlist,2,";")
+vscreen=_dword(optlist,3,";")
+if observer then do
+ woscreen=0
+ tdlscreen=0
+ tdrscreen=0
+end /*if*/
+else do
+ woscreen=_dword(optlist,4,";")
+ tdlscreen=_dword(optlist,5,";")
+ tdrscreen=_dword(optlist,6,";")
+end /*else*/
+
+/* LOAD USER SETTINGS */
+if \arg(1,"E") then iname=zocgetfilename("choose config file:",spath||"*.ini")
+               else iname=arg.2
+if iname="##CANCEL##" then exit
+call _newline _ansi("bt;fgr")
+if \arg(1,"E") then parse value _getgameinfo(iname) with spath ";" iname ";" game
+               else game=arg.3
+htmltitle=_ini_askstr("html title?", "untitled", iname, game, "htmltitle")
+htmlpath=_ini_askstr("where do put the html?", "c:\", iname, game, "localpath")
+if htmlpath="" then exit
+prefix=_ini_askstr("what file prefix?", "gameA", iname, game, "prefix")
+if prefix="" then exit
+interval=_ini_askint("how often to refresh (minutes)?", 60, iname, game, "interval")
+if interval=0 then exit
+if interval<2 then interval=2
+loginmacro=_ini_askstr("##DEFAULT##", "", iname, game, "login_macro")
+gamepwd=_ini_askstr("game password?", "password", iname, game, "game_pwd")
+lname=lpath||"game_reporter_log.txt"
+
+address=_ini_askstr("address?", "", iname, "*ftp", "address")
+username=_ini_askstr("username?", "", iname, "*ftp", "username")
+password=_ini_askstr("password?", "", iname, "*ftp", "password")
+remotewd=_ini_askstr("remote working directory?", "", iname, "*ftp", "remotewd")
+mode=_ini_askstr("transfer mode?", "ascii", iname, "*ftp", "mode")
+if \arg(1,"E") then wmode=_chooselisti("ftp window?","normal;hidden;minimized;no ftp", ";", "c")-1
+               else wmode=arg.4
+
+/* DEFINE HEADER */
+infile=prefix||"_log.ans"
+hdr1="REV-SCRIPT - _game_reporter.zrx r.5 - "
+
+_g.1=loginmacro
+_g.2=gamepwd
+_g.3=iname
+_g.4=game
+_g.5=lname
+_g.6=optlist
+_g.7=wmode
+
+/* DISABLE MESSAGES */
+call _twmsg "off"
+
+startover:
+
+/* ENTER COMPUTER MODE */
+if \vscreen then do
+ call zocsend "c"
+ if zocwait("Computer command [")=640 then call _error "timeout"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+end /*do*/
+call _newline
+
+/* START LOGGING TO INFILE */
+call zoclogging 0, 1
+if _fileexists(lpath||infile) then call dosdel lpath||infile
+call zocsetoption('VTStripSeq=no')
+call zoclogname infile
+call zoclogging 1, 1
+
+/* WRITE HEADER TO LOG */
+call zocwriteln _ansi("bt;frd")||hdr1||date("N")||", "||time("N")||", refresh every "||interval||" minutes."||_ansi("bt;fwh")
+
+/* WRITE V SCREEN TO LOG */
+if vscreen then do
+ call zocsend "v"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+end /*if*/
+
+/* WRITE # SCREEN TO LOG */
+if woscreen then do
+ call zocsend "#"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+end /*if*/
+
+/* ENTER COMPUTER MODE */
+if vscreen then do
+ call zocsend "c"
+ if zocwait("Computer command [")=640 then call _error "timeout"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+end /*do*/
+
+/* WRITE CLV SCREEN TO LOG */
+if clvscreen then do
+ call zocsend "lv"
+ if zocwait("Computer command")=640 then call _error "timeout"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+end /*if*/
+
+/* WRITE CD SCREEN TO LOG */
+call zocsend "d"
+if zocwait("to read from. Today is")=640 then call _error "timeout"
+if zocwait("^M")=640 then call _error "timeout"
+date=strip(_lastline())
+call zocrespond "[Pause]", "^M"
+if timestamp then call zocsend date||"^My"
+else call zocsend date||"^Mn"
+if zocwait("Computer command")=640 then call _error "timeout"
+if zocwait("(?=Help)?")=640 then call _error "timeout"
+call zocrespond "[Pause]"
+
+/* EXIT COMPUTER MODE */
+call zocsend "q"
+if zocwait("<Computer deactivated>")=640 then call _error "timeout"
+if zocwait("(?=Help)?")=640 then call _error "timeout"
+
+/* WRITE TDL AND TDR SCREENS */
+if tdlscreen | tdrscreen then do
+ call zocsend "t"
+ if zocwait("Corporate command")=640 then call _error "timeout"
+ if tdlscreen then do
+  call zocsend "dl"
+  if zocwait("TW2002 Corporate Listings")=640 then call _error "timeout"
+  if zocwait("Corporate command")=640 then call _error "timeout"
+ end /*if*/
+ if tdrscreen then do
+  call zocsend "dr"
+  if zocwait("TW2002 Corporate Listings")=640 then call _error "timeout"
+  if zocwait("Corporate command")=640 then call _error "timeout"
+ end /*if*/
+ call zocsend "q"
+ if zocwait("Command [")=640 then call _error "timeout"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+end /*if*/
+
+/* STOP LOGGING TO INFILE */
+call zoclogging 0, 1
+call zoclogname ldefault
+call zoclogging 1, 1
+call zocsetoption('VTStripSeq='||emulation)
+
+/* CONVERT LOG ANSI TO HTML */
+outfile=prefix||"_"||translate(date,"_","/")||".html"
+call _ansi_to_html lpath||infile, htmlpath||outfile, "REV-SCRIPT - "||htmltitle
+
+/* FTP TO WEBSERVER */
+if wmode<3 then do
+ call zocwrite "ftp in progress ... "
+ if _ftp(address, username, password, ,
+         remotewd, mode, htmlpath, outfile, wmode) then call zocwriteln "SUCCESS!"
+ else call zocwriteln "FAILED!"
+end /*if*/
+
+/* WAIT FOR NEXT INTERVAL */
+now=_getservertime("minutes")+1
+stop=(now%interval)*interval+interval
+if (stop-now)<2 then stop=stop+interval
+
+done=0
+do while \done
+ if now>=stop | (stop-now)>=1440 then done=1
+ else do
+  delay=min(30,trunc(((stop-now)//1440)*60))
+   hh=trunc(((stop-now)//1440)/60)
+   if hh<10 then hh="0"||hh
+   mm=trunc(((stop-now)//1440)-hh*60)
+   if mm<10 then mm="0"||mm
+   ss=trunc((((stop-now)//1440)//1)*60)
+   if ss<10 then ss="0"||ss
+   call zocwrite _ansi("bt;fwh")||"< refresh in "||hh||":"||mm||":"||ss||" > "
+  call zocdelay delay
+  now=_getservertime("minutes")+1
+ end /*else*/
+end /*do*/
+
+signal startover
+
+exit
+
+_halt: procedure expose (globals)
+ call zocwriteln "^M^J^[[1;33m<< script aborted by user. >>^[[0;35m "
+ call zocsetoption('VTStripSeq='||emulation)
+ call _twmsg "on"
+ exit
+return
+
+_error: procedure expose (globals)
+ if zocgetinfo("CURSOR-X")>0 then call zocwriteln
+ call zocwrite _ansi("bt;frd")||"< script error"
+ if arg(1,"E") then call zocwrite ": "||arg(1)
+ call zocwriteln " >"
+ call zocwriteln _ansi("bt;fye")||"< if this is a serious problem, email me at: the.reverend@coastgames.com > "
+ call zocwriteln "< ZOC VERSION '"||zocgetinfo("VERSION")||"', OS '"||zocgetinfo("OSYS")||"', LOCATION '"||zocgetinfo("CONNECTEDTO")||"' >"
+ if arg(2,"E") then call zocwriteln _ansi("bt;fgr")||"< "||arg(2)||" >"
+ call zocwrite _ansi()
+ call _beep "error.wav"
+ if _g.1\="" & _g.!sname\="" & arg(1)="timeout" then do
+  /* call zocdisconnect */
+  call zocwriteln _ansi("bt;fwh")||"< ATTEMPTING TO RECONNECT >"
+  call _domacro _g.1
+  ans=0
+  do while ans=0
+   ans=zocwaitmux("[Pause]", ,
+                  "Enter your choice:")
+   select
+    when ans=0 then call zocsend "^M"
+    when ans=1 then do
+     call _timeout 60
+     call _login _g.2, "game_reporter", 0, _g.3, _g.4, _g.5, 0
+     call _timeout 15
+     call zocdostring "^RUN="||_g.!sname _g.6 translate(_g.3,"?"," ") translate(_g.4,"?"," ") _g.7
+     exit
+    end /*when*/
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*do*/
+ end /*if*/
+exit
+
+/***                     REV'S TW LIBRARY FOR ZOC/REXX                      ***/
+
+/** _setglobals v.5 **/
+    _setglobals: procedure expose _verbose _monthdays _monthnames _baseday. _g. _msg. _debug (globals)
+
+     _debug=0
+     _verbose=0
+     _msg.=""; _msg.0=0
+     _monthdays="31;28;31;30;31;30;31;31;30;31;30;31"
+     _monthnames="jan;feb;mar;apr;may;jun;jul;aug;sep;oct;nov;dec"
+     _baseday.2000=730118 + 1 /* +1 added 6/23/2008 */
+     _baseday.2001=_baseday.2000+365+1
+     _baseday.2002=_baseday.2001+365
+     _baseday.2003=_baseday.2002+365
+     _baseday.2004=_baseday.2003+365
+     _baseday.2005=_baseday.2004+365+1
+     _baseday.2006=_baseday.2005+365
+     _baseday.2007=_baseday.2006+365
+     _baseday.2008=_baseday.2007+365
+     _baseday.2009=_baseday.2008+365+1
+     _baseday.2010=_baseday.2009+365
+     _baseday.2011=_baseday.2010+365
+     _baseday.2012=_baseday.2011+365
+     _baseday.2013=_baseday.2012+365+1
+     _baseday.2014=_baseday.2013+365
+     _baseday.2015=_baseday.2014+365
+     _baseday.2016=_baseday.2015+365
+     _baseday.2017=_baseday.2016+365+1
+
+     i=lastpos(".",_g.!sname)
+     if i=0 then _g.!sname1=_g.!sname
+            else _g.!sname1=left(_g.!sname,i-1)
+
+     rslt="_g. _ini. _s. _p. _d. _v. _f. _m. _l. _q. _sl. _ex. _qs. "
+     rslt=rslt||"_ef. _efc. _es. _et. _ep. _fc. "
+     rslt=rslt||"_path. _dist. _dtomsl. _dfrmsl. "
+     rslt=rslt||"_bg. _bd. _nwi. _nwo. _nw. _nwt. _od. _sv. _pv. _vs. _vn. _vi. _mcic. _fh. _fhp. "
+     rslt=rslt||"_clv. _online. _msg _msg. _debug "
+     rslt=rslt||"_verbose _monthdays _monthnames _baseday. "
+     rslt=rslt||"globals "
+     if arg(1,"E") then rslt=rslt||arg(1)
+
+     rslt=_space(rslt)
+    return rslt
+
+/** _timeout v.1 **/
+    _timeout: procedure expose (globals)
+     if _g.!timeout="_G.!TIMEOUT" then _g.!timeout=60
+     rslt=_g.!timeout
+     nt=_stripint(arg(1))
+     if arg(1,"E") & nt>0 then do
+      call zoctimeout nt
+      _g.!timeout=nt
+     end /*if*/
+    return rslt
+
+/** _pcheck v.4 **/
+    _pcheck: procedure expose (globals)
+     pc1=arg(1)
+     pc2=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     rslt=0
+     do i=1 to _dwords(pc1,";")
+      if _instr(_dword(pc1,i,";"),pc2,"cs") then rslt=1
+     end /*do*/
+    return rslt
+
+/** _get_log_info v.2 **/
+    _get_log_info: procedure expose (globals)
+     parse value zocgetoption("CaptDefaultName") with . '="' ldefault '"'
+     if left(zocgetinfo("VERSION"),1)>4 then ldefault = zocfilename("RESOLV", ldefault)
+     lpath=_get_log_path()
+     rslt=lpath||";"||ldefault
+    return rslt
+
+/** _get_script_path v.1 **/
+    _get_script_path: procedure expose (globals)
+     parse value zocgetglobaloption("ScriptPath") with . '="' spath '"'
+     if left(zocgetinfo("VERSION"),1)>4 then spath = zocfilename("RESOLV", spath)
+     spath=dosfname(spath)
+     if right(spath,1)\="\" then spath=spath||"\"
+     if \dosisdir(spath) then call _error "invalid path in _get_script_path"
+    return spath
+
+/** _mrequestlist v.3 **/
+    _mrequestlist: procedure expose (globals)
+     do i=1 to 2
+      if \arg(i,"E") then call _error "missing parameter in _mrequestlist"
+     end /*do*/
+     msg=arg(1)
+     list=arg(2)
+     if list="" then call _error "empty list in _mrequestlist"
+     if arg(3,"E") then delim=arg(3); else delim=";"
+     if arg(4,"E") then mode=arg(4); else mode=""
+     if arg(5,"E") then default=arg(5); else default=""
+
+     yes="> "
+     no="   "
+
+     if default="" then do
+      rslt=0
+      menu="   DONE"||delim||no||_dword(list,1,delim)
+      count=_dwords(list,delim)
+     end /*if*/
+     else do
+      rslt=_dword(default,1,delim)
+      if rslt then menu="   DONE"||delim||yes||_dword(list,1,delim)
+      else menu="   DONE"||delim||no||_dword(list,1,delim)
+      count=min(_dwords(list,delim),_dwords(default,delim))
+     end /*else*/
+
+     if count>1 then do
+      do i=2 to count
+       if default="" then flag=no
+       else do
+        if _dword(default,i,delim) then flag=yes
+        else flag=no
+       end /*else*/
+       menu=menu||delim||flag||_dword(list,i,delim)
+       if default="" then rslt=rslt||delim||0
+       else rslt=rslt||delim||_dword(default,i,delim)
+      end /*do*/
+     end /*if*/
+
+     i=_drequestlisti(msg,menu,delim)
+
+     do while i>1
+      menu="   DONE"
+      temp=""
+      do j=1 to _dwords(list,delim)
+       if j=(i-1) then do
+        if _dword(rslt,j,delim) then do
+         menu=menu||delim||no||_dword(list,j,delim)
+         if temp="" then temp=0
+         else temp=temp||delim||0
+        end /*if*/
+        else do
+         menu=menu||delim||yes||_dword(list,j,delim)
+         if temp="" then temp=1
+         else temp=temp||delim||1
+        end /*else*/
+       end /*if*/
+       else do
+        if temp="" then temp=_dword(rslt,j,delim)
+        else temp=temp||delim||_dword(rslt,j,delim)
+        if _dword(rslt,j,delim) then menu=menu||delim||yes||_dword(list,j,delim)
+        else menu=menu||delim||no||_dword(list,j,delim)
+       end /*else*/
+      end /*do*/
+      rslt=temp
+      i=_drequestlisti(msg,menu,delim)
+     end /*do*/
+
+     if lower(mode)="c" & i=0 then call _quit "script cancelled by user."
+
+     dmax=_dwords(default,";")
+     lmax=_dwords(list,";")
+     if dmax>lmax then do
+      do i=dmax+1 to lmax
+       rslt=rslt||delim||_dword(default,i,";")
+      end /*do*/
+     end /*if*/
+
+    return rslt
+
+/** _quit v.7 **/
+    _quit: procedure expose (globals)
+     lcpy=1
+     arg1=""
+     do i=1 to 2 /* manage arguments */
+      select
+       when arg(i,"E") & lower(arg(i))="nocopy" then lcpy=0
+       when arg(i,"E") & arg1="" then arg1=arg(i)
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     line=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     select /* define message */
+      when  lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m^M^J"||line
+      when \lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m "
+      when  lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m^M^J"||line
+      when \lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m "
+      otherwise nop
+     end /*select*/
+     call zocwrite msg
+     select /* choose a beep */
+      when lower(arg1)="script cancelled by user." then call _beep "cancel.wav"
+      otherwise call _beep "quit.wav"
+     end /*select*/
+     exit
+    return 1
+
+/** _dword v.2 **/
+    _dword: procedure expose (globals)
+     rslt=translate(word(translate(arg(1),arg(3)||" "," "||arg(3)),arg(2))," "||arg(3),arg(3)||" ")
+    return rslt
+
+/** _newline v.3 **/
+    _newline: procedure expose (globals)
+     if zocgetinfo("CURSOR-X")>0 then call zocwriteln
+     if arg(1,"E") then call zocwrite arg(1)
+    return
+
+/** _ansi v.3 **/
+    _ansi: procedure expose (globals)
+     rslt="0"
+     pre=""
+     do i=1 to _dwords(arg(1),";")
+      w=_dword(arg(1),i,";")
+      select
+       when w="clearline" then pre=pre||"^[[100D^[[K"
+       when w="dl"  then rslt=rslt||";"||0  /* dull               */
+       when w="bt"  then rslt=rslt||";"||1  /* bright             */
+       when w="ul"  then rslt=rslt||";"||4  /* underlined         */
+       when w="blk" then rslt=rslt||";"||5  /* blinking           */
+       when w="fbk" then rslt=rslt||";"||30 /* black foreground   */
+       when w="frd" then rslt=rslt||";"||31 /* red foreground     */
+       when w="fgr" then rslt=rslt||";"||32 /* green foreground   */
+       when w="fye" then rslt=rslt||";"||33 /* yellow foreground  */
+       when w="fbl" then rslt=rslt||";"||34 /* blue foreground    */
+       when w="fmg" then rslt=rslt||";"||35 /* magenta foreground */
+       when w="fcy" then rslt=rslt||";"||36 /* cyan foreground    */
+       when w="fwh" then rslt=rslt||";"||37 /* white foreground   */
+       when w="bbk" then rslt=rslt||";"||40 /* black background   */
+       when w="brd" then rslt=rslt||";"||41 /* red background     */
+       when w="bgr" then rslt=rslt||";"||42 /* green background   */
+       when w="bye" then rslt=rslt||";"||43 /* yellow background  */
+       when w="bbl" then rslt=rslt||";"||44 /* blue background    */
+       when w="bmg" then rslt=rslt||";"||45 /* magenta background */
+       when w="bcy" then rslt=rslt||";"||46 /* cyan background    */
+       when w="bwh" then rslt=rslt||";"||47 /* white background   */
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     rslt=pre||"^[["||rslt||"m"
+    return rslt
+
+/** _getgameinfo v.5 **/
+    _getgameinfo: procedure expose (globals)
+     spath=_get_script_path()
+     base=spath||"script.ini"
+
+     if arg(1,"E") then fname=arg(1)
+     else fname=base
+
+     parse value zocgetglobaloption("WindowTitle") with . '="' game '"'
+     if fname\=base | game="" | game="%ZOCORHOST% %OPTIONS%" then do
+      list=_ini_getheadings(fname)
+      if list="##EOF##" then game="##EOF##"
+      else do
+       templist=""
+       do i=1 to _dwords(list,";")
+        temp=_dword(list,i,";")
+        if left(temp,1)\="*" then do
+         if templist="" then templist=temp
+         else templist=templist||";"||temp
+        end /*if*/
+       end /*do*/
+       list=templist
+       game=_drequestlist("select a game:", list, ";", "c")
+      end /*else*/
+     end /*do*/
+
+     call zocwrite _ansi("bt;fgr")||"< using "
+     if length(fname)>17 then call zocwrite "..."
+     call zocwriteln right(fname,min(length(fname),17))||" - ["||game||"] >"
+
+     rslt=spath||";"||fname||";"||game
+    return rslt
+
+/** _ini_askstr v.6 **/
+    _ini_askstr: procedure expose (globals)
+     if \arg(1,"E") then msg="enter a string"; else msg=arg(1)
+     do i=2 to 4; if \arg(i,"E") then call _error "missing parameter in _ini_askstr"; end
+     default=arg(2)
+     section=arg(3); if left(section,1)\="!" then section="!"||section
+     key=arg(4); if left(key,1)\="!" then key="!"||key
+     if section="##EOF##" then rslt="##EOF##"
+     else rslt=_ini.section.key
+     select
+      when (rslt="##EOF##" | rslt="##UNDEF##") & msg="##DEFAULT##" then rslt=default
+      when  rslt="##EOF##" | rslt="##UNDEF##"                      then rslt=_askstr(msg||" ("||key||"=)",default,"c")
+      otherwise                                                         nop
+     end /*select*/
+     _ini.!section.!key=rslt
+    return rslt
+
+/** _ini_askint v.6 **/
+    _ini_askint: procedure expose (globals)
+     if \arg(1,"E") then msg="enter an integer"; else msg=arg(1)
+     do i=2 to 4; if \arg(i,"E") then call _error "missing parameter in _ini_askint"; end
+     default=arg(2)
+     section=arg(3); if left(section,1)\="!" then section="!"||section
+     key=arg(4); if left(key,1)\="!" then key="!"||key
+     if _stripint(default)\=default then call _error "invalid parameter in _ini_askint"
+     if section="##EOF##" then rslt="##EOF##"
+     else rslt=_ini.section.key
+     select
+      when (rslt="##EOF##" | rslt="##UNDEF##") & msg="##DEFAULT##" then rslt=_stripint(default)
+      when  rslt="##EOF##" | rslt="##UNDEF##"                      then rslt=_askint(msg||" ("||key||"=)",default,"c")
+      otherwise                                                         rslt=_stripint(rslt)
+     end /*select*/
+     _ini.!section.!key=rslt
+    return rslt
+
+/** _chooselisti v.3 **/
+    _chooselisti: procedure expose (globals)
+     prompt=arg(1)
+     list=arg(2)
+     if list="" then call _error "no list"
+     delim=arg(3)
+     if delim="" then delim=" "
+     if length(delim)>1 then call _error "long delimiter"
+
+     rslt=_list_index(_chooselist(prompt,list,delim,arg(4)),list)
+
+    return rslt
+
+/** _twmsg v.3 **/
+    _twmsg: procedure expose (globals)
+     if \arg(1,"E") then call _error "missing parameter in _twmsg."
+     select
+      when lower(arg(1))="on" then do
+       call zocsend "|"
+       ans=_waitmux("Silencing|Displaying")
+       if ans=0 then call zocsend "|"
+       if ans=640 then call _error "timeout"
+      end /*when*/
+      when lower(arg(1))="off" then do
+       call zocsend "|"
+       ans=_waitmux("Silencing|Displaying")
+       if ans=1 then call zocsend "|"
+       if ans=640 then call _error "timeout"
+      end /*when*/
+      otherwise nop
+     end /*select*/
+    return
+
+/** _fileexists v.4 **/
+    _fileexists: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileexists"
+      when arg(1)="" then rslt=0
+      when stream(arg(1), "C", "QUERY EXISTS")="" then rslt=0
+      otherwise rslt=1
+     end /*select*/
+    return rslt
+
+/** _lastline v.3 **/
+    _lastline: procedure expose (globals)
+     rslt=zoclastline()
+     select
+      when lower(arg(1))="raw" then nop
+      when pos(d2c(7),rslt)>0  then rslt=translate(zocstring("REMOVE", rslt, d2c(7)),"  ",d2c(0)||d2c(10))
+      otherwise                     rslt=translate(rslt,"  ",d2c(0)||d2c(10))
+     end /*select*/
+    return rslt
+
+/** _ansi_to_html v.4 **/
+    _ansi_to_html: procedure expose (globals)
+     do i=1 to 2
+      if arg(i,"O") | \arg(i,"E") then call _error "missing parameter in _ansi_to_html"
+     end /*do*/
+     infile=arg(1)
+     outfile=arg(2)
+     if arg(3,"E") then title=arg(3)
+     else title="REV-SCRIPT"
+     success=0
+
+     /* define constants */
+     esc=d2c(27)
+     cr=d2c(13)
+     lf=d2c(10)
+     fface='Terminal'
+     fsize=2
+
+     /* define colors */
+     color.=""
+     color.30='#000000' /* black   */
+     color.31='#6A0000' /* red     */
+     color.32='#006A00' /* green   */
+     color.33='#6A6A00' /* yellow  */
+     color.34='#00006A' /* blue    */
+     color.35='#800080' /* magenta */
+     color.36='#006A6A' /* cyan    */
+     color.37='#A0A0A0' /* white   */
+     color.130='#A0A0A0'
+     color.131='#D40000'
+     color.132='#00FF00'
+     color.133='#D4D400'
+     color.134='#0000D4'
+     color.135='#D400D4'
+     color.136='#00D4D4'
+     color.137='#FFFFFF'
+     do i=30 to 37
+      temp=i+10
+      color.temp=color.i
+      temp=i+110
+      color.temp=color.i
+     end /*do*/
+
+     /* initialize colors */
+     reset=1
+     bright=0    /* 1 */
+     underline=0 /* 4 */
+     blink=0     /* 5 */
+     reverse=0   /* 7 */
+     hidden=0    /* 8 */
+     bg=30
+     fg=37
+
+     /* initialize counters */
+     incode=0
+     count=0
+     ignore=0
+     lastspace=1
+     html=""
+
+     if _fileopenr(infile) then do
+      if _filenew(outfile,"delete") then do
+       call _newline
+       call zocwrite _ansi("bt;fwh;bbk")||'writing file: "'||outfile||'" '
+       mon=_spinner(0,25)
+       call lineout outfile, '<html><title>'||title||'</title>'
+       call lineout outfile, '<body bgcolor="'||color.bg||'" text="#808080" link="#FF0000" vlink="#800000" alink="#FF0000">'
+       call lineout outfile, '<font size='||fsize||' face="'||fface||'">'
+       call charout outfile, '<span style="background-color:'||color.bg||';color:'||color.fg||'">'
+       do while \_fileeof(infile)
+        ch=charin(infile)
+        select
+
+         when ch=esc then do
+          mon=_spinner(mon,25)
+          incode=1
+          count=count+1
+          codes=""
+         end /*when*/
+
+         when incode & \_in("0123456789;[",ch) then do
+          incode=0
+          select
+           when ch="H" then do              /* esc[<row>;<col>H positions cursor at row, col  */
+            call charout outfile, "<!-- ansi code ignored: reposition cursor at row "||_dword(codes,1,";")||", col "||_dword(codes,2,";")||". -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="f" then do              /* esc[<row>;<col>f positions cursor at row, col  */
+            call charout outfile, "<!-- ansi code ignored: reposition cursor at row "||_dword(codes,1,";")||", col "||_dword(codes,2,";")||". -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="A" then do              /* esc[<n>A - moves cursor up n lines             */
+            call charout outfile, "<!-- ansi code ignored: move cursor up "||_dword(codes,1,";")||" line(s) -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="B" then do              /* esc[<n>B - moves cursor down n line(s)         */
+            do i=1 to _dword(codes,1,";")
+             call charout outfile, "<br>"
+            end /*do*/
+           end /*when*/
+           when ch="C" then do              /* esc[<n>C - moves cursor right n column(s)      */
+            do i=1 to _dword(codes,1,";")
+             call charout outfile, "&nbsp;"
+            end /*do*/
+           end /*when*/
+           when ch="D" then do              /* esc[<n>D - moves cursor left n column(s)       */
+            call charout outfile, "<!-- ansi code ignored: move cursor left "||_dword(codes,1,";")||" column(s) -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="s" then do              /* esc[s - saves current position                 */
+            call charout outfile, "<!-- ansi code ignored: save current cursor position -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="u" then do              /* esc[u - restores saved position                */
+            call charout outfile, "<!-- ansi code ignored: restore saved cursor position -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="J" then do              /* esc[<n>J - clears the screen for any integer n */
+            call charout outfile, "<br><!-- ansi code ignored: clear screen -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="K" then do              /* esc[K - clears from cursor to eoln             */
+            call charout outfile, "<!-- ansi code ignored: clear to end-of-line -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="h" then do              /* esc[<num>h - changes display mode              */
+            call charout outfile, "<!-- ansi code ignored: display mode -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="l" then do              /* esc[<num>l - changes display mode              */
+            call charout outfile, "<!-- ansi code ignored: display mode -->"
+            ignore=ignore+1
+           end /*when*/
+           when ch="m" then do              /* esc[<num>m - changes text and background color */
+            do i=1 to _dwords(codes,";")
+             c=_dword(codes,i,";")
+             select
+              when c=0 then do
+               reset=1
+               bright=0    /* 1 */
+               underline=0 /* 4 */
+               blink=0     /* 5 */
+               reverse=0   /* 7 */
+               hidden=0    /* 8 */
+               bg=40
+               fg=37
+              end /*when*/
+              when c=1 then bright=1
+              when c=4 then underline=1
+              when c=5 then blink=1
+              when c=7 then reverse=1
+              when c=8 then hidden=1
+              when c>=30 & c<=37 then do
+               fg=c
+               reset=0
+              end /*when*/
+              when c>=40 & c<=47 then bg=c
+              otherwise nop
+             end /*select*/
+            end /*do*/
+            if bright & \reset then fg=(fg//100)+100
+            if hidden then visibility="hidden"
+            else visibility="visible"
+            select
+             when blink then textdec="blink"
+             when underline then textdec="underline"
+             otherwise textdec="none"
+            end /*select*/
+            bg1=bg
+            fg1=fg
+            if reverse then do
+             bg1=(87-(bg//100))+100
+             fg1=(67-(fg//100))+100
+            end /*if*/
+            html='</span><span style="background-color:'||color.bg1||';color:'||color.fg1||';text-decoration:'||textdec||';visibility:'||visibility||'">'
+           end /*if*/
+           otherwise do
+            call charout outfile, "<!-- ansi code ignored: unknown -->"
+            ignore=ignore+1
+           end /*otherwise*/
+          end /*select*/
+         end /*when*/
+
+         when incode & ch\="[" then codes=codes||ch
+
+         when \incode then do
+          ch=translate(ch,"¶¶¶¶¶¶¶++¶¶++++++--+-+¶¶++--¶-+----++++++++¶_¶¶Ø", ,
+                          "∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ")
+
+          if html\="" & ch\=lf then call charout outfile, html
+          html=""
+
+          select
+           when ch=lf then nop
+           when ch=cr then do
+            call lineout outfile, "<br>"
+            lastspace=1
+           end /*when*/
+           when ch="<" then call charout outfile, "&lt;"
+           when ch=">" then call charout outfile, "&gt;"
+           when ch="&" then call charout outfile, "&amp;"
+           when ch='"' then call charout outfile, "&quot;"
+           when ch=" " & lastspace then call charout outfile, "&nbsp;"
+           when ch=" " then do
+            call charout outfile, " "
+            lastspace=1
+           end /*when*/
+           otherwise call charout outfile, ch
+          end /*select*/
+          if ch\=" " & ch\=cr & ch\=lf then lastspace=0
+         end /*when*/
+
+         otherwise nop
+
+        end /*select*/
+       end /*do*/
+       call lineout outfile, "</span></font><br><br>"
+       call lineout outfile, '<div align="center"><font size='||fsize||' face="'||fface||'">Copyright (C) 2001 Ron Wilson</font></div>'
+       call lineout outfile, '<div align="center"><a href="http://thereverend.coastgames.com/tradewars/rev-license.html"><font size='||fsize||' face="'||fface||'">REV-LICENSE</font></a></div>'
+       call charout outfile, "</body></html>"
+       call _fileclose outfile
+       call zocwriteln d2c(27)||"[1D."
+       call zocwriteln " "||count||" ansi codes converted."
+       call zocwriteln " "||ignore||" ansi codes discarded."
+       success=1
+      end /*if*/
+      else call zocwriteln 'unable to create file: "'||outfile||'"'
+      call _fileclose infile
+     end /*if*/
+     else call zocwriteln 'unable to open file: "'||infile||'"'
+
+    return success
+
+/** _ftp v.2 **/
+    _ftp: procedure expose (globals)
+     address=arg(1)
+     username=arg(2)
+     password=arg(3)
+     remotewd=arg(4)
+     mode=arg(5)
+     fpath=arg(6)
+     fname=arg(7)
+     wmode=arg(8)
+     if windowmode="" then windowmode=0
+     sname=_space(translate(left(address,min(10,length(address)))||fname,"    ","./\:"),0)||".txt"
+     if _fileexists(fpath||sname) then call dosdel fpath||sname
+     if _fileopenw(fpath||sname) then do
+      call lineout fpath||sname, "open "||address
+      call lineout fpath||sname, username
+      call lineout fpath||sname, password
+      call lineout fpath||sname, 'cd "'||remotewd||'"'
+      call lineout fpath||sname, mode
+      call lineout fpath||sname, 'put "'||fpath||fname||'"'
+      call lineout fpath||sname, "quit"
+      call _fileclose fpath||sname
+      if _fileexists(fpath||sname) then rslt=zocexec('ftp "-s:'||fpath||sname||'"',wmode)
+      else rslt=1
+     end /*if*/
+     else rslt=1
+     if rslt>0 then rslt=0
+     else rslt=1
+    return rslt
+
+/** _getservertime v.7 **/
+    _getservertime: procedure expose (globals)
+
+     /* get real date/time values */
+        parse value date("N") with . . year
+        parse value date("O") with . "/" month "/" day
+        sod=time("S")
+        parse value time("N") with hr ":" mn ":" sc
+        doy=date("D")
+        base=date("B")
+        leapyear=abs((year//4=0)-1)
+        base=base-_baseday.2000
+        base_sec=base*86400+sod
+
+     /* get game date/time values */
+        if _g.!timediff="_G.!TIMEDIFF" then do
+         if _sendwait("ct","(?=Help)? T")=640 then call _error "timeout"
+         if _waitmux(", "||year+11||"|, "||year+12||"|, "||year+13)=640 then call _error "timeout"
+         parse value _lastline() with g_hr ":" g_min ":" g_sec g_ampm . g_month g_day ", " g_year .
+         call zocsend "q"
+         if _waitmux("(?=Help)? :|(?=help)")=640 then call _error "timeout"
+         g_year=g_year-12
+         if g_ampm="PM" & g_hr\=12 then g_hr=g_hr+12
+         g_month=lower(g_month)
+         do i=12 to 1 by -1
+          if g_month=_dword(_monthnames,i,";") then leave
+         end /*do*/
+         g_month=i
+         parse value _calc_base_date(g_year, g_month, g_day, g_hr, g_min, g_sec) with g_base ";" g_doy ";" g_sod ";" g_base_sec
+         _g.!timediff=base_sec-g_base_sec
+        end /*if*/
+        else do
+         g_base_sec=base_sec-_g.!timediff
+         g_sod=g_base_sec//86400
+         g_base=g_base_sec%86400
+         do i=2000 to 2008
+          if (_baseday.i-_baseday.2000)<=g_base then g_year=i
+         end /*do*/
+         g_doy=g_base-_baseday.g_year+_baseday.2000
+        end /*else*/
+
+     select
+      when arg(1)="seconds"   then rslt=g_sod
+      when arg(1)="minutes"   then rslt=g_sod%60
+      when arg(1)="hours"     then rslt=g_sod%3600
+      when arg(1)="stamp_old" then rslt=g_year-2000||copies("0",3-length(g_doy))||g_doy||copies("0",5-length(g_sod))||g_sod
+      when arg(1)="stamp"     then rslt=g_base_sec
+      otherwise                    rslt=g_base_sec
+     end /*select*/
+    return rslt
+
+/** _beep v.2 **/
+    _beep: procedure expose (globals)
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then d=arg(3); else d=0
+     select
+      when arg(1,"O") then call zocwrite copies(d2c(7),n)
+      when _fileexists(arg(1)) then do
+       do i=1 to n
+        call zocplaysound arg(1)
+        if i\=n & d>0 then call zocdelay d
+       end /*do*/
+      end /*when*/
+      otherwise call zocwrite copies(d2c(7),n)
+     end /*select*/
+    return
+
+/** _domacro v.4 **/
+    _domacro: procedure expose (globals)
+     list=arg(1)
+     n=_dwords(list,"}")
+     a=""
+     mux=0
+     rslt=0
+     leav=0
+     do i=1 to n
+      parse value _dword(list,i,"}") with c "{" s
+      if c="s" then do
+       s=_dword(s,mux+1,"|")
+       if pos("_x",s)>0 then do
+        s=zocstring("REMOVE",s,"_x")
+        rslt=1
+       end /*if*/
+       if pos("_c",s)>0 then do
+        s=zocstring("REMOVE",s,"_c")
+        leav=1
+       end /*if*/
+      end /*if*/
+      c=strip(lower(c))
+      select
+       when c="s" & a\="" then do
+        call zocconnect a
+        do while \_isonline(15)
+         call zocdisconnect
+         call zocconnect a
+        end /*do*/
+        call zocsend s
+        mux=0
+        a=""
+       end /*when*/
+       when c="s" then do
+        call zocsend s
+        mux=0
+       end /*when*/
+       when c="w" & a\="" then do
+        call zocconnect a
+        do while _wait(s)=640
+         call zocdisconnect
+         call zocconnect a
+        end /*do*/
+        a=""
+       end /*when*/
+       when c="w" then if _wait(s)=640 then call _error "timeout"
+       when c="m" then do
+        mux=_waitmux(s)
+        if mux=640 then call _error "timeout"
+       end /*when*/
+       when c="b" then call zocbeep s
+       when c="p" then call zocdelay abs(_stripint(s)/1000)
+       when c="d" then call zocdisconnect
+       when c="l" | c="c" then a=s
+       when c="r" & s="" then nop
+       when c="r" then do
+        if _fileexists(s) then do; call zocdostring "^RUN="||s; exit; end
+       end /*when*/
+       otherwise nop
+      end /*select*/
+      if rslt then leave
+      if leav then leave
+     end /*do*/
+    return rslt
+
+/** _login v.5 **/
+    _login: procedure expose (globals)
+     gamepwd=_iniv(!settings,"!game_pwd")
+     dname=_iniv(!settings,"!dname")
+     gname=_iniv(!settings,"!gname")
+     lname=_iniv(!settings,"!lname")
+     ignorelist=_iniv(!settings,"!ignore")
+     if _undef(ignorelist) then ignorelist=""
+     lg_stamp=_iniv(!settings,"!lastlogstamp")
+     login_count=_iniv(!settings,"!login_count")
+     if _undef(login_count) then login_count=0
+
+     if \arg(1,"E") then hide=1
+     else hide=arg(1)
+
+     call _rseed
+     yr=word(date("N"),3)-2000+12
+
+     call zoclogging 0, 1
+     call zoclogname gname||"_log_^3^2^1_^8.txt"
+     call zocsetoption 'CaptDefaultName="'||gname||'_log_^3^2^1_^8.txt"'
+     call zoclogging 1, 1
+     log_flag=_fileopenw(lname)
+
+     call zocsend "t^M"
+
+     newgame=0
+     if (login_count=0) then newgame=1
+     newname=""
+
+     done=0
+     pause_flag=1
+     do while \done
+
+      ans=_waitmux("[Pause]",
+                ||"|Show today's log?",
+                ||"|time/date stamp?",
+                ||"|       Hello ",
+                ||"|Password?",
+                ||"|messages received since",
+                ||"|new character",
+                ||"|destroyed your ship today...",
+                ||"|No messages received.",
+                ||"|> ",
+                ||"|::",
+                ||"|/"||yr-1||":",
+                ||"|/"||yr||":",
+                ||"|/"||yr+1||":",
+                ||"|entered sector.",
+                ||"|Sub Space Ether Probe.",
+                ||"|I.D. code.",
+                ||"|all of your mines in ",
+                ||"|Delete messages? (Y/N) [N]",
+                ||"|clear some avoids? (Y/N) [N]",
+                ||"|Planet command",
+                ||"|Option? (A,D,I",
+                ||"|Class 9 (Special)",
+                ||"|Sector  : 1 in",
+                ||"|name your ship",
+                ||"|(B)BS Name [B] ?",
+                ||"|cannot use the name",
+                ||"|alias would look",
+                ||"|name your home",
+                ||"|(?=Help)? :",
+                ||"| - Ship ",
+                ||"|sorry, but this is a closed game.")
+
+      select
+
+       /* "[Pause]" */
+          when ans=0 then do
+           call zocdelay .3
+           select
+            when _pcheck("[Pause] - [") & pause_flag then do
+             call zocsend " "
+             pause_flag=0
+            end /*when*/
+            when _pcheck("[Pause] - [") then nop
+            when _pcheck("[Pause] - D") then do
+             call zocsend "y"
+             mode=2
+            end /*when*/
+            otherwise do
+             call zocsend " "
+             pause_flag=0
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+
+       /* "Show today's log? (Y/N) [N]" */
+          when ans=1 then call zocsend "n"
+
+       /* "Include time/date stamp? (Y/N) [N]" */
+          when ans=2 then call zocsend "y"
+
+       /* "       Hello " */
+          when ans=3 then do
+           bbsname=_grabit(", welcome")
+           bbsname=left(bbsname,pos(", welcome",bbsname)-1)
+          end /*when*/
+
+       /* "Password?" */
+          when ans=4 then do
+           if _undef(gamepwd) then do
+            gamepwd=_askstr("what password for this game?",_random_pwd(8),"c")
+            if \_ini_write(dname,"settings","game_pwd",gamepwd) then call _error "unable to write to "||dname
+           end /*if*/
+           call zocsend gamepwd||"^M"
+          end /*when*/
+
+       /* "messages received since your last" */
+          when ans=5 then mode=1
+
+       /* "new character" */
+          when ans=6 then do
+           call zocsend "y"
+           mode=3
+          end /*when*/
+
+       /* "destroyed your ship today..." */
+          when ans=7 then done=1
+
+       /* "No messages received." */
+          when ans=8 then mode=2
+
+       /* "> " */
+          when ans=9 & \pause_flag then pause_flag=1
+          when ans=9 then nop
+
+       /* "::" */
+          when ans=10 then do
+           line=_lastline()
+           parse var line brand "-" typ " : " cmd . args "::"
+           typ=lower(typ); cmd=lower(cmd); args=strip(args)
+           select
+            when typ\="cmd" then nop
+            when cmd="bust_clr" then do
+             parse var args sect . stamp .
+             bstamp=_iniv("!bust","!"||sect)
+             select
+              when _undef(bstamp) then nop
+              when bstamp>=stamp then nop
+              otherwise do
+               call _ini_delete_key dname, "bust", sect
+               call _iniv "!bust", "!"||sect, "##UNDEF##"
+              end /*otherwise*/
+             end /*select*/
+            end /*when*/
+            when cmd="set_var" then do
+             parse var args section " : " vr "=" vl
+             call _ini_write dname, section, vr, vl
+             call _iniv "!"||section, "!"||vr, vl
+            end /*when*/
+            otherwise nop
+           end /*select*/
+          end /*when*/
+
+       /* "/"||yr-1||":" */
+       /* "/"||yr||":" */
+       /* "/"||yr+1||":" */
+       /* Received from The Federation at 00:00:03 AM S.D. 08/08/14: */
+       /* Received from Deployed Fighters at 03:49:25 PM S.D. 06/27/14: */
+       /* Received from Fear Me at 11:08:45 PM S.D. 11/25/14: */
+          when ans<=13 then do
+           line=_lastline()
+           parse var line "Received from " lg_name " at " lg_hr ":" lg_mn ":" lg_sc lg_ampm " S.D. " lg_ds ":"
+           if lg_ampm="PM" & lg_hr<12 then lg_hr=lg_hr+12
+           lg_ts=lg_hr||":"||lg_mn||":"||lg_sc
+           lg_stamp=lg_ds||", "||lg_ts
+           call _iniv "!settings", "!lastlogstamp", lg_stamp
+          end /*when*/
+
+       /* "entered sector." */
+       /* > Report Sector 409: Sporty's Imperial StarShip entered sector. */
+          when ans=14 then do
+           line=_lastline()
+           parse var line "Report Sector " lg_sect ": " lg_name " entered sector."
+           poss=lastpos("'s",lg_name)
+           if poss>0 then do
+            lg_player=left(lg_name,poss-1)
+            lg_ship=substr(lg_name,poss+3)
+            lg_sect=_stripint(lg_sect)
+            if lg_sect\="" & log_flag & \_undef(lg_stamp) then do
+             if _listinstr(ignorelist, lg_player) then call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - ENTER IGNORE ("||_abbrv_words(lg_ship,3)||")"
+                                                  else call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - ENTER "||lg_player||" ("||_abbrv_words(lg_ship,3)||")"
+            end /*if*/
+           end /*if*/
+          end /*when*/
+
+       /* "Sub Space Ether Probe." */
+       /* > Your fighters in sector 1348 destroyed a Sub Space Ether Probe. */
+          when ans=15 then do
+           line=_lastline()
+           parse var line . "sector " lg_sect .
+           lg_sect=_stripint(lg_sect)
+           pause_flag=1
+          end /*when*/
+
+       /* "I.D. code." */
+       /* They traced it's transmission to Tweety's I.D. code. */
+          when ans=16 then do
+           line=_lastline()
+           parse var line . "to " lg_player "'s I.D. code." .
+           if lg_sect\="" & \_listinstr(ignorelist, lg_player) & log_flag & \_undef(lg_stamp) then ,
+            call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - PROBE "||lg_player
+          end /*when*/
+
+       /* "disrupted all of your mines in " */
+       /* > Fer disrupted all of your mines in 547 */
+          when ans=17 then do
+           line=_lastline()
+           lg_sect=_stripint(_grabit("^M"))
+           parse var line lg_player " disrupted all " .
+           if lg_sect\="" & \_listinstr(ignorelist, lg_player) & log_flag & \_undef(lg_stamp) then ,
+            call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - DISRUPT "||lg_player
+          end /*when*/
+
+       /* "Delete messages? (Y/N) [N]" */
+          when ans=18 then do
+           call zocsend "y"
+           mode=2
+          end /*when*/
+
+       /* "Do you wish to clear some avoids? (Y/N) [N]" */
+          when ans=19 then call zocsend "n"
+
+       /* "Option? (A,D,I" */
+          when ans=21 then done=1
+
+       /* "Class 9 (Special)" */
+          when ans=22 & hide then do
+           if _sendwait("  psg y g ","<Galactic Bank>")=640 then call _error "timeout"
+           done=1
+          end /*when*/
+          when ans=22 then nop
+
+       /* "Sector  : 1 in" */
+          when ans=23 & hide then do
+           if _sendwait("  l1^M","colonists ready")=640 then call _error "timeout"
+           done=1
+          end /*when*/
+          when ans=23 then nop
+
+       /* "What do you want to name your ship? (30 letters)" */
+          when ans=24 then do
+           shipname=_askstr("what name for your ship?","Merchant Marines","c")
+           call zocsend shipname||"^My"
+          end /*when*/
+
+       /* "Use (N)ew Name or (B)BS Name [B] ?" */
+          when ans=25 then do
+           newname=_askstr("what name for this game?",bbsname,"c")
+           if newname=bbsname then call zocsend "b"
+           else call zocsend "n"||newname||"^M"
+           newgame=1
+          end /*when*/
+
+       /* "cannot use the name" */
+          when ans=26 then do
+           newname=_askstr("what name for this game?",newname||random(1,100),"c")
+           call zocsend newname||"^M"
+          end /*when*/
+
+       /* "That alias would look" */
+          when ans=27 then call zocsend "y"
+
+       /* "name your home planet?" */
+          when ans=28 then do
+           planetname=_askstr("what name for this planet?",newname||"'s home planet","c")
+           call zocsend planetname||"^Mq"
+           if _wait("Blasting off")=640 then call _error "timeout"
+          end /*when*/
+
+       /* "Planet command (?=help) [D]" */
+          when ans=20 & \newgame then do
+           call zocsend "c"
+           done=1
+          end /*when*/
+
+       /* "(?=Help)? :" */
+          when ans=29 & \newgame then do
+           call zocsend "zn"
+           done=1
+          end /*when*/
+          when ans=20 | ans=29 then do
+           /* get stardock */
+              if (ans=20) then do
+               pnum=_get_planet_number("planet")
+               call zocsend "ocqqqznznv"
+              end /*if*/
+              else call zocsend "v"
+              ans2=_waitmux("The StarDock is located in sector|Photon Missile Wave duration")
+              select
+               when ans2=0 then sd=_stripint(_grabit("."))
+               when ans2=1 then sd=""
+               when ans2=640 then call _error "timeout"
+               otherwise nop
+              end /*select*/
+              if (ans=20) then call zocsend "l"||pnum||"^Mc"
+           /* turn off animations */
+              call zocsend "cn"
+              ans2=_waitmux("(2) Animation display        - On|(2) Animation display        - Off")
+              select
+               when ans2=0 then call zocsend "2qq"
+               when ans2=1 then call zocsend "qq"
+               when ans2=640 then call _error "timeout"
+               otherwise nop
+              end /*select*/
+           /* get server time */
+              now=_getservertime("stamp")
+           /* get ship catalog */
+              call _ini_write_ship_catalog dname
+           /* write other settings to script.ini */
+              call zocwrite _ansi("bt;fwh")||"writing settings."
+              if \_ini_write(dname,"settings","timediff",_g.!timediff) then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","player_name",newname) then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","sd",sd) then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","rylos","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","alpha","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","log_ignore","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","ignore","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","target","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","red_ships","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","corp_pwd","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","corp","") then call _error "unable to write to "||dname
+              call zocwrite "."
+              if \_ini_write(dname,"settings","login_macro","") then call _error "unable to write to "||dname
+              call zocwrite "."
+
+           /* setshortname */
+           /* set other script.ini stuff */
+           done=1
+          end /*when*/
+
+       /* ck bust message */
+          when ans=30 then do
+           line=_lastline()
+           parse var line . "Busted - Sector " sect " - Ship"
+           sect=_stripint(sect)
+           bstamp=_iniv("!bust","!"||sect)
+             select
+              when _undef(bstamp) then nop
+              when bstamp>=stamp then nop
+              otherwise do
+               call _ini_delete_key dname, "bust", sect
+               call _iniv "!bust", "!"||sect, "##UNDEF##"
+              end /*otherwise*/
+             end /*select*/
+          end /*when*/
+
+       /* closed game */
+          when ans=31 then do
+           return 0
+          end /*when*/
+
+       /* timeout */
+          when ans=640 then call _error "timeout"
+
+       otherwise nop
+      end /*select*/
+     end /*do*/
+
+     call _ini_write dname, "settings", "lastlogstamp", lg_stamp
+     call _ini_write dname, "settings", "login_count", login_count + 1
+     if log_flag then call _fileclose lname
+
+    return 1
+
+/** _debug v.5 **/
+    _debug: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _debug"
+     mode=strip(left(lower(arg(1)),3))
+     msg=arg(2)
+     if arg(3,"E") then logname=strip(arg(3))
+     else logname="_debug.txt"
+     select
+      when mode="scr" then call zocwriteln "^[[1;34mREV-DEBUG <"||msg||">^[[0m"
+      when mode="fed" then call zocsend "`REV-DEBUG <"||msg||">^M"
+      when mode="sub" then call zocsend "'REV-DEBUG <"||msg||">^M"
+      when mode="log" then do
+       if _fileopenw(logname) then do
+        call lineout logname, msg
+        call _fileclose logname
+       end /*if*/
+       else call _error "unable to open rev-log.txt."
+      end /*when*/
+      otherwise nop
+     end /*select*/
+    return
+
+/** _space v.1 **/
+    _space: procedure expose (globals)
+     str=strip(arg(1))
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then pad=arg(3); else pad=" "
+     rslt=word(str,1)
+     do i=2 to words(str)
+      rslt=rslt||copies(pad,n)||word(str,i)
+     end /*do*/
+    return rslt
+
+/** _stripint v.4 **/
+    _stripint: procedure expose (globals)
+     mask=_space(translate(arg(1)," ","-0123456789,"," "),0)
+     rslt=word(_space(translate(_stripcomma(arg(1))," ",mask," ")),1)
+     if rslt="" | rslt="-" then do; call _set_msg "##NAN##", "_stripint"; rslt=0; end
+     else do
+      if left(rslt,1)="-" then neg="-"; else neg=""
+      rslt=_space(translate(rslt," ","-"),0)
+      if length(rslt)>9 then rslt=left(rslt,9)
+      rslt=neg||rslt
+     end /*else*/
+    return rslt
+
+/** _dwords v.2 **/
+    _dwords: procedure expose (globals)
+     rslt=words(translate(arg(1),arg(2)||" "," "||arg(2)))
+    return rslt
+
+/** _instr v.3 **/
+    _instr: procedure expose (globals)
+     fnd=arg(1)
+     str=arg(2)
+     if lower(arg(3))\="cs" then do
+      fnd=lower(fnd)
+      str=lower(str)
+     end /*if*/
+     if arg(1,"E") & arg(2,"E") & pos(fnd,str)>0 then rslt=1
+     else rslt=0
+    return rslt
+
+/** _get_log_path v.2 **/
+    _get_log_path: procedure expose (globals)
+     parse value zocgetglobaloption("CapturePath") with . '="' lpath '"'
+     if left(zocgetinfo("VERSION"),1)>4 then lpath = zocfilename("RESOLV", lpath)
+     lpath=dosfname(lpath)
+     if right(lpath,1)\="\" then lpath=lpath||"\"
+     if \dosisdir(lpath) then call _error "invalid path in _get_log_path"
+    return lpath
+
+/** _drequestlisti v.2 **/
+    _drequestlisti: procedure expose (globals)
+     do i=1 to 3
+      if \arg(i,"E") then call _error "missing parameter in _drequestlisti"
+     end /*do*/
+     i=zocrequestlist(arg(1),translate(arg(2),"|"||arg(3),arg(3)||"|"))
+     if i<0 & lower(arg(4))="c" then call _quit "script cancelled by user.", "nocopy"
+                                else rslt=i+1
+    return rslt
+
+/** _ini_getheadings v.5 **/
+    _ini_getheadings: procedure expose (globals)
+     if arg(1,"E") then fname=arg(1)
+     else call _error "missing parameter in _ini_getheadings"
+     if arg(2,"E") then delim=left(arg(2),1)
+     else delim=";"
+     list=""
+     if _fileopenr(fname) then do
+      do while \_fileeof(fname)
+       line=strip(linein(fname))
+       if left(line,1)="[" then do
+        if list="" then list=strip(translate(line,"  ","[]"))
+        else list=list||delim||strip(translate(line,"  ","[]"))
+       end /*if*/
+      end /*do*/
+      call _fileclose fname
+     end /*do*/
+     if list="" then list="##EOF##"
+    return list
+
+/** _drequestlist v.3 **/
+    _drequestlist: procedure expose (globals)
+     i=zocrequestlist(arg(1),translate(arg(2),"|"||arg(3),arg(3)||"|"))
+     select
+      when i<0 & lower(arg(4))="c" then call _quit "script cancelled by user.", "nocopy"
+      when i<0 then rslt="##CANCEL##"
+      otherwise rslt=_dword(arg(2),i+1,arg(3))
+     end /*select*/
+    return rslt
+
+/** _askstr v.1 **/
+    _askstr: procedure expose (globals)
+     do i=1 to 3
+      select
+       when i=1 & arg(i,"E") then msg=arg(i)
+       when i=1              then msg="enter an string:"
+       when i=2 & arg(i,"E") then default=arg(i)
+       when i=2              then default=""
+       when i=3 & arg(i,"E") then cflag=min(verify(lower(arg(i)),"c","M"),1)
+       when i=3              then cflag=0
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     rslt=zocask(msg, default)
+     if cflag & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+    return rslt
+
+/** _askint v.2 **/
+    _askint: procedure expose (globals)
+     do i=1 to 3
+      select
+       when i=1 & arg(i,"E") then msg=arg(i)
+       when i=1              then msg="enter an integer:"
+       when i=2 & arg(i,"E") then default=arg(i)
+       when i=2              then default=""
+       when i=3 & arg(i,"E") then cflag=min(verify(lower(arg(i)),"c","M"),1)
+       when i=3              then cflag=0
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     rslt=strip(zocask(msg, default))
+     do while _stripint(rslt)\=rslt | rslt=""
+      default=rslt||" [please enter an integer or ESC to cancel.]"
+      if rslt="##CANCEL##" then leave
+      else rslt=strip(zocask(msg, default))
+     end /*do*/
+     if cflag & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+    return rslt
+
+    /* _list_index v.2 */
+    _list_index: procedure expose (globals)
+     find=arg(1)
+     list=arg(2)
+     if arg(4,"E") then d=arg(3); else d=";"
+     if arg(5,"E") then rslt=arg(4); else rslt=""
+     do i=1 to _dwords(list,d)
+      if find=_dword(list,i,d) then do; rslt=i; leave; end
+     end /*do*/
+    return rslt
+
+/** _chooselist v.6 **/
+    _chooselist: procedure expose (globals)
+     prompt=arg(1)
+     if arg(2,"E") then list=arg(2); else list=""
+     if list="" then call _error "no list"
+     if arg(3,"E") then delim=left(arg(3),1); else delim=";"
+
+     select
+      when _dwords(list,delim)=1 then rslt=zocrequest(prompt, list)
+      when _dwords(list,delim)=2 then rslt=zocrequest(prompt, _dword(list,1,delim), _dword(list,2,delim))
+      when _dwords(list,delim)=3 then rslt=zocrequest(prompt, _dword(list,1,delim), _dword(list,2,delim), _dword(list,3,delim))
+      when _dwords(list,delim)=4 then rslt=zocrequest(prompt, _dword(list,1,delim), _dword(list,2,delim), _dword(list,3,delim), _dword(list,4,delim))
+      otherwise do
+       ch.=""
+       i=_dwords(list,delim)
+       do j=1 to i
+        ch.j=_dword(list,j,delim)
+       end /*do*/
+
+       if i<7 then max=1
+       if i<5 then max=0
+       if i>=7 then max=(i-5)%2+1
+
+       done=0
+       loc=0
+       do while \done
+        if loc<0 then loc=0
+        if loc>max then loc=max
+
+        select
+         when loc=0 then do
+          if max=0 then rslt=zocrequest(prompt, ch.1, ch.2, ch.3, ch.4)
+          else rslt=zocrequest(prompt, ch.1, ch.2, ch.3, "next")
+         end /*when*/
+         when loc=max then do
+          p1=(loc-1)*2+4
+          p2=p1+1
+          p3=p1+2
+          rslt=zocrequest(prompt, "back", ch.p1, ch.p2, ch.p3)
+         end /*when*/
+         otherwise do
+          p1=(loc-1)*2+4
+          p2=p1+1
+          rslt=zocrequest(prompt, "back", ch.p1, ch.p2, "next")
+         end /*otherwise*/
+        end /*select*/
+
+        select
+         when rslt="next" then loc=loc+1
+         when rslt="back" then loc=loc-1
+         when rslt="##CANCEL##" then done=1
+         when rslt="" then nop
+         otherwise done=1
+        end /*select*/
+
+       end /*do*/
+      end /*otherwise*/
+     end /*select*/
+
+     if lower(arg(4))="c" & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+
+    return rslt
+
+/** _waitmux v.1 **/
+    _waitmux: procedure expose (globals)
+     rslt=zocwaitmux(arg(1))
+    return rslt
+
+/** _fileopenr v.4 **/
+    _fileopenr: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileopenr"
+      when arg(1)="" then rslt=0
+      when _fileexists(arg(1)) then do
+       call stream arg(1), "C", "OPEN READ"
+       rslt=_fileready(arg(1))
+       if \rslt then call _fileclose arg(1)
+      end /*when*/
+      otherwise rslt=_filenew(arg(1))
+     end /*select*/
+    return rslt
+
+/** _filenew v.4 **/
+    _filenew: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _filenew"
+      when arg(1)="" then rslt=0
+      otherwise do
+       if arg(2,"E") & lower(arg(2))="delete" then call dosdel arg(1)
+       if _fileexists(arg(1)) then rslt=0
+       else do
+        call stream arg(1), "C", "OPEN WRITE"
+        rslt=_fileready(arg(1))
+        if \rslt then call _fileclose arg(1)
+       end /*else*/
+      end /*otherwise*/
+     end /*select*/
+    return rslt
+
+/** _spinner v.3 **/
+    _spinner: procedure expose (globals)
+     if arg(1,"E") then count=arg(1)
+                   else call _error "missing parameter in _spinner"
+     if arg(2,"E") then width=arg(2)
+                   else width=100
+     if arg(3,"E") & length(arg(3))=5 then chs=arg(3)
+                                      else chs="-\|/."
+    /* bs="^H" */
+     bs=d2c(27)||"[1D"
+     select
+      when count=-1        then call zocwrite bs||substr(chs,5,1)
+      when count<0         then count=-1
+      when count=0         then call zocwrite left(chs,1)
+      when count=width     then call zocwrite bs||substr(chs,2,1)
+      when count=(width*2) then call zocwrite bs||substr(chs,3,1)
+      when count=(width*3) then call zocwrite bs||substr(chs,4,1)
+      when count=(width*4) then do
+       call zocwrite bs||left(chs,1)
+       count=0
+      end /*when*/
+      otherwise nop
+     end /*select*/
+     count=count+1
+    return count
+
+/** _fileeof v.4 **/
+    _fileeof: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileeof"
+      when arg(1)="" then rslt=0
+      otherwise rslt=\lines(arg(1))
+     end /*select*/
+    return rslt
+
+/** _in v.3 **/
+    _in: procedure expose (globals)
+     if arg(1,"E") & arg(2,"E") & length(arg(1))>0 & verify(arg(2),arg(1),"N")=0 then rslt=1
+     else rslt=0
+    return rslt
+
+/** _fileclose v.3 **/
+    _fileclose: procedure expose (globals)
+     if \arg(1,"E") then call _error "missing argument in _fileclose"
+     select
+      when arg(1)="" then nop
+      otherwise call stream arg(1), "C", "CLOSE"
+     end /*select*/
+    return
+
+/** _fileopenw v.3 **/
+    _fileopenw: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileopenw"
+      when arg(1)="" then rslt=0
+      when _fileexists(arg(1)) then do
+       call stream arg(1), "C", "OPEN WRITE"
+       call stream arg(1), "C", "SEEK <0"
+       rslt=_fileready(arg(1))
+       if \rslt then call _fileclose arg(1)
+      end /*when*/
+      otherwise rslt=_filenew(arg(1))
+     end /*select*/
+    return rslt
+
+/** _sendwait v.1 **/
+    _sendwait: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _sendwait"
+     call zocsend arg(1)
+     rslt=_wait(arg(2))
+     select
+      when \arg(3,"E") | arg(3)=""             then nop
+      when lower(arg(3))="timeout"  & rslt=640 then call _error "timeout"
+      when lower(arg(3))="lastline" & rslt=640 then call _error "timeout"
+      when lower(arg(3))="lastline"            then rslt=_lastline()
+      otherwise nop
+     end /*select*/
+    return rslt
+
+/** _calc_base_date v.3 **/
+    /* v.3 tested */
+    _calc_base_date: procedure expose (globals)
+
+     yr=arg(1); mm=arg(2); dd=arg(3); hr=arg(4); mn=arg(5); sc=arg(6)
+
+     /* leapyear? */
+        leapyear=abs((yr//4=0)-1)
+
+     /* day of year */
+        doy=dd
+        do i=1 to mm-1
+         doy=doy+_dword(_monthdays,i,";")
+        end /*do*/
+        if mm>2 & leapyear then doy=doy+1
+
+     /* base day since 2000 */
+        base=_baseday.yr-_baseday.2000+doy
+
+     /* seconds of day */
+        sod=((hr*60)+mn)*60+sc
+
+     /* base day in seconds */
+        base_sec=base*86400+sod
+
+     rslt=base||";"||doy||";"||sod||";"||base_sec
+
+    return rslt
+
+/** _isonline v.3 **/
+    _isonline: procedure expose (globals)
+     if zocgetinfo("ONLINE")="##YES##" then return 1
+     if arg(1,"E") then t=arg(1)
+     else call _error "missing parameter in _isonline"
+     rslt=0
+     o="##NO##"
+     call time "R"
+     do while time("E")<=t & o\="##YES##"
+      o=zocgetinfo("ONLINE")
+      if o="##YES##" then rslt=1
+     end /*do*/
+    return rslt
+
+/** _wait v.1 **/
+    _wait: procedure expose (globals)
+     rslt=zocwait(arg(1))
+    return rslt
+
+    _iniv: procedure expose (globals)
+     s=arg(1); v=arg(2)
+     if arg(3,"E") then _ini.s.v=arg(3)
+    return _ini.s.v
+
+    _undef: procedure expose (globals)
+     if arg(1)="##UNDEF##" then return 1; else return 0
+
+/** _rseed v.7 **/
+    _rseed: procedure expose (globals)
+     if arg(1,"E") then width=min(max(arg(1),2),86400)
+     else width=1000
+     parse value time("L") with r1 ":" r2 ":" r3 "." r4
+     r4=strip(left(r4,5))
+     seed=r4||copies(0,5-length(r4))
+     rslt=random(0, 99999, seed)//width
+    return rslt
+
+/** _grabit v.2 **/
+    _grabit: procedure expose (globals)
+     if _wait(arg(1))=640 then call _error "timeout"
+     rslt=_lastline()
+     if lower(arg(2))="s" then rslt=reverse(substr(reverse(rslt),length(arg(1))+1))
+    return rslt
+
+/** _random_pwd v.3 **/
+    _random_pwd: procedure expose (globals)
+     if arg(1,"E") then w=arg(1); else w=6
+     if arg(2,"E") then n=arg(2); else n=4
+     if n=0 then set.0=arg(3)
+     set.1="1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+     set.2="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+     set.3="1234567890abcdefghijklmnopqrstuvwxyz"
+     set.4="34679abcdefghijkmnopqrstuvwxyzACDEFGHJKLMNPQRTUVWXY"
+     set.5="abcdefghijklmnopqrstuvwxyz"
+     set.6="bcdfghjklmnpqrstvwxz"
+     set.7="aeiouy"
+     set.8="BCDFGHJKLMNPQRSTVWXZ"
+     set.9="AEIOUY"
+     set.10="1234567890"
+     rslt=""
+     len=length(set.n)
+     do i=1 to w
+      ch=substr(set.n,random(1,len),1)
+      rslt=rslt||ch
+     end /*do*/
+    return rslt
+
+/** _ini_write v.3 **/
+    /*_ v.3 tested -*/
+    _ini_write: procedure expose (globals)
+     /* argument check */
+     do i=1 to 4
+      if \arg(i,"E") | arg(i,"O") then call _error "missing arguments in _ini_write."
+     end /*do*/
+
+     /* name arguments */
+     fname=arg(1)
+     s=strip(arg(2))
+     k=strip(arg(3))
+     v=strip(arg(4))
+
+     tname=fname||".tmp"
+     written=0
+
+     rslt=0
+     if _fileopenr(fname) then do
+      if _fileexists(tname) then if \dosdel(tname) then call _error "file delete failed."
+      if _fileopenw(tname) then do
+       insection=0
+       linenum=0
+       do while \_fileeof(fname)
+        line=strip(linein(fname))
+        linenum=linenum+1
+        select
+         when line="["||s||"]" then do
+          insection=1
+          if linenum>1 then call lineout tname, ""
+          call lineout tname, line
+          call charout tname, k||"="||v
+          written=1
+         end /*when*/
+         when insection & left(line,length(k)+1)=k||"=" then nop
+         when insection & left(line,1)="[" then do
+          if linenum>1 then call lineout tname, ""
+          call charout tname, line
+          insection=0
+         end /*when*/
+         when line="" then do
+          if linenum>1 then call lineout tname, ""
+          call charout tname, ""
+         end /*when*/
+         otherwise do
+          if linenum>1 then call lineout tname, ""
+          call charout tname, line
+         end /*otherwise*/
+        end /*select*/
+       end /*do*/
+       if \written then do
+        if linenum>1 then call lineout tname, ""
+        call lineout tname, "["||s||"]"
+        call charout tname, k||"="||v
+        written=1
+       end /*if*/
+       call _fileclose(tname)
+      end /*if*/
+      call _fileclose(fname)
+     end /*if*/
+     if written then do
+      if \dosdel(fname) then call _error "file delete failed."
+      if \dosrename(tname,fname) then call _error "file rename failed."
+     end /*if*/
+     else do
+      if \_fileexists(fname) then do
+       if _filenew(fname) then do
+        call lineout fname, "["||s||"]"
+        call charout fname, k||"="||v
+        call _fileclose(fname)
+        written=1
+       end /*if*/
+      end /*if*/
+     end /*else*/
+    return written
+
+/** _ini_delete_key v.1 **/
+    /*_ v.1 tested -*/
+    _ini_delete_key: procedure expose (globals)
+     /* argument check */
+     do i=1 to 3
+      if \arg(i,"E") then call _error "missing argument in _ini_write."
+     end /*do*/
+
+     /* name arguments */
+     fname=arg(1)
+     s=strip(arg(2))
+     k=strip(arg(3))
+
+     tname=fname||".tmp"
+     written=0
+
+     rslt=0
+     if _fileopenr(fname) then do
+      if _filenew(tname,"delete") then do
+       insection=0
+       linenum=0
+       do while \_fileeof(fname)
+        line=strip(linein(fname))
+        linenum=linenum+1
+        select
+         when line="["||s||"]" then do
+          insection=1
+          if linenum>1 then call lineout tname, ""
+          call charout tname, line
+          written=1
+         end /*when*/
+         when insection & left(line,length(k)+1)=k||"=" then nop
+         when insection & left(line,1)="[" then do
+          if linenum>1 then call lineout tname, ""
+          call charout tname, line
+          insection=0
+         end /*when*/
+         when line="" then call lineout tname, ""
+         otherwise do
+          if linenum>1 then call lineout tname, ""
+          call charout tname, line
+         end /*otherwise*/
+        end /*select*/
+       end /*do*/
+       call _fileclose(tname)
+      end /*if*/
+      call _fileclose(fname)
+     end /*if*/
+     if written then do
+      if \dosdel(fname) then call _error "file delete failed."
+      if \dosrename(tname,fname) then call _error "file rename failed."
+     end /*if*/
+    return written
+
+/** _listinstr v.3 **/
+    _listinstr: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _listinstr"
+     abbrlist=arg(1)
+     archetype=arg(2)
+     if arg(3,"E") then mode=arg(3)
+     else mode=""
+     if arg(4,"E") then delim=left(arg(4),1)
+     else delim=";"
+     if mode\="cs" then do
+      abbrlist=lower(abbrlist)
+      archetype=lower(archetype)
+     end /*if*/
+     rslt=0
+     if archetype="" then rslt=1
+     else do
+      do i=1 to _dwords(abbrlist,delim)
+       if pos(_dword(abbrlist,i,delim), archetype)>0 then do
+        rslt=1
+        leave
+       end /*if*/
+      end /*do*/
+     end /*else*/
+    return rslt
+
+/** _pad v.3 **/
+    _pad: procedure expose (globals)
+     rslt=arg(1)
+     if arg(2,"E") then w=arg(2); else return rslt
+     if \arg(3,"E") then m="l"; else m=lower(arg(3))
+     if \arg(4,"E") then p=" "; else p=left(arg(4),1)
+     select
+      when m="l" then rslt=left(rslt,w,p)
+      when m="r" then rslt=reverse(left(reverse(rslt),w,p))
+      when m="c" then rslt=center(rslt,w,p)
+      otherwise       rslt=left(rslt,w,p)
+     end /*select*/
+    return rslt
+
+/** _abbrv_words v.1 **/
+    _abbrv_words: procedure expose (globals)
+     rslt=""
+     if \arg(2,"E") then len=4
+     else len=arg(2)
+     do i=1 to words(arg(1))
+      w=word(arg(1),i)
+      select
+       when len<1 then nop
+       when len=1 then rslt=rslt||" "||left(w,1)
+       when len>2 then rslt=rslt||" "||left(w,1)||strip(left(_space(translate(substr(w,2),"          ","aeiouAEIOU"),0),len-1))
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     rslt=strip(rslt)
+    return rslt
+
+/** _get_planet_number v.2 **/
+    _get_planet_number: procedure expose (globals)
+     if arg(1,"E") then prompt=arg(1)
+                   else prompt=_synchronize()
+     select
+      when prompt="citadel" then do
+       if _sendwait("qd","Planet #")=640 then call _error "timeout"
+       parse value _grabit("in sector") with planet " in sector"
+       if _sendwait("c","Citadel command (?=help)")=640 then call _error "timeout"
+      end /*when*/
+      when prompt="computer_cit" then do
+       if _sendwait("qqd","Planet #")=640 then call _error "timeout"
+       parse value _grabit("in sector") with planet " in sector"
+       if _sendwait("cc","Computer command [")=640 then call _error "timeout"
+      end /*when*/
+      when prompt="corporate_cit" then do
+       if _sendwait("qqd","Planet #")=640 then call _error "timeout"
+       parse value _grabit("in sector") with planet " in sector"
+       if _sendwait("cx","Computer command [")=640 then call _error "timeout"
+      end /*when*/
+      when prompt="planet" then do
+       if _sendwait("d","Planet #")=640 then call _error "timeout"
+       parse value _grabit("in sector") with planet " in sector"
+      end /*when*/
+      otherwise planet=0
+     end /*select*/
+    return planet
+
+/** _ini_write_ship_catalog v.1 **/
+    _ini_write_ship_catalog: procedure expose (globals)
+     dname=arg(1)
+     call _twmsg "OFF"
+     call zocsend "cc"
+     if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+
+     /* setup ship array */
+     nextpage=0
+     ship.0=0
+     i=1
+     buflen=8*1024
+     done=0
+     do while \done
+
+      /* read catalog page into buffer */
+      call zocreceivebuf buflen
+      if i=1 then call zocsend "?"
+      else call zocsend "+"
+      if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+      buff=translate(zocreceivebuf(buflen),"  ",d2c(0)||d2c(10))
+      if length(buff)=buflen then call _error "buffer overflow"
+
+      /* parse ship catalog page */
+      j=ship.0
+      jj=1
+      ii=pos("<",buff,jj)
+      if ii>0 then jj=pos(d2c(13),buff,ii)
+      do while ii>0 & jj>0
+       parse value substr(buff,ii,jj-ii) with "<" letter "> " shipname
+       select
+        when i>1 & letter="A" & shipname=_dword(ship.1,3,";") then do
+         done=1
+         leave
+        end /*when*/
+        when shipname="Next Page" then nextpage=1
+        when shipname="To Leave" then nop
+        otherwise do
+         j=j+1
+         ship.j=i||";"||letter||";"||shipname
+        end /*otherwise*/
+       end /*select*/
+       ii=pos("<",buff,jj)
+       if ii>0 then jj=pos(d2c(13),buff,ii)
+       else jj=0
+      end /*do*/
+      ship.0=j
+
+      if \nextpage then done=1
+      i=i+1
+
+     end /*do*/
+
+     currentpage=1
+     do i=1 to ship.0
+
+      mshlds=0
+      mfigs=0
+      mfigattack=0
+      offodds=0
+      defodds=0
+
+      /* get ship description */
+      parse var ship.i page ";" letter ";" shipname
+      if page>currentpage then do
+       currentpage=page
+       call zocsend "+"
+       if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+       buff=translate(zocreceivebuf(buflen),"  ",d2c(0)||d2c(10))
+       if length(buff)=buflen then call _error "buffer overflow"
+      end /*if*/
+      call zocsend letter
+      if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+      buff=translate(zocreceivebuf(buflen),"  ",d2c(0)||d2c(10))
+      if length(buff)=buflen then call _error "buffer overflow"
+
+      line.i=_parse_ship_desc(buff)
+
+      /* parse ship description
+      ii=pos("Maximum Shields:",buff)
+      if ii>0 then jj=pos(d2c(13),buff,ii)
+      else jj=0
+      if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii)with "Maximum Shields:" mshlds
+
+      ii=pos("Max Fighters:",buff)
+      if ii>0 then jj=pos("Offensive Odds:",buff,ii)
+      else jj=0
+      if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Max Fighters:" mfigs
+      if jj>0 then kk=pos(":1",buff,jj)
+      else kk=0
+      if jj>0 & kk>0 then parse value substr(buff,jj,kk-jj) with "Offensive Odds:" offodds
+
+      ii=pos("Turns Per Warp:",buff)
+      if ii>0 then jj=pos("Defensive Odds:",buff,ii)
+      else jj=0
+      if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Turns Per Warp:" tpw
+      if jj>0 then kk=pos(":1",buff,jj)
+      else kk=0
+      if jj>0 & kk>0 then parse value substr(buff,jj,kk-jj) with "Defensive Odds:" defodds
+
+      ii=pos("Max Figs Per Attack:",buff)
+      if ii>0 then jj=pos("TransWarp Drive:",buff,ii)
+      else jj=0
+      if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Max Figs Per Attack:" mfigattack
+
+      ii=pos("Maximum Holds:",buff)
+      if ii>0 then jj=pos("Transport Range:",buff,ii)
+      else jj=0
+      if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Maximum Holds:" mholds
+      if jj>0 then kk=pos("Photon Missiles:",buff,jj)
+      else kk=0
+      if jj>0 & kk>0 then parse value substr(buff,jj,kk-jj) with "Transport Range:" range
+
+      mshlds=_space(translate(mshlds," ",","),0)
+      mfigs=_space(translate(mfigs," ",","),0)
+      mfigattack=_space(translate(mfigattack," ",","),0)
+      offodds=strip(offodds)
+      defodds=strip(defodds)
+      mholds=strip(mholds)
+      range=strip(range)
+      tpw=strip(tpw)
+      line.i=mshlds||";"||mfigs||";"||mfigattack||";"||offodds||";"||defodds||";"||mholds||";"||range||";"||tpw
+      */
+
+     end /*do*/
+
+     /* exit ship catalog */
+     call zocsend "qq"
+     if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+     call zocsend "|"
+     if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+
+     call _newline _ansi("bt;fwh")||"writing ship catalog to "||dname
+
+     shiplist="";
+     do i=ship.0 to 1 by -1
+      call zocwrite "."
+      shiptype=translate(strip(_dword(ship.i,3,";")),"____","|;=.")
+      if \_ini_write(dname,"settings","ship."||shiptype,line.i) then call _error "unable to write to "||dname
+      shiplist=shiptype||";"||shiplist
+     end /*do*/
+     if \_ini_write(dname,"settings","ship.key_long","base cost;max figs per attack;max holds;initial holds;max fighters;turns per warp;max mines;max genesis torps;transwarp drive;transport range;max shields;offensive odds;defensive odds;max beacons;long range scan;planet scanner;photon missiles") then call _error "unable to write to "||dname
+     if \_ini_write(dname,"settings","ship.key","1bcst;2mfgpa;3mhlds;4ihlds;5mfg;6tpw;7mmine;8mgent;9tw;10trng;11mshlds;12offodds;13defodds;14mbeac;15lrs;16ps;17phot") then call _error "unable to write to "||dname
+     pods=_mrequestlist("which ships are pods, or have no pod?",shiplist,";","c")
+     podlist=""
+     do i=1 to _dwords(pods,";")
+      if _dword(pods,i,";") then podlist=podlist||";"||_dword(shiplist,i,";")
+     end /*do*/
+     podlist=substr(podlist,2)
+     shiplist=_list_sort_by_length(left(shiplist,length(shiplist)-1),";")
+     call zocwrite "."
+     if \_ini_write(dname,"settings","shiplist",shiplist) then call _error "unable to write to "||dname
+     if \_ini_write(dname,"settings","podless",podlist) then call _error "unable to write to "||dname
+     call zocwriteln "."
+
+    return
+
+/** _stripcomma v.1 **/
+    _stripcomma: procedure expose (globals)
+     rslt=translate(_space(translate(arg(1),", "," ,"),0)," ",",")
+    return rslt
+
+    _set_msg: procedure expose (globals)
+     i=_msg.0
+     if i="_MSG.0" then do; _msg.=""; _msg.0=0; i=0; end
+     i=i+1; _msg.0=i; _msg=""
+     if arg(1,"E") then do; _msg.i=arg(1); _msg=arg(1); end;
+     if arg(2,"E") then _msg.i.!source=arg(2)
+     if arg(3,"E") then _msg.i.!comment=arg(3)
+    return i
+
+/** _fileready v.2 **/
+    _fileready: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileready"
+      when arg(1)="" then rslt=0
+      when stream(arg(1), "S")\="NOTREADY" then rslt=1
+      otherwise rslt=0
+     end /*select*/
+    return rslt
+
+/** _synchronize v.5 **/
+    _synchronize: procedure expose (globals)
+
+     if arg(1,"E") then checkcitprompts=arg(1); else checkcitprompts=1
+
+     synchw=_synchronize_vars("w")
+     synchr=_synchronize_vars("r")
+
+     call zocsend "&&"
+     ans=_waitmux("&&|Pausing is")
+     select
+      when ans=0 then return "unknown_text_entry"
+      when ans=1 then nop
+      when ans=640 then return "timeout"
+      otherwise nop
+     end /*select*/
+
+     ans=_waitmux(synchw)
+     select
+      when ans=640 then rslt="timeout"
+      when ans>0 then do
+       if _wait("Pausing is")=640 then call _error "timeout"
+      end /*when*/
+      otherwise nop
+     end /*select*/
+     rslt=_dword(synchr,ans+1,";")
+
+     select
+      when \checkcitprompts then nop
+      when rslt="computer" then do
+       call zocsend "q"
+       ans=_waitmux("Command [|Citadel command")
+       select
+        when ans=0 then nop
+        when ans=1 then rslt="computer_cit"
+        when ans=640 then call _error "timeout"
+        otherwise nop
+       end /*select*/
+       call zocsend "c"
+      end /*when*/
+      when rslt="corporate" then do
+       call zocsend "q"
+       ans=_waitmux("Command [|Citadel command")
+       select
+        when ans=0 then call zocsend "t"
+        when ans=1 then do
+         rslt="corporate_cit"
+         call zocsend "x"
+        end /*when*/
+        when ans=640 then call _error "timeout"
+        otherwise nop
+       end /*select*/
+      end /*when*/
+      otherwise nop
+     end /*select*/
+
+    return rslt
+
+    /* _parse_ship_desc v.1 */
+    _parse_ship_desc:  procedure expose (globals)
+     buff=arg(1)
+     rslt=""
+
+     i=pos("Basic Hold Cost:",buff)
+     j=pos(d2c(13),buff,i)
+     line.1=strip(substr(buff,i,j-i))
+     parse var line.1 ":" basicholdcost . ":" initialholds . ":" maximumshields .
+     basicholdcost=_stripcomma(strip(basicholdcost))
+     maximumshields=_stripcomma(strip(maximumshields))
+
+     i=pos("Main Drive Cost:",buff,j+1)
+     j=pos(d2c(13),buff,i)
+     line.2=strip(substr(buff,i,j-i))
+     parse var line.2 ":" maindrivecost . ":" maxfighters . ":" offensiveodds .
+     maindrivecost=_stripcomma(strip(maindrivecost))
+     maxfighters=_stripcomma(strip(maxfighters))
+     offensiveodds=_dword(strip(offensiveodds),1,":")
+
+     i=pos("Computer Cost:",buff,j+1)
+     j=pos(d2c(13),buff,i)
+     line.3=strip(substr(buff,i,j-i))
+     parse var line.3 ":" computercost . ":" turnsperwarp . ":" defensiveodds .
+     computercost=_stripcomma(strip(computercost))
+     defensiveodds=_dword(strip(defensiveodds),1,":")
+
+     i=pos("Ship Hull Cost:",buff,j+1)
+     j=pos(d2c(13),buff,i)
+     line.4=strip(substr(buff,i,j-i))
+     parse var line.4 ":" shiphullcost . ":" minemax . ":" beaconmax .
+     shiphullcost=_stripcomma(strip(shiphullcost))
+     minemax=strip(minemax)
+     beaconmax=strip(beaconmax)
+
+     i=pos("Ship Base Cost:",buff,j+1)
+     j=pos(d2c(13),buff,i)
+     line.5=strip(substr(buff,i,j-i))
+     parse var line.5 ":" shipbasecost . ":" genesismax . ":" longrangescan .
+     shipbasecost=_stripcomma(strip(shipbasecost))
+     genesismax=strip(genesismax)
+     longrangescan=pos("Y",strip(longrangescan))
+
+     i=pos("Max Figs Per Attack:",buff,j+1)
+     j=pos(d2c(13),buff,i)
+     line.6=strip(substr(buff,i,j-i))
+     parse var line.6 ":" maxfigsperattack . ":" transwarpdrive . ":" planetscanner .
+     maxfigsperattack=_stripcomma(strip(maxfigsperattack))
+     transwarpdrive=pos("Y",strip(transwarpdrive))
+     planetscanner=pos("Y",strip(planetscanner))
+
+     i=pos("Maximum Holds:",buff,j+1)
+     j=pos(d2c(13),buff,i)
+     line.7=strip(substr(buff,i,j-i))
+     parse var line.7 ":" maximumholds . ":" transportrange . ":" photonmissiles .
+     maximumholds=strip(maximumholds)
+     transportrange=strip(transportrange)
+     photonmissiles=pos("Y",strip(photonmissiles))
+
+     rslt=shipbasecost maxfigsperattack maximumholds initialholds maxfighters turnsperwarp minemax genesismax ,
+          transwarpdrive transportrange maximumshields offensiveodds defensiveodds beaconmax longrangescan ,
+          planetscanner photonmissiles
+     rslt=translate(rslt,";"," ")
+
+    return rslt
+
+    /*
+
+    Which ship are you interested in (?=List) ?
+    You shut off the Vid Term.
+
+    Computer command [TL=00:00:00]:[3156] (?=Help)? ;
+
+                                  Corporate FlagShip
+
+         Basic Hold Cost:   10,000   Initial Holds:     20 Maximum Shields: 1,500
+         Main Drive Cost:    5,000    Max Fighters: 20,000  Offensive Odds: 1.2:1
+           Computer Cost:  120,000  Turns Per Warp:      3  Defensive Odds: 1.2:1
+          Ship Hull Cost:   28,500        Mine Max:    100      Beacon Max:   100
+          Ship Base Cost:  163,500     Genesis Max:     10 Long Range Scan:   Yes
+     Max Figs Per Attack:     6000 TransWarp Drive:    Yes  Planet Scanner:   Yes
+           Maximum Holds:       85 Transport Range:     10 Photon Missiles:    No
+
+    Computer command [TL=00:00:00]:[3156] (?=Help)?
+    */
+
+/** _list_sort_by_length v.1 **/
+    _list_sort_by_length: procedure expose (globals)
+     list=arg(1)
+     if arg(2,"E") then delim=arg(2)
+                   else delim=";"
+     a.=""
+     do i=1 to _dwords(list,delim)
+      a.i=_dword(list,i,delim)
+     end /*do*/
+     do k=i-1 to 1 by -1
+      do j= 1 to k
+       j2=j+1
+       if length(a.j)<length(a.j2) then do
+        temp=a.j
+        a.j=a.j2
+        a.j2=temp
+       end /*if*/
+      end /*do*/
+     end /*do*/
+     list=a.1
+     i=2
+     do while a.i\=""
+      if list="" then list=a.i
+      else list=list||delim||a.i
+      i=i+1
+     end /*do*/
+    return list
+
+/** _synchronize_vars v.1 **/
+    _synchronize_vars: procedure expose (globals)
+     select
+      when arg(1)="w" then rslt="Pausing",
+                              ||"|Command [",
+                              ||"|Citadel command",
+                              ||"|Planet command",
+                              ||"|<StarDock>",
+                              ||"|ship to sell",
+                              ||"|Still interested ?",
+                              ||"|wish to buy? (A,B,C,Q,?)",
+                              ||"|<Galactic Bank>",
+                              ||"|<Hardware Emporium>",
+                              ||"|<Shipyards>",
+                              ||"|<Tavern>",
+                              ||"|Enter your choice [T] ?",
+                              ||"|do you want to sell [",
+                              ||"|do you want to buy [",
+                              ||"|Computer command",
+                              ||"|Corporate command",
+                              ||"|Colonists? [T]",
+                              ||"|Stop in this sector (Y,N,E,I,R,S,D,P,?) (?=Help) [N]",
+                              ||"|`",
+                              ||"|F: ",
+                              ||"|'",
+                              ||"|S: ",
+                              ||"|M: ",
+                              ||"|P: "
+      when arg(1)="r" then rslt="unknown;command;citadel;planet;stardock;ship_sell;ship_sell_interested;class_0",
+                             ||";bank;hardware;shipyards;tavern;port_menu;port_haggle;port_haggle;computer",
+                             ||";corporate;terra;stop_in_this_sector?;fedcom_text_entry_1;fedcom_text_entry_2",
+                             ||";subspace_text_entry_1;subspace_text_entry_2;mail_text_entry;private_text_entry",
+                             ||";corporate_cit;computer_cit;unknown_text_entry" /* <-- these unmatched in the wait string above */
+      when arg(1)="command" then rslt=" ; ;qq;q;q;qqq;nqq;q;qq;qq;qq;qq;q;0^Mz0^Mz0^M;0^Mz0^Mz0^M;q;q;q;y;^H;^M;^H;^M;^M;^M;qqq;qqq; "
+      when arg(1)="computer" then rslt=" ;c;c;qc;qc;qqqc;nqqc;qc;qqc;qqc;qqc;qqc;qc;0^Mz0^Mz0^Mc;0^Mz0^Mz0^Mc; ;qc;qc;yc;^Hc;^Mc;^Hc;^Mc;^Mc;^Mc;qc;qc; "
+      otherwise call _error "unknown argument in _synchronize_vars"
+     end /*select*/
+    return rslt

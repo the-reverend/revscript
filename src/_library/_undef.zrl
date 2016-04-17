@@ -1,0 +1,2 @@
+_undef: procedure expose (globals)
+ if arg(1)="##UNDEF##" then return 1; else return 0

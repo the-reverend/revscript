@@ -1,0 +1,8 @@
+/** _getversion v.2 **/
+_getversion: procedure expose (globals)
+ call zocsend "@"
+ if zocwait("Version ")=640 then call _error "timeout"
+ if zocwait("^M")=640 then call _error "timeout"
+ parse value _lastline() with gv1 gv2 gv3
+ rslt=gv1||";"||gv2||";"||gv3
+return rslt

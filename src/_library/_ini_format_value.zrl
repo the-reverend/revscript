@@ -1,0 +1,15 @@
+/** _ini_format_value **/
+_ini_format_value: procedure expose (globals)
+ v=arg(1)
+ if _dwords(v,"=")=2 then do
+  t=lower(_dword(v,1,"="))
+  v=_dword(v,2,"=")
+  select
+   when t="i" then v=_stripint(v)
+   when t="f" then v=_stripnum(v)
+   when t="b" then do; v=_stripint(v); if v>0 then v=1; else v=0; end
+   when t="s" then nop
+   otherwise nop
+  end /*select*/
+ end /*if*/
+return v

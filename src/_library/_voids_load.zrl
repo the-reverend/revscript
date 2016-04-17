@@ -1,0 +1,24 @@
+/** _voids_load v.1 **/
+/*- _voids_load [infile] -*/
+_voids_load: procedure expose (globals)
+ infile=arg(1)
+ _v.=0
+ c=0; n=1
+ if _fileopenr(infile) then do
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||"loading voids from" infile "... "
+  do while \_fileeof(infile)
+   n=word(strip(linein(infile)),1)
+   select
+    when _stripint(n)\=n then nop
+    when n<1 then nop
+    otherwise do
+     _v.n=1
+     c=c+1
+    end /*otherwise*/
+   end /*select*/
+  end /*do*/
+  call _fileclose(infile)
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||c||" voids loaded. "
+ end /*if*/
+ rslt=c n
+return rslt

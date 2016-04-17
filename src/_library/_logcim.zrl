@@ -1,0 +1,51 @@
+/** _logcim v.4 **/
+_logcim: procedure expose (globals)
+
+ path=arg(1)
+ fname=arg(2)
+ tasks=arg(3)
+ default=arg(4)
+
+ if zocgetinfo("VERSION")>=4.03 then call zoclogging 0, 1
+ else call zoclogging 0
+ call zocsend "^^?"
+ if zocwait("Interrogation Modes")=640 then call _error "timeout"
+ if zocwait(":")=640 then call _error "timeout"
+ call zocwriteln
+ call zocrespond "[Pause]", " "
+ t=_timeout(60)
+
+ do while tasks\=""
+
+  parse var tasks task ";" tasks
+  select
+   when task="portcim" then ext=".prt"
+   when task="sectorcim" then ext=".sct"
+   otherwise task=""
+  end /*select*/
+
+  if task\="" then do
+   if _fileexists(path||fname||ext) then call dosdel path||fname||ext
+   call zoclogname fname||ext
+   call zoclogging 1, 1
+   call _timeout 3000
+   select
+    when task="portcim" then call zocsend "r"
+    when task="sectorcim" then call zocsend "i"
+    otherwise nop
+   end /*select*/
+   if zocwait(":")=640 then call _error "timeout"
+   call zoclogging 0, 1
+  end /*if*/
+
+ end /*do*/
+
+ call _timeout t
+ call zocsend "q"
+ if zocwait("ENDINTERROG")=640 then call _error "timeout"
+ call zocrespond "[Pause]"
+ call zoclogname default
+ if zocgetinfo("VERSION")>=4.03 then call zoclogging 1, 1
+ else call zoclogging 1
+
+return

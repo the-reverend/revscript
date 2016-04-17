@@ -1,0 +1,14 @@
+/** _error v.9 **/
+/*- _error [msg] [,comment] -*/
+_error: procedure expose (globals)
+ call off halt
+ call _cleanup
+ call zocwrite _ansi("clearline;bt;frd")||"< script error ("||_g.!sname||" b."||_g.!sbuild||")"
+ if arg(1,"E") then call zocwrite " : "||arg(1)
+ call zocwriteln " >"
+ call zocwriteln _ansi("bt;fye")||"< if this is a serious problem, email me at: revhelper_at_thereverend_dot_org > "
+ call zocwriteln "< SCRIPT "||_g.!sname||", BUILD "||_g.!sbuild||", DATE "||_g.!sdate||" > "
+ call zocwriteln "< ZOC VERSION '"||zocgetinfo("VERSION")||"', OS '"||zocgetinfo("OSYS")||"', LOCATION '"||zocgetinfo("CONNECTEDTO")||"' >"
+ if arg(2,"E") then call zocwriteln _ansi("bt;fgr")||"< "||arg(2)||" >"
+ call _beep "error.wav"
+exit

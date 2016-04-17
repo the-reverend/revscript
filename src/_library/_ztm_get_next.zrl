@@ -1,0 +1,85 @@
+/** _ztm_get_next v.1 **/
+_ztm_get_next: procedure expose (globals)
+ a=arg(1); b=arg(2); m=arg(3); w=arg(4); ns=arg(5);
+ cr=d2c(13)
+ macro=""
+ select
+
+  when m="ow" then do
+   a=a+1
+   do i=a to ns
+    do j=1 to words(_s.i)
+     num=word(_s.i,j)
+     if num>b then do
+      b=num
+      if \_listin(i,_s.b," ") then macro=macro||"f"||b||cr||i||cr||"y"
+     end /*if*/
+    end /*if*/
+    b=0
+    if length(macro)>190 then leave
+   end /*do*/
+   a=i
+   if i>=ns then do; a=0; b=0; end;
+  end /*when*/
+
+  when m="sm" & w=0 then do
+   a=a+1
+   do i=a to ns
+    if _s.i="" then do
+     a=i
+     b=b-1
+     do j=b to 1 by -1
+      if words(_s.j)<=1 & j\=a & \_sv.j then do; b=j; leave; end;
+     end /*do*/
+     if j<=1 then b=ns
+     if a=b then b=b-1
+     macro=macro||"f"||a||cr||b||cr||"y"
+    end /*if*/
+    if length(macro)>190 then leave
+   end /*do*/
+   if i>=ns then do; a=0; b=0; end;
+  end /*when*/
+
+  when m="sm" & w=1 then do
+   a=a+1
+   do i=a to ns
+    if words(_s.i)<=1 & \_sv.i then do
+     a=i
+     b=b-1
+     do j=b to 1 by -1
+      if words(_s.j)=1 & j\=a & \_sv.j then do; b=j; leave; end;
+     end /*do*/
+     if j<=1 then b=ns
+     if a=b then b=b-1
+     if _s.a="" then macro=macro||"f"||a||cr||b||cr||"y"
+                else macro=macro||"s"||_s.a||cr||"f"||a||cr||b||cr||"yc"||_s.a||cr
+    end /*if*/
+    if length(macro)>170 then leave
+   end /*do*/
+   if i>=ns then do; a=0; b=0; end;
+  end /*when*/
+
+  when m="sm" then do
+   a=a+1
+   do i=a to ns
+    if words(_s.i)=w & \_sv.i then do
+     a=i
+     b=b-1
+     do j=b to 1 by -1
+      if words(_s.j)=1 & j\=a & \_sv.j then do; b=j; leave; end;
+     end /*do*/
+     if j<=1 then b=ns
+     if a=b then b=b-1
+     if _s.a="" then macro=macro||"f"||a||cr||b||cr||"y"
+                else macro=macro||"s"||zocstring("REPLACE",_s.a," ",cr||"s")||cr||"f"||a||cr||b||cr||"yc"||zocstring("REPLACE",_s.a," ",cr||"c")||cr
+    end /*if*/
+    if length(macro)>110 then leave
+   end /*do*/
+   if i>=ns then do; a=0; b=0; end;
+  end /*when*/
+
+  otherwise do; a=0; b=0; end;
+
+ end /*select*/
+ rslt=a||";"||b||";"||macro
+return rslt

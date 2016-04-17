@@ -1,0 +1,40 @@
+PLAYER GUIDELINES
+
+1  Terminology
+
+   GAME   = the ICE tournament
+   SYSOP  = gameop, sysop, co-sysop, etc. managing the GAME
+   SERVER = TWGS server hosting the GAME
+   PLAYER = a single player account registered in the GAME
+
+2  Accounts
+
+2.1 There shall be no duplicate accounts.  This rule shall be enforced by the SYSOP.  If a PLAYER legitimately shares an IP address with another PLAYER, both PLAYERS must demonstrate that legitimacy to the satisfaction of the SYSOP prior to the GAME start.
+
+2.2 PLAYERS shall only login to their own account.
+
+3  Conduct
+
+3.1 There shall be no bug use.  PLAYERS are prohibited from using flaws in TWGS.  Some questionable activities that are permitted include:  megarob, buyouts, alien farming, alien capping, exit/enter clearing, g-bonus mothing, and t-menu activity monitoring.
+
+3.2 There shall be no hacking.  PLAYERS shall only join corporations consisting of their own teammates.  In GAME psychological warfare, supspace eavesdropping, and social engineering is permitted.  Obtaining another PLAYER's login information by any means and using it is prohibited.
+
+4  Language
+
+4.1 PLAYERS shall respect the requests of other PLAYERS to refrain from offensive language regarding race, sex, or religion.  SYSOPS shall err on the side of the offended PLAYERS if problems persists.
+
+4.2 There shall be no spamming.  Spamming is any communication designed to overwhelm another PLAYER or the SERVER with high volume activity.
+
+5  Discipline
+
+5.1 Rule violators will be disciplined by the SYSOP.
+
+5.2 PLAYERS may report GAME irregularities or possible PLAYER cheating to the SYSOP for appropriate action.  If a PLAYER suspects cheating, un-edited GAME logs must be provided as evidence or no action will be taken.
+
+5.3 Infractions may be punished by temporary suspension or permanent removal of PLAYERs.
+
+6  Winning
+
+6.1 After 60 days, if more than one team is still contending, the team with the most net kills wins (kills minus deaths).
+
+6.2 Teams with zero kills cannot claim the win.

@@ -1,0 +1,20 @@
+/** _terracheck v.3 **/
+_terracheck: procedure expose (globals)
+ buflen=3*1024
+ call zocreceivebuf buflen
+ call zocsend "l1^Mq"
+ ans=_waitmux("You return to your ship|How many groups of Colonists")
+ select
+  when ans=0 then nop
+  when ans=1 then call zocsend "0^M"
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+ i=pos("There are currently ",buff)+20
+ if i>20 then j=pos(" colonists",buff,i)
+ else j=0
+ if i>20 & j>0 then avail=substr(buff,i,j-i)
+ else avail=0
+return avail

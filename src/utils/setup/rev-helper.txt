@@ -1,0 +1,27 @@
+welcome to rev-helper!
+
+to setup rev-helper for zoc, follow these steps:
+
+1) extract this archive to your zoc\script folder.
+2) open zoc.
+3) run the _setup.zrx script.
+4) save your session settings.
+5) save your program settings.
+
+it is as easy as that!  good luck and god speed!
+
+the reverend.
+
+REVISION HISTORY
+revision description
+-------- ----------------------------------------------------------------------
+15.11.02 initial release
+19.11.02 fixed problem with _login not storing the password under certain
+         circumstances.  fixed bust management in _rt.  modified _setup so that
+         it doesn't overwrite menu files when upgrading unless the user so
+         directs.
+02.05.03 major overhaul of data storage and released some new scripts.
+11.01.03 enhanced port negotiation, data management, expanded bot, bug fixes,
+         and speed improvements.  some new scripts released.
+08.03.04 bug fix release - compatible with twgs .55 only - .58 issues remain.
+15.03.04 bug fix release - stupid error in hardware emporium code

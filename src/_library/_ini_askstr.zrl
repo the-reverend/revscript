@@ -1,0 +1,17 @@
+/** _ini_askstr v.6 **/
+/*- _ini_askstr [msg], default, section, key -*/
+_ini_askstr: procedure expose (globals)
+ if \arg(1,"E") then msg="enter a string"; else msg=arg(1)
+ do i=2 to 4; if \arg(i,"E") then call _error "missing parameter in _ini_askstr"; end
+ default=arg(2)
+ section=arg(3); if left(section,1)\="!" then section="!"||section
+ key=arg(4); if left(key,1)\="!" then key="!"||key
+ if section="##EOF##" then rslt="##EOF##"
+ else rslt=_ini.section.key
+ select
+  when (rslt="##EOF##" | rslt="##UNDEF##") & msg="##DEFAULT##" then rslt=default
+  when  rslt="##EOF##" | rslt="##UNDEF##"                      then rslt=_askstr(msg||" ("||key||"=)",default,"c")
+  otherwise                                                         nop
+ end /*select*/
+ _ini.!section.!key=rslt
+return rslt

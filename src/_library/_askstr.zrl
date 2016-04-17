@@ -1,0 +1,18 @@
+/** _askstr v.1 **/
+/*- _askstr msg, default, flags -*/
+/*- v.1 tested -*/
+_askstr: procedure expose (globals)
+ do i=1 to 3
+  select
+   when i=1 & arg(i,"E") then msg=arg(i)
+   when i=1              then msg="enter an string:"
+   when i=2 & arg(i,"E") then default=arg(i)
+   when i=2              then default=""
+   when i=3 & arg(i,"E") then cflag=min(verify(lower(arg(i)),"c","M"),1)
+   when i=3              then cflag=0
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ rslt=zocask(msg, default)
+ if cflag & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+return rslt

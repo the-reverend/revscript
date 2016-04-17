@@ -1,0 +1,51 @@
+/** _joincorp v.2 **/
+_joincorp: procedure expose (globals)
+ success=1
+ num=arg(1)
+ pwd=arg(2)
+ if num=0 then call zocsend "xy"
+ else do
+  call zocsend "j"
+  ans=_waitmux("Which Corp|You are already on a Corp silly!")
+  select
+   when ans=0 then nop
+   when ans=1 then call zocsend "xyj"
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+  call zocsend num||"^M"
+  ans=_waitmux("Current Federal Regulations prohibit more than",
+            ||"|Sorry, you can only join a Corporation if your alignment doesn't conflict.",
+            ||"|Enter the Password to join")
+  select
+   when ans<=1 then success=0
+   when ans=2 then do
+    call zocsend pwd||"^M"
+    ans2=_waitmux("Welcome aboard!  You're in!",
+               ||"|Nice try, that has been recorded by Federal Intelligence.")
+    select
+     when ans2=0 then nop
+     when ans2=1 then success=0
+     when ans2=640 then call _error "timeout"
+     otherwise nop
+    end /*select*/
+   end /*when*/
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*else*/
+ if _wait("Corporate command")=640 then call _error "timeout"
+return success
+/*- Which Corp number do you wish to join? 11                                  -*/
+/*- Current Federal Regulations prohibit more than 6 Traders per Corp.         -*/
+/*- Corporate command [TL=00:00:00]:[67] (?=Help)?                             -*/
+/*-                                                                            -*/
+/*- Which Corp number do you wish to join? 5                                   -*/
+/*- Sorry, you can only join a Corporation if your alignment doesn't conflict. -*/
+/*- Corporate command [TL=00:00:00]:[521] (?=Help)?                            -*/
+/*-                                                                            -*/
+/*- Which Corp number do you wish to join? 2                                   -*/
+/*- Enter the Password to join - .                                             -*/
+/*- Nice try, that has been recorded by Federal Intelligence.                  -*/
+/*- For trying to break into this Corp your alignment went down by 1 point(s). -*/
+/*- Corporate command [TL=00:00:00]:[521] (?=Help)?                            -*/

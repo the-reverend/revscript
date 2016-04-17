@@ -1,0 +1,12 @@
+/** _watchcontinue v.2 **/
+_watchcontinue: procedure expose (globals)
+ pmpt=arg(1)
+ if pmpt="" then pmpt="Command ["
+ cont=1
+ call _onlineget
+ if zocwait(pmpt)=640 then call _error "timeout"
+ if _onlinereport() then do
+  call _beep "alert.wav"
+  cont=_yesno("online status changed - continue?")
+ end /*if*/
+return cont

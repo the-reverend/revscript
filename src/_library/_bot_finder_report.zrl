@@ -1,0 +1,42 @@
+_bot_finder_report: procedure expose (globals)
+  prefix=arg(1)
+  strt=arg(2)
+  findlist=arg(3)
+  srch=arg(4)
+  call zocsend "'^M"
+  do j=1 to words(findlist)
+   find=word(findlist,j)
+   msg=find
+   if _p.find\="" then msg=msg||" "||_dword(_p.find,1,";")
+   msg=msg||" ("||_nw.find-_nwi.find||"."||_nwi.find||":"||_dfrmsl.find||word("f",abs(_f.find-2))||word("d",abs(_od.find-2))||")"
+   if pos("r:1",srch)>0 then do
+    msg=msg||" "||_dist.find.strt||" hops"
+    path=translate(_path.find.strt," ",";")
+    n=word(path,1)
+    msg=msg||" "||n||word(".f",abs(_f.n-2))
+    do i=2 to words(path)
+     n=word(path,i)
+     msg=msg||">"||n||word(".f",abs(_f.n-2))
+    end /*do*/
+   end /*if*/
+   else do
+    msg=msg||" "||_dist.strt.find||" hops"
+    path=translate(_path.strt.find," ",";")
+    n=word(path,1)
+    msg=msg||" "||n||word(".f",abs(_f.n-2))
+    do i=2 to words(path)
+     n=word(path,i)
+     msg=msg||">"||n||word(".f",abs(_f.n-2))
+    end /*do*/
+   end /*else*/
+   line=prefix||" : "||msg
+   do while length(line)>70
+    i=lastpos(">",line,69)+1
+    call zocsend strip(left(line,i-1),t)||"^M"
+    line=substr(line,i)
+   end /*do*/
+   call zocsend line||"^M"
+   if _g.!autoex then _ex.find=1
+  end /*do*/
+  call zocsend "^M"
+return

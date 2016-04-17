@@ -1,0 +1,13 @@
+/** _cost_holds v.1 **/
+/*- _cost_holds current, num -*/
+/*- v.1 tested -*/
+_cost_holds: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _calc_holds"
+ cost=arg(1)
+ num=arg(2)
+ rslt=0
+ do i=1 to num
+  rslt=rslt+cost
+  cost=cost+20
+ end /*do*/
+return rslt

@@ -1,0 +1,16 @@
+/** _dsinfo v.2 **/
+/*- _dsinfo dslist, param -*/
+/*- v.2 tested -*/
+_dsinfo: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _dsinfo"
+ ds1=arg(1)
+ param=lower(arg(2))
+ parse var _d.ds1 dens "," nw "," haz "," anom ";" .
+ select
+  when param="d" then rslt=dens
+  when param="w" then rslt=nw
+  when param="n" then rslt=haz
+  when param="a" then rslt=anom
+  otherwise rslt=0
+ end /*select*/
+return rslt

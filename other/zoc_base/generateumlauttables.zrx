@@ -1,0 +1,52 @@
+/*REXX*/
+
+bit7= "[\]{|}~"
+ibm= "Ž™š„”á"
+latin= "ÄÖÜäöüß"
+linux= latin
+vt220= latin
+ansi= latin
+
+/* Generate ZOC ZTR tables for German Umlaut Conversion */
+
+call tableout "7bit_to_DosIBM.ztr", bit7, ibm
+call tableout "7bit_to_WinAnsi.ztr", bit7, latin
+call tableout "7bit_to_Vt220.ztr", bit7, vt220
+call tableout "7bit_to_Linux.ztr", bit7, linux
+call tableout "DosIBM_to_Ansi.ztr", ibm, ansi
+call tableout "WinAnsi_to_IBM.ztr", ansi, ibm
+call tableout "DosIBM_to_Vt220.ztr", ibm, vt220
+
+
+
+
+
+exit
+
+tableout:
+	n= arg(1)
+	x1= arg(2)
+	x2= arg(3)
+
+	/*
+	ZOC3.93 // TRANSLATE
+	// CHARACTER TRANSLATION TABLE (CHANGED ENTRIES ONLY)
+	// format: x|Old|New 
+	//         x= I (inward) or O (outward), Old/New in hex
+	*/
+
+	say n
+	address cmd "DEL "n ">NUL"
+	call lineout n, "ZOC3.93 // TRANSLATE"
+	do i=1 to length(x1)
+		c1= substr(x1, i,1)
+		c2= substr(x2, i,1)
+
+		call lineout n, "I|"c2x(c1)"|"c2x(c2)
+		call lineout n, "O|"c2x(c2)"|"c2x(c1)
+	end
+	say
+
+	return
+
+

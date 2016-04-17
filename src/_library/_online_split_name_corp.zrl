@@ -1,0 +1,10 @@
+_online_split_name_corp: procedure expose (globals)
+ name=arg(1)
+ parse value reverse(name) with temp1 "]" num "[" temp2
+ corp=0
+ if _stripint(num)=num & temp1="" & strip(temp2)\="" then do
+  corp=reverse(num)
+  name=reverse(substr(reverse(name),4+length(num)))
+ end /*if*/
+ rslt=name||";"||num
+return rslt

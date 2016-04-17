@@ -1,0 +1,4 @@
+/** _wait v.1 **/
+_wait: procedure expose (globals)
+ rslt=zocwait(arg(1))
+return rslt

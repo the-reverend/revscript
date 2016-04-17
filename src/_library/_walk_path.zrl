@@ -1,0 +1,32 @@
+/** _walk_path v.1 **/
+_walk_path: procedure expose (globals)
+ path=translate(arg(1)," ",";")
+ sd=arg(2)
+ if arg(3,"E") then bore=arg(3); else bore=0
+ if bore then parse value _getinfo("ore;hlds") with ore ";" holds
+ do i=2 to words(path)
+  nxt=word(path,i)
+  call _ds
+  parse var _d.nxt dens "," nwp "," haz "," anom ";" .
+  dens2=dens-haz*21
+  if \_sv.n then call _holoscan
+  select
+   when _ef.nxt then do; _v.nxt=1; return 0; end
+   when _v.nxt then return 0
+   when haz>5 then return 0
+   when anom then return 0
+   when dens2>100 then return 0
+   when dens2=100 & _p.nxt="" then return 0
+   when dens2>0 & dens2<100 then do; _v.nxt=1; return 0; end
+   otherwise nop
+  end
+  if nxt\=sd & nxt>10 then do; call zocsend "m"||nxt||"^Mznf1^Mzcdzn"; _f.nxt=1; end
+                      else call zocsend "m"||nxt||"^Mzn"
+  if bore then do
+   if ore<holds & _portmatch(_dword(_p.nxt,1,";"),"sxx") then do
+    call zocsend "pt^M^Mz0^Mz0^M"
+    ore=holds
+   end
+  end
+ end
+return 1

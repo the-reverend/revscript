@@ -1,0 +1,52 @@
+/** _ds v.3 **/
+_ds: procedure expose (globals)
+/*- Sector   1478  ==>            861  Warps : 4    NavHaz :    41%    Anom : No -*/
+/*- Sector   5327  ==>            100  Warps : 4    NavHaz :     0%    Anom : No -*/
+/*- Sector   5816  ==>            100  Warps : 2    NavHaz :     0%    Anom : No -*/
+/*- Sector   9315  ==>            100  Warps : 2    NavHaz :     0%    Anom : No -*/
+/*- Sector  10258  ==>              0  Warps : 4    NavHaz :     0%    Anom : No -*/
+/*- Sector  13732  ==>            100  Warps : 3    NavHaz :     0%    Anom : No -*/
+ if _d.1="_D.1" then _d.=""
+ line.=""
+ i=0
+ done=0
+ dsin=0
+ rslt=""
+
+ select
+  when \arg(1,"E") then call zocsend "sd"
+  when arg(1)=0 then call _error "no holoscanner"
+  when arg(1)=1 then call zocsend "s"
+  when arg(1)=2 then call zocsend "sd"
+  when arg(1)=3 then call zocsend arg(2)
+  otherwise call zocsend "sd"
+ end /*select*/
+ do while \done
+  ans=_waitmux("No|Yes|You don't have a long range scanner.|Relative Density Scan|(?=Help)? :")
+  select
+   when ans<2 & dsin then do
+    i=i+1
+    line.i=translate(strip(_lastline()),"  ","()")
+   end /*when*/
+   when ans=2 then done=1
+   when ans=3 then dsin=1
+   when ans=4 & dsin then done=1
+   when ans=4 then nop
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ max=i
+
+ rslt=""
+ do i=1 to max
+  parse var line.i . adj . dens . . nw . . haz . . anom .
+  dens=_stripcomma(dens)
+  haz=strip(translate(haz," ","%"))
+  if anom="No" then anom=0
+               else anom=1
+  parse var _d.adj last ";" .
+  _d.adj=dens||","||nw||","||haz||","||anom||";"||last
+  rslt=rslt||";"||adj
+ end /*do*/
+ rslt=substr(rslt,2)
+return rslt

@@ -1,0 +1,23 @@
+/** _sort_string v.1 **/
+/*- _sort_string str -*/
+/*- v.1 tested -*/
+_sort_string: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _sort_string"
+ ch.0=length(arg(1))
+ do i=1 to ch.0
+  ch.i=substr(arg(1),i,1)
+ end /*do*/
+ do i=1 to ch.0
+  do j=i to ch.0
+   if ch.i>ch.j then do
+    temp=ch.i
+    ch.i=ch.j
+    ch.j=temp
+   end /*if*/
+  end /*do*/
+ end /*do*/
+ rslt=""
+ do i=1 to ch.0
+  rslt=rslt||ch.i
+ end /*do*/
+return rslt

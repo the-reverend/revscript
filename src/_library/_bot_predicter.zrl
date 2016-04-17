@@ -1,0 +1,177 @@
+/** _bot_predicter v.1 **/
+_bot_predicter: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then return "INACTIVITY WARNING|entered sector.|activated|launched a P-Missile in sector"
+  when lower(arg(1))="build matrix" then do
+   if _sendwait("'building prediction matrix...^m","sent on sub-space")=640 then call _error "timeout"
+   mname=arg(2); reclen=arg(3); ns=arg(4); if arg(5,"E") then we=max(min(arg(5),5),1); else we=2
+   _ex.=0
+   _g.!autobuy=0; _g.!sectorcannon="##UNDEF##"; _g.!hide="f:1;d:1"
+   count=0
+   /* BUILD MATRIX HERE */
+   _sl.=0
+   do sn_a=1 to ns
+    call _mapseek mname, reclen, sn_a
+    if _f.sn_a & _s.sn_a\="" then do
+     do b=1 to _nw.sn_a
+      sn_d=0
+      code=word(_s.sn_a,b)
+      wt_b=code%20000 /* twarptype = (w_out, w_both, w_in); */
+      sn_b=code//20000
+      call _mapseek mname, reclen, sn_b
+      if _f.sn_b & wt_b<2 then do /* vector identified sn_a->sn_b */
+       /* check for at least one more warp out of sn_b */
+          nw=0
+          do c=1 to _nw.sn_b
+           code=word(_s.sn_b,c)
+           wt_c=code%20000 /* twarptype = (w_out, w_both, w_in); */
+           sn_c=code//20000
+           call _mapseek mname, reclen, sn_c
+           if sn_c\=sn_a & wt_c<2 then nw=nw+1
+          end /*do*/
+       /* given vector sn_a->sn_b, choose sn_c with an adjacent fig \=sn_b */
+          if nw>0 & nw<we then do /* we=width of error, we>1 means photon can miss */
+           _ex.=0
+           _ex.sn_b=1
+           do c=1 to _nw.sn_b
+            code=word(_s.sn_b,c)
+            wt_c=code%20000 /* twarptype = (w_out, w_both, w_in); */
+            sn_c=code//20000
+            if wt_c<2 & sn_c\=sn_a then do
+             af_c=_mapfind(sn_c, "r:1;f:1", mname, reclen, 1)
+             if af_c>0 then sn_d=af_c
+            end /*if*/
+            if sn_d>0 then leave
+           end /*do*/
+          end /*if*/
+       /* set vector boolean and pdrop/photon sectors */
+          if sn_d>0 then do
+           _sl.!vector.sn_a.sn_b=1
+           _sl.!pdrop.sn_a.sn_b=sn_d
+           _sl.!photon.sn_a.sn_b=sn_c
+           count=count+1
+/* call zocwriteln _ansi("clearline;bt;fwh") sn_a "->" sn_b "= drop" sn_d "and photon" sn_c */
+          end /*if*/
+      end /*if*/
+     end /*do*/
+    end /*if*/
+   end /*do*/
+   return count
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ line=arg(2)
+ user=arg(3)
+ cmd=arg(4)
+ args=arg(5)
+ name=arg(6)
+ mode=arg(7)
+ prompt=arg(8)
+ sector=arg(9)
+ planet=arg(10)
+ auth=arg(11)
+ abort=arg(12)
+ mname=arg(13)
+ reclen=arg(14)
+ select
+  when ans=0 & auth then do
+   select
+    when cmd="cannon" then do
+     damage=_stripint(word(args,1))
+     prompt=_synchronize()
+     select
+      when prompt\="citadel" then nop
+      when damage<0 then nop
+      when damage<=100 then do; _g.!sectorcannon=damage; call zocsend "ls"||damage||"^M"; end
+      otherwise _g.!sectorcannon=_set_sector_quasar_damage(damage, 30*400, prompt)
+     end /*select*/
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="hide" then do
+     _g.!hide=args
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="autobuy" then do
+     call _getinfo
+     prompt=_synchronize()
+     select
+      when _qs.!exp>999 then call zocsend "'bot owner must be fedsafe^m"
+      when _qs.!aln<1000 then call zocsend "'bot owner must be fed commissioned^m"
+      when _qs.!twarp="No" then call zocsend "'bot owner must have twarp^m"
+      otherwise do
+       planet=_get_planet_number(prompt)
+       _g.!autobuy=abs(_g.!autobuy-1)
+       call zocsend "'autobuy : "||word("off on", _g.!autobuy+1)||"^M"
+      end /*otherwise */
+     end /*select*/
+    end /*when*/
+    when cmd="status" then do
+     call zocsend "'^M  cannon  : "||_g.!sectorcannon||"^M",
+                   ||"  hide    : "||_g.!hide||"^M",
+                   ||"  autobuy : "||word("off on", _g.!autobuy+1)||"^M^M"
+    end /*when*/
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  when ans=1 then call zocsend "^["
+  when ans=2 | ans=3 then do
+   if ans=2 then do
+    parse var line temp "Deployed Fighters Report Sector " target ": " player "entered sector." .
+    if pos("'s",player)>0 then do
+     ship=substr(player,lastpos("'s",player)+3)
+     player=left(player,lastpos("'s",player)-1)
+    end /*if*/
+    else do
+     player="fighter"
+     ship=""
+    end /*else*/
+   end /*if*/
+   else do
+    parse var line temp "Limpet mine in " target " activated"
+    player="limpet"
+    ship=""
+   end /*else*/
+   _f.target=0
+   if strip(temp)="" then do
+    _sl.!fh.player.1=_sl.!fh.player.2
+    _sl.!fh.player.2=target
+    a=_sl.!fh.player.1
+    b=_sl.!fh.player.2
+    if _sl.!vector.a.b then do
+     c=_sl.!photon.a.b
+     d=_sl.!pdrop.a.b
+     if _f.d then do
+      call zocsend "p"||c||"^mycpy"||b||"^m^mqp"||d||"^mycpy"||c||"^m^mq"
+      call zocsend "'^mattempted to photon "||c||"->"||b||"^mattempted to photon "||d||"->"||c||"^m^m"
+      prompt=_synchronize()
+      call _getinfo
+      if d=_qs.!sect then do /* hide? */
+       _ex.d=1
+       select
+        when _g.!hide="" then nop
+        when _g.!hide=0 then nop
+        when _stripint(_g.!hide)=_g.!hide then call zocsend "p"||_g.!hide||"^My"
+        otherwise do
+         t=_mapfind(d, _g.!hide, mname, reclen, 255)
+         if t>0 then call zocsend "p"||t||"^My"
+        end /*otherwise*/
+       end /*select*/
+      end /*if*/
+      if _qs.!phot=0 then do /* autobuy? */
+       if _g.!autobuy then do
+        call zocsend "tf1000000^mqtnt1^mqf1^mcdy1^mqnsyypsgygqhp5^mp4^mp3^mp2^mp1^mqqn1yyl"||planet||"^mc@"
+        if _wait("Average Interval Lag:")=640 then call _error "timeout"
+        call _getinfo
+        if _qs.!phot=0 then call zocsend "'out of photons^M'mode finder ::^M"
+       end /*if*/
+       else call zocsend "'mode finder ::^M"
+      end /*if*/
+     end /*if*/
+    end /*if*/
+   end /*if*/
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=prompt planet
+return rslt

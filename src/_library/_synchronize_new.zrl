@@ -1,0 +1,66 @@
+/** _synchronize v.6 **/
+_synchronize: procedure expose (globals)
+
+ if arg(1,"E") then checkcitprompts=arg(1); else checkcitprompts=1
+
+ call zocsend d2c(145)
+ pmt=_grabit(d2c(145),"s")
+ select
+  when pmt="Command"           then rslt="command"
+  when pmt="Computer command"  then rslt="computer"
+  when pmt="Corporate command" then rslt="corporate"
+  when pmt=""                  then rslt="planet"
+  when pmt=""                  then rslt="stardock"
+  when pmt=""                  then rslt="ship_sell"
+  when pmt=""                  then rslt="ship_sell_interested"
+  when pmt=""                  then rslt="class_0"
+  when pmt=""                  then rslt="bank"
+  when pmt=""                  then rslt="hardware"
+  when pmt=""                  then rslt="shipyards"
+  when pmt=""                  then rslt="tavern"
+  when pmt=""                  then rslt="port_menu"
+  when pmt=""                  then rslt="port_haggle"
+  when pmt=""                  then rslt="port_haggle"
+  when pmt=""                  then rslt="computer"
+  when pmt=""                  then rslt="corporate"
+  when pmt=""                  then rslt="terra"
+  when pmt=""                  then rslt="stop_in_this_sector?"
+  when pmt="`"                 then rslt="fedcom_text_entry_1"
+  when pmt="F: "               then rslt="fedcom_text_entry_2"
+  when pmt="'"                 then rslt="subspace_text_entry_1"
+  when pmt="S: "               then rslt="subspace_text_entry_2"
+  when pmt="M: "               then rslt="mail_text_entry"
+  when pmt="P: "               then rslt="private_text_entry"
+  otherwise                         rslt="unknown"
+ end /*select*/
+ 
+ select
+  when \checkcitprompts then nop
+  when rslt="computer" then do
+   call zocsend "q"
+   ans=_waitmux("Command [|Citadel command")
+   select
+    when ans=0 then nop
+    when ans=1 then rslt="computer_cit"
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+   call zocsend "c"
+  end /*when*/
+  when rslt="corporate" then do
+   call zocsend "q"
+   ans=_waitmux("Command [|Citadel command")
+   select
+    when ans=0 then call zocsend "t"
+    when ans=1 then do
+     rslt="corporate_cit"
+     call zocsend "x"
+    end /*when*/
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  otherwise nop
+ end /*select*/
+
+return rslt

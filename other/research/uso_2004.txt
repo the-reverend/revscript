@@ -1,0 +1,113 @@
+USO 2003: Star Endeavors
+3 Blue Adept, Cherokee, FreeJack, <<Doctor Who>>, <<Overkill>>, Haolemon
+
+USO 2002: FeDcom NavHaz
+4 Xide, Gravedigr, hELLCAT, Hekate, Speedy, Rave
+
+USO 2001: GoodGuys
+4 Prestone, Zep, White Knight, The Reverend, Father Cajone, Banano
+
+USO 2000: Dominance Enterprises
+4 Eleq'Trizi'T, Rawhead Rex, Peacemaker, Retaliator, Ripclaw, Guardian 
+
+USO 1999: The Dark
+2 Peacemaker, Rawhead Rex, Leila, Zelda, Dietrich, Lyran
+ 
+USO Settings
+.
+MBBS mode
+6 man corps
+no death limit
+30 day game age
+50k colo regen
+100% port regen
+100% trade percent
+3 planets per sector, no ferrengal
+2 second photons, multi-fire on, fed off
+5000 sectors, plus 500 sectors for every corp that signs up
+unlimited fed parking for the first week, no fed parking after that
+.
+USO Scoring
+.
+ 50 points -- USO type planet, level 6 citadel, 6K colos, created by your corp
+200 points -- USO type planet, level 6 citadel, 6K colos, created by enemy corp
+-10 points -- any kind of death
+100 points -- player with zero deaths at the end of the game *
+100 points -- player with the most deaths at the end of the game *
+100 points -- player with the most experience at the end of the game *
+.
+ * in the case of a tie, each player will receive the full point bonus
+
+
+planets:
+
+Dominance Enterprises Earth
+30k/30k/30k colonists
+100k/100k/100k products
+3/7/13/10 production
+1M fighters
+1/1/1/1/3/0 citadels
+
+FeDcom NavHaz WastEland
+40k/40k/40k colonists
+200k/50k/10k products
+2/100/500/15 production
+1M fighters
+2/2/2/2/3/0 citadels
+
+Blue Adept Ocean
+200k/200k/200k colonists
+100k/1M/50k poducts
+20/2/100/15 production
+1M fighters
+1/2/1/4/3/0 citadels
+
+FreeJack Forest
+40k/40k/40k colonists
+200k/200k/100k products
+2/5/20/12 production
+1M fighters
+0/1/0/1/3/0 citadels
+
+Guardian's Glacier
+100k/100k/100k colonists
+20k/50k/10k products
+50/100/500/25 production
+1M fighters
+2/2/2/2/3/0 citadels
+
+Haolemon's Hell
+100k/0/100k colonists
+1M/10k/100k products
+1/0/500/50 production
+1M fighters
+1/1/1/2/3/0 citadels
+
+USO
+60k/30k/45k colonists
+1M/1M/1M products
+1/1/1/4 production
+1M fighters
+1/2/3/1/3/0 citadels
+
+
+<table>
+<tr><td><font size="-5">&nbsp;</font></td><td><font size="-5">name</font></td><td><font size="-5">base cost</font></td><td><font size="-5">turns per warp</font></td><td><font size="-5">init holds</font></td><td><font size="-5">max holds</font></td><td><font size="-5">max figs</font></td><td><font size="-5">max figs per attack</font></td><td><font size="-5">max shields</font></td><td><font size="-5">offensive odds</font></td><td><font size="-5">defensive odds</font></td><td><font size="-5">pt</font></td><td><font size="-5">mines</font></td><td><font size="-5">gt</font></td><td><font size="-5">det</font></td><td><font size="-5">clk</font></td><td><font size="-5">md</font></td><td><font size="-5">crb</font></td><td><font size="-5">epr</font></td><td><font size="-5">bc</font></td><td><font size="-5">tw</font></td><td><font size="-5">lrs</font></td><td><font size="-5">ps</font></td><td><font size="-5">th</font></td><td><font size="-5">idg</font></td><td><font size="-5">cs</font></td><td><font size="-5">land</font></td><td><font size="-5">pod</font></td><td><font size="-5">tr</font></td></tr>
+<tr><td><font size="-5">0</font></td><td><font size="-5"><< DW POD >></font></td><td><font size="-5">165,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">60</font></td><td><font size="-5">60</font></td><td><font size="-5"> 500 </font></td><td><font size="-5"> 500 </font></td><td><font size="-5">500</font></td><td><font size="-5">1.0</font></td><td><font size="-5">4.0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">5000</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">10</font></td></tr>
+<tr><td><font size="-5">1</font></td><td><font size="-5">Speedy Cruiser</font></td><td><font size="-5">95,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">90</font></td><td><font size="-5"> 10,000 </font></td><td><font size="-5"> 1,000 </font></td><td><font size="-5">1000</font></td><td><font size="-5">1.8</font></td><td><font size="-5">1.8</font></td><td><font size="-5">0</font></td><td><font size="-5">50</font></td><td><font size="-5">5</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">50</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td></tr>
+<tr><td><font size="-5">2</font></td><td><font size="-5">Xide Scout</font></td><td><font size="-5">119,000 </font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">30</font></td><td><font size="-5"> 5,000 </font></td><td><font size="-5"> 1,000 </font></td><td><font size="-5">100</font></td><td><font size="-5">3.0</font></td><td><font size="-5">3.0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1000</font></td><td><font size="-5">5</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td></tr>
+<tr><td><font size="-5">3</font></td><td><font size="-5">Prestone Antifreeze Frigate</font></td><td><font size="-5">168,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">60</font></td><td><font size="-5"> 10,000 </font></td><td><font size="-5"> 2,000 </font></td><td><font size="-5">1000</font></td><td><font size="-5">1.3</font></td><td><font size="-5">1.3</font></td><td><font size="-5">10</font></td><td><font size="-5">5</font></td><td><font size="-5">0</font></td><td><font size="-5">10</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">1000</font></td><td><font size="-5">5</font></td><td><font size="-5">5</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td></tr>
+<tr><td><font size="-5">4</font></td><td><font size="-5">Rawhead Rex BattleShip</font></td><td><font size="-5">383,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">120</font></td><td><font size="-5"> 80,000 </font></td><td><font size="-5"> 20,000 </font></td><td><font size="-5">10000</font></td><td><font size="-5">2.5</font></td><td><font size="-5">2.0</font></td><td><font size="-5">1</font></td><td><font size="-5">200</font></td><td><font size="-5">1</font></td><td><font size="-5">20</font></td><td><font size="-5">2</font></td><td><font size="-5">10</font></td><td><font size="-5">1000</font></td><td><font size="-5">5</font></td><td><font size="-5">50</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">8</font></td></tr>
+<tr><td><font size="-5">5</font></td><td><font size="-5">hELLCAT fLAGsHIP</font></td><td><font size="-5">434,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">30</font></td><td><font size="-5">140</font></td><td><font size="-5"> 100,000 </font></td><td><font size="-5"> 10,000 </font></td><td><font size="-5">2000</font></td><td><font size="-5">2.0</font></td><td><font size="-5">1.8</font></td><td><font size="-5">3</font></td><td><font size="-5">100</font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">2</font></td><td><font size="-5">10</font></td><td><font size="-5">1000</font></td><td><font size="-5">5</font></td><td><font size="-5">100</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td></tr>
+<tr><td><font size="-5">6</font></td><td><font size="-5">Gravedigr Body Hauler</font></td><td><font size="-5">290,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">65</font></td><td><font size="-5">255</font></td><td><font size="-5"> 200 </font></td><td><font size="-5"> 100 </font></td><td><font size="-5">5000</font></td><td><font size="-5">0.6</font></td><td><font size="-5">0.6</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">12</font></td></tr>
+<tr><td><font size="-5">7</font></td><td><font size="-5">BananoTran</font></td><td><font size="-5">76,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">60</font></td><td><font size="-5">125</font></td><td><font size="-5"> 400 </font></td><td><font size="-5"> 100 </font></td><td><font size="-5">100</font></td><td><font size="-5">1.0</font></td><td><font size="-5">1.0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">5</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">20</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td></tr>
+<tr><td><font size="-5">8</font></td><td><font size="-5">FC-FURB</font></td><td><font size="-5">73,000 </font></td><td><font size="-5">1</font></td><td><font size="-5">30</font></td><td><font size="-5">65</font></td><td><font size="-5"> 300 </font></td><td><font size="-5"> 100 </font></td><td><font size="-5">100</font></td><td><font size="-5">0.5</font></td><td><font size="-5">0.5</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">2</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">20</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td></tr>
+<tr><td><font size="-5">9</font></td><td><font size="-5">Peacemaker ISS</font></td><td><font size="-5">1,010,000 </font></td><td><font size="-5">3</font></td><td><font size="-5">40</font></td><td><font size="-5">230</font></td><td><font size="-5"> 120,000 </font></td><td><font size="-5"> 10,000 </font></td><td><font size="-5">2000</font></td><td><font size="-5">2.0</font></td><td><font size="-5">1.5</font></td><td><font size="-5">10</font></td><td><font size="-5">250</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td><td><font size="-5">2</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">150</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">8</font></td></tr>
+<tr><td><font size="-5">10</font></td><td><font size="-5">The Dark Gunstar</font></td><td><font size="-5">319,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">30</font></td><td><font size="-5">90</font></td><td><font size="-5"> 70,000 </font></td><td><font size="-5"> 10,000 </font></td><td><font size="-5">5000</font></td><td><font size="-5">1.2</font></td><td><font size="-5">1.2</font></td><td><font size="-5">1</font></td><td><font size="-5">50</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">5</font></td><td><font size="-5">10</font></td><td><font size="-5">1000</font></td><td><font size="-5">5</font></td><td><font size="-5">5</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">8</font></td></tr>
+<tr><td><font size="-5">11</font></td><td><font size="-5">rev-master</font></td><td><font size="-5">305,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">75</font></td><td><font size="-5"> 50,000 </font></td><td><font size="-5"> 5,000 </font></td><td><font size="-5">8000</font></td><td><font size="-5">2.8</font></td><td><font size="-5">1.2</font></td><td><font size="-5">5</font></td><td><font size="-5">50</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">10</font></td><td><font size="-5">2000</font></td><td><font size="-5">5</font></td><td><font size="-5">50</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">8</font></td></tr>
+<tr><td><font size="-5">12</font></td><td><font size="-5">SE Constellation</font></td><td><font size="-5">182,000 </font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">80</font></td><td><font size="-5"> 30,000 </font></td><td><font size="-5"> 2,000 </font></td><td><font size="-5">1000</font></td><td><font size="-5">1.8</font></td><td><font size="-5">1.8</font></td><td><font size="-5">0</font></td><td><font size="-5">25</font></td><td><font size="-5">2</font></td><td><font size="-5">20</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">1000</font></td><td><font size="-5">5</font></td><td><font size="-5">50</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">6</font></td></tr>
+<tr><td><font size="-5">13</font></td><td><font size="-5">CK Orion</font></td><td><font size="-5">138,000 </font></td><td><font size="-5">1</font></td><td><font size="-5">30</font></td><td><font size="-5">60</font></td><td><font size="-5"> 2,000 </font></td><td><font size="-5"> 250 </font></td><td><font size="-5">1000</font></td><td><font size="-5">1.1</font></td><td><font size="-5">1.1</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td><td><font size="-5">2</font></td><td><font size="-5">10</font></td><td><font size="-5">2000</font></td><td><font size="-5">5</font></td><td><font size="-5">20</font></td><td><font size="-5">1</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">8</font></td></tr>
+<tr><td><font size="-5">14</font></td><td><font size="-5">Dietrich Tholian</font></td><td><font size="-5">378,000 </font></td><td><font size="-5">4</font></td><td><font size="-5">10</font></td><td><font size="-5">40</font></td><td><font size="-5"> 40,000 </font></td><td><font size="-5"> 800 </font></td><td><font size="-5">0</font></td><td><font size="-5">1.0</font></td><td><font size="-5">1.0</font></td><td><font size="-5">1</font></td><td><font size="-5">50</font></td><td><font size="-5">1</font></td><td><font size="-5">20</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">20</font></td></tr>
+<tr><td><font size="-5">15</font></td><td><font size="-5">Elec'Tric'Mule</font></td><td><font size="-5">86,000 </font></td><td><font size="-5">1</font></td><td><font size="-5">50</font></td><td><font size="-5">150</font></td><td><font size="-5"> 300 </font></td><td><font size="-5"> 150 </font></td><td><font size="-5">600</font></td><td><font size="-5">0.5</font></td><td><font size="-5">0.5</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">20</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">5</font></td></tr>
+<tr><td><font size="-5">16</font></td><td><font size="-5">The GoodGuys IDC</font></td><td><font size="-5">1,010,000 </font></td><td><font size="-5">8</font></td><td><font size="-5">10</font></td><td><font size="-5">40</font></td><td><font size="-5"> 150,000 </font></td><td><font size="-5"> 10,000 </font></td><td><font size="-5">4000</font></td><td><font size="-5">1.2</font></td><td><font size="-5">1.2</font></td><td><font size="-5">0</font></td><td><font size="-5">200</font></td><td><font size="-5">10</font></td><td><font size="-5">5</font></td><td><font size="-5">1</font></td><td><font size="-5">10</font></td><td><font size="-5">0</font></td><td><font size="-5">5</font></td><td><font size="-5">100</font></td><td><font size="-5">0</font></td><td><font size="-5">2</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">1</font></td><td><font size="-5">0</font></td><td><font size="-5">1</font></td><td><font size="-5">20</font></td></tr>
+</table>

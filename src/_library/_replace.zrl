@@ -1,0 +1,12 @@
+/** _replace v.2 **/
+/*- _replace str, fnd, rep -*/
+/*- v.2 tested -*/
+_replace: procedure expose (globals)
+ if arg(1,"O") | arg(2,"O") | arg(3,"O") then call _error "missing argument in _replace"
+ rslt=arg(1)
+ n=pos(arg(2),rslt)
+ do while n>0
+  if n>0 then rslt=left(rslt,n-1)||arg(3)||substr(rslt,n+length(arg(2)))
+  n=pos(arg(2),rslt)
+ end /*do*/
+return rslt

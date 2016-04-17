@@ -1,0 +1,28 @@
+/** _calc_base_date v.3 **/
+/* v.3 tested */
+_calc_base_date: procedure expose (globals)
+
+ yr=arg(1); mm=arg(2); dd=arg(3); hr=arg(4); mn=arg(5); sc=arg(6)
+
+ /* leapyear? */
+    leapyear=abs((yr//4=0)-1)
+
+ /* day of year */
+    doy=dd
+    do i=1 to mm-1
+     doy=doy+_dword(_monthdays,i,";")
+    end /*do*/
+    if mm>2 & leapyear then doy=doy+1
+
+ /* base day since 2000 */
+    base=_baseday.yr-_baseday.2000+doy
+
+ /* seconds of day */
+    sod=((hr*60)+mn)*60+sc
+
+ /* base day in seconds */
+    base_sec=base*86400+sod
+
+ rslt=base||";"||doy||";"||sod||";"||base_sec
+
+return rslt

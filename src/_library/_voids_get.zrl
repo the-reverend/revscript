@@ -1,0 +1,36 @@
+/** _voids_get v.1 **/
+/*- _voids_get -*/
+_voids_get: procedure expose (globals)
+ _v.=0
+ c=0
+ buflen=32*1024
+ call zocreceivebuf buflen
+ if _sendwait("cx","<List Avoided Sectors>")=640 then call _error "timeout"
+ if _wait("Computer command")=640 then call _error "timeout"
+ call zocsend "q"
+ if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+ m=0; i=0; j=0
+ i=pos("<List Avoided Sectors>",buff)
+ i=pos(d2c(13),buff,i)+1
+ i=pos(d2c(13),buff,i)+1
+ j=pos(d2c(13),buff,i)
+ do while j>0
+  line=_space(substr(buff,i,j-i),1)
+  if line="" then leave
+  if line="No Sectors are currently being avoided." then leave
+  do k=1 to words(line)
+   s1=word(line,k)
+   if _stripint(s1)=s1 then do
+    _v.s1=1
+    c=c+1
+    m=max(m,s1)
+   end /*if*/
+  end /*do*/
+  i=j+1
+  j=pos(d2c(13),buff,i)
+ end /*do*/
+ if _verbose then call zocwrite _ansi("clearline;bt;fwh")||c||" voids read. "
+ rslt=c m
+return rslt

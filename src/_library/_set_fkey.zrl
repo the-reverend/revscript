@@ -1,0 +1,11 @@
+/** _set_fkey v.2 **/
+/*- _set_fkey trigger, reply -*/
+/*- v.1 tested -*/
+_set_fkey: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _add_autoreply"
+ num=arg(1)
+ mac=arg(2)
+ if num>23 | num<0 then return 0
+ label="FKey#"||copies("0",2-length(num))||num
+ call zocsetoption(label'="'||mac||'"')
+return 1

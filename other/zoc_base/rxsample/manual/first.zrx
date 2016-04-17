@@ -1,0 +1,5 @@
+/* REXX-Program: FIRST.ZRX */
+
+CALL ZocCls                      /* clear screen */
+CALL ZocWriteln "Hello World!"   /* print text */
+EXIT

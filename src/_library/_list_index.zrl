@@ -1,0 +1,11 @@
+/* _list_index v.2 */
+/*- _list_index find
+_list_index: procedure expose (globals)
+ find=arg(1)
+ list=arg(2)
+ if arg(4,"E") then d=arg(3); else d=";"
+ if arg(5,"E") then rslt=arg(4); else rslt=""
+ do i=1 to _dwords(list,d)
+  if find=_dword(list,i,d) then do; rslt=i; leave; end
+ end /*do*/
+return rslt

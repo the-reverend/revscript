@@ -1,0 +1,9 @@
+/** _pcheck v.4 **/
+_pcheck: procedure expose (globals)
+ pc1=arg(1)
+ pc2=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+ rslt=0
+ do i=1 to _dwords(pc1,";")
+  if _instr(_dword(pc1,i,";"),pc2,"cs") then rslt=1
+ end /*do*/
+return rslt

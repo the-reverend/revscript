@@ -1,0 +1,16 @@
+/** _load_ini_variables v.1 **/
+_load_ini_variables:
+   sl=_ini_load_settings()
+   do i=1 to _dwords(sl,";")
+    s=_dword(sl,i,";")
+    globals=globals||" !"||s
+    interpret '!'||s||'="!"||s'
+   end;
+   f=0; l=""
+   do i=1 to words(load)
+    s=word(load,i)
+    x="!"||s
+    interpret s||"=_ini.!settings.x"
+    interpret 'if '||s||'="##UNDEF##" then do; l=l s; f=1; end'
+   end; if f then call _error "missing config variable(s):"||l; drop s sl x f l
+return

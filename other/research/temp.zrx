@@ -1,0 +1,36 @@
+/* REXX */
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf165000^M2d2^M1c60^M2c60^M1d500^Mp500^Me500^M2e10^MI40^M1o0^Mf0^Mi0^Mk0^Mj1^Mn0^Ml5000^Mm0^Mh0^M3encydnfylnhninky2f10^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf95000^M2d2^M1c90^M2c20^M1d10000^Mp1000^Me1000^M2e18^MI18^M1o0^Mf50^Mi5^Mk0^Mj1^Mn10^Ml0^Mm5^Mh50^M3encydyfylnhniyky2f5^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf119000^M2d1^M1c30^M2c10^M1d5000^Mp1000^Me100^M2e30^MI30^M1o0^Mf0^Mi0^Mk0^Mj1^Mn0^Ml1000^Mm5^Mh10^M3encydyfylnhniyky2f5^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf168000^M2d2^M1c60^M2c20^M1d10000^Mp2000^Me1000^M2e13^MI13^M1o10^Mf5^Mi0^Mk10^Mj1^Mn10^Ml1000^Mm5^Mh5^M3eycydyfylnhniyky2f5^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf383000^M2d2^M1c120^M2c20^M1d80000^Mp20000^Me10000^M2e25^MI20^M1o1^Mf200^Mi1^Mk20^Mj2^Mn10^Ml1000^Mm5^Mh50^M3eycydyfylnhniyky2f8^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf434000^M2d2^M1c140^M2c30^M1d100000^Mp10000^Me2000^M2e20^MI18^M1o3^Mf100^Mi2^Mk20^Mj2^Mn10^Ml1000^Mm5^Mh100^M3eycydyfylnhniyky2f10^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf290000^M2d2^M1c255^M2c65^M1d200^Mp100^Me5000^M2e6^MI6^M1o0^Mf0^Mi5^Mk0^Mj1^Mn0^Ml0^Mm5^Mh10^M3encydyfylyhniyky2f12^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf76000^M2d2^M1c125^M2c60^M1d400^Mp100^Me100^M2e10^MI10^M1o0^Mf1^Mi2^Mk5^Mj1^Mn0^Ml0^Mm5^Mh20^M3eycydyfylnhniyky2f5^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf73000^M2d1^M1c65^M2c30^M1d300^Mp100^Me100^M2e5^MI5^M1o0^Mf2^Mi2^Mk0^Mj1^Mn0^Ml0^Mm5^Mh20^M3encydyfylnhniyky2f5^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf1010000^M2d3^M1c230^M2c40^M1d120000^Mp10000^Me2000^M2e20^MI15^M1o10^Mf250^Mi1^Mk5^Mj2^Mn10^Ml0^Mm5^Mh150^M3eycydyfylnhyiyky2f8^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf319000^M2d2^M1c90^M2c30^M1d70000^Mp10000^Me5000^M2e12^MI12^M1o1^Mf50^Mi1^Mk10^Mj5^Mn10^Ml1000^Mm5^Mh5^M3eycydyfylnhniyky2f8^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf305000^M2d2^M1c75^M2c20^M1d50000^Mp5000^Me8000^M2e28^MI12^M1o5^Mf50^Mi1^Mk0^Mj2^Mn10^Ml2000^Mm5^Mh50^M3eycydyfylnhniyky2f8^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf182000^M2d2^M1c80^M2c20^M1d30000^Mp2000^Me1000^M2e18^MI18^M1o0^Mf25^Mi2^Mk20^Mj1^Mn10^Ml1000^Mm5^Mh50^M3encydyfylnhniyky2f6^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf138000^M2d1^M1c60^M2c30^M1d2000^Mp250^Me1000^M2e11^MI11^M1o0^Mf5^Mi1^Mk5^Mj2^Mn10^Ml2000^Mm5^Mh20^M3eycydyfylnhniyky2f8^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf378000^M2d4^M1c40^M2c10^M1d40000^Mp800^Me0^M2e10^MI10^M1o1^Mf50^Mi1^Mk20^Mj1^Mn10^Ml0^Mm5^Mh10^M3encydyfylyhniykn2f20^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf86000^M2d1^M1c150^M2c50^M1d300^Mp150^Me600^M2e5^MI5^M1o0^Mf0^Mi1^Mk0^Mj1^Mn0^Ml0^Mm5^Mh20^M3encydyfylnhniyky2f5^M>y"
+call zocwait("Save this ship class? (Y/N)")
+call zocsend "3mnnyonpn4c0^Md0^Me0^Mf1010000^M2d8^M1c40^M2c10^M1d150000^Mp10000^Me4000^M2e12^MI12^M1o0^Mf200^Mi10^Mk5^Mj1^Mn10^Ml0^Mm5^Mh100^M3encydyfylnhyiykn2f20^M>y"
+call zocwait("Save this ship class? (Y/N)")
+exit

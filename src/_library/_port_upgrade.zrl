@@ -1,0 +1,13 @@
+/** _port_upgrade v.1 **/
+_port_upgrade: procedure expose (globals)
+ product=arg(1); amount=_roundup(arg(2))
+ if arg(3,"E") then mode=arg(3); else mode=0
+ cost="250 500 900"; noexp="9 4 3"; noaln="19 9 6"
+ noe=word(noexp,product); noa=word(noaln,product)
+ select
+  when mode=1 then call zocsend "o" copies(product||noe||"^M ",amount%noe) word(product||amount//noe||"^Mq q",(amount//noe=0)+1)
+  when mode=2 then call zocsend "o" copies(product||noa||"^M ",amount%noa) word(product||amount//noa||"^Mq q",(amount//noa=0)+1)
+  otherwise call zocsend "o" product||amount||"^M q"
+ end /*select*/
+ if _wait("Command [")=640 then call _error "timeout"
+return amount*word(cost,product)

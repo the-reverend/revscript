@@ -1,0 +1,43 @@
+LEAGUE  SYSOP
+FREQUENTLY ASKED QUESTIONS
+(F.A.Q.)
+
+Q:  What are the requirements for a League game?
+
+A:  You must create the game at least 7 days from the game's start date.  You will either input the game's description and winning 'goal' in the description box provided or you will put a link to a website with this information in that space.  You may care to specify if this is a league only game or open game.  (League only means only league members can play.)
+
+Q:  How do I report an instance of a problem with a game or league player?
+
+A:  Login to the League site and choose the option to 'E-mail the League Board'.  Every member on the board will get an e-mail and your complaint will be followed up within 24 hours.  If this problem concerns a League player, it is asked that you change their password until the issue has been resolved instead of banning or deleting their account.  This results in an even more stressful and unresolvable situation. 
+
+Q:  Are league games only for league players? 
+
+A:  No and Yes.  You can have a League game that is closed from day one meaning that all players will have to join from the League site and you will then ask for the e-mails of the players signed up for your game no less than 24 hours before the game starts in order to e-mail them their passwords.  You can also have an 'open' game for everyone to play, but this game has to be closed on day 7 to any new players.
+
+Q:  How do I get a list of player's e-mails that have joined my game?
+
+A:  Click on the 'Login' link from the menu at the top.  Once you have logged in click on the 'Add/Edit/Close' link at the top.  If you have a game running or have just created a game you will see a button that reads 'Player E-mail List'.  Clicking on this button will direct you to a page that will have the players names and e-mails.  Remember, this is a courtesy and any misuse will result in revocation of the option.  The player's want their privacy, lets try to give them that.  Use their e-mails for official league use only.
+
+Q:  Once my game has ended how do I submit the game winners?
+
+A:   Login to the League site and choose the option that reads 'Add/Edit/Close League Game'.  You will notice that your games at the bottom will have the button option reading 'Submit Game Winners'.  Click on this button and read the next form CAREFULLY!!  There is no correcting a form processed incorrectly. 
+
+Q:  How do I get my server rating up? 
+
+A:  Your server rating comes from the users that played League games on your server.  Your server could have had problems, or maybe the user just didn't like you.  After a period of time your rating will go up as one user doesn't have that much power to change your rating unless that is the only user to vote. 
+
+Q: How do I quit the league? 
+
+A:  Login and send the board an e-mail or just send an e-mail to ANY board member requesting to withdraw from the League. 
+
+Q:  Can I also be a League Player?  
+
+A:  Yes.  You will have to join the League as a player also and you can use the same username that you have as a sysop if you wish.
+
+Q:  Can I change my username? 
+
+A:  No.  However, if this is an extreme circumstance e-mail the League board and send a reason why you need your username changed.  A response will be sent back within 24 hours.
+
+Q:  How do I get my password if I forgot it? 
+
+A:  Click on the 'Login' link from the menu at the top.  Below the Submit button you will see a link that says 'Lost Password?'.  Click on that and follow the directions.  It will be e-mailed to your address on record.  If your e-mail address has changed you will need to contact the league board.

@@ -1,0 +1,18 @@
+/** _abbrv_words v.1 **/
+/*- _abbrv_words string [, len] -*/
+/*- v.1 tested -*/
+_abbrv_words: procedure expose (globals)
+ rslt=""
+ if \arg(2,"E") then len=4
+ else len=arg(2)
+ do i=1 to words(arg(1))
+  w=word(arg(1),i)
+  select
+   when len<1 then nop
+   when len=1 then rslt=rslt||" "||left(w,1)
+   when len>2 then rslt=rslt||" "||left(w,1)||strip(left(_space(translate(substr(w,2),"          ","aeiouAEIOU"),0),len-1))
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ rslt=strip(rslt)
+return rslt

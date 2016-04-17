@@ -1,0 +1,25 @@
+/* REXX __void.zrx by the reverend (build 4)                                  */
+/*-       built by rev-builder version 1.3a on 17 Oct 2003 at 12:59:30       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*-                       Copyright (C) 2003 Ron Wilson                      -*/
+/*-                                                                          -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author. Your use of    -*/
+/*- this script is governed by the terms of the REV-LICENSE.                 -*/
+/*-                                                                          -*/
+/*- This program is provided to you WITHOUT ANY WARRANTY, even the implied   -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the -*/
+/*- REV-LICENSE for more details.                                            -*/
+/*-                                                                          -*/
+/*-                A copy of the REV-LICENSE is available at:                -*/
+/*-       http://thereverend.coastgames.com/tradewars/rev-license.html       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ----------------------*/ _g.!sname="__void.zrx" /*---------------------- -*/
+/*- ---------------*/ _g.!sbuild=4; _g.!sdate="2003-10-17" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+ call zocsend "^^s42^Ms172^Ms250^Ms516^Ms595^Ms737^Ms1023^Ms1088^Ms1203^Ms1397^Mq"
+ call zocsend "^^s1902^Ms1992^Ms2218^Ms2260^Ms2302^Ms2538^Ms2615^Ms2650^Ms2724^Ms2937^Mq"
+ call zocsend "^^s3103^Ms3165^Ms3316^Ms3346^Ms3376^Ms3723^Ms3814^Ms3901^Ms4297^Ms4533^Mq"
+ call zocsend "^^s4796^Ms5000^Mq"
+exit

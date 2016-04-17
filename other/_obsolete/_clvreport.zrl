@@ -1,0 +1,56 @@
+/** _clvreport v.3 **/
+/*- _clvreport -*/
+/*- v.3 tested -*/
+_clvreport: procedure expose (globals)
+
+ msg.=""
+ if _verbose then msg.1="REV-SCRIPT:  clv update^M"
+             else msg.1=""
+ exptag="EXP"
+ alntag="ALN"
+ shiptag="SHIP"
+ corptag="CORP"
+ deltag="PLAYER DELETED"
+ explimit=5
+ alnlimit=5
+
+ do i=1 to _clvlist1.0
+  found=0
+  do j=1 to _clvlist2.0
+   if _dword(_clvlist1.i,1,";")=_dword(_clvlist2.j,1,";") then do
+    found=1
+    dexp=_dword(_clvlist1.i,2,";")-_dword(_clvlist2.j,2,";")
+    select
+     when dexp=0 then nop
+     when dexp>explimit then msg.2=msg.2||" "||exptag||": "||_dword(_clvlist1.i,1,";")||" gained "||dexp||" exp.^M"
+     when dexp<-explimit then msg.2=msg.2||" "||exptag||": "||_dword(_clvlist1.i,1,";")||" lost "||abs(dexp)||" exp.^M"
+     otherwise _clvlist1.i=_dword(_clvlist1.i,1,";")||";"||_dword(_clvlist2.j,2,";")||";"||_dword(_clvlist1.i,3,";")||";"||_dword(_clvlist1.i,4,";")||";"||_dword(_clvlist1.i,5,";")
+    end /*select*/
+    daln=_dword(_clvlist1.i,3,";")-_dword(_clvlist2.j,3,";")
+    select
+     when daln=0 then nop
+     when daln>alnlimit then msg.2=msg.2||" "||alntag||": "||_dword(_clvlist1.i,1,";")||" gained "||daln||" align.^M"
+     when daln<-alnlimit then msg.2=msg.2||" "||alntag||": "||_dword(_clvlist1.i,1,";")||" lost "||abs(daln)||" align.^M"
+     otherwise _clvlist1.i=_dword(_clvlist1.i,1,";")||";"||_dword(_clvlist1.i,2,";")||";"||_dword(_clvlist2.j,3,";")||";"||_dword(_clvlist1.i,4,";")||";"||_dword(_clvlist1.i,5,";")
+    end /*select*/
+    if _dword(_clvlist1.i,4,";")\=_dword(_clvlist2.j,4,";") then do
+     select
+      when _dword(_clvlist1.i,4,";")=0 then msg.2=msg.2||" "||corptag||": "||_dword(_clvlist1.i,1,";")||" left corp "||_dword(_clvlist2.j,4,";")||".^M"
+      when _dword(_clvlist2.j,4,";")=0 then msg.2=msg.2||" "||corptag||": "||_dword(_clvlist1.i,1,";")||" joined corp "||_dword(_clvlist1.i,4,";")||".^M"
+      otherwise msg.2=msg.2||" "||corptag||": "||_dword(_clvlist1.i,1,";")||" switched from corp "||_dword(_clvlist2.j,4,";")||" to "||_dword(_clvlist1.i,4,";")||".^M"
+     end /*select*/
+    end /*if*/
+    if _dword(_clvlist1.i,5,";")\=_dword(_clvlist2.j,5,";") then msg.2=msg.2||" "||shiptag||": "||_dword(_clvlist1.i,1,";")||" is now in a "||_dword(_clvlist1.i,5,";")||".^M"
+    leave
+   end /*if*/
+  end /*do*/
+  if \found then msg.2=msg.2||" "||deltag||": "||_dword(_clvlist1.i,1,";")||"^M"
+ end /*do*/
+
+ if msg.2="" then rslt=0
+ else do
+  rslt=1
+  call zocsend "'^M"||msg.1||msg.2||"^M"
+ end /*else*/
+
+return rslt

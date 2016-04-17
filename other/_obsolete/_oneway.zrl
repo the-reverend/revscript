@@ -1,0 +1,11 @@
+/** _oneway **/
+_oneway:
+ owfrom=arg(1)
+ owto=arg(2)
+ owr=1
+ owtemp=s.owto
+ do while owtemp\=""
+  parse var owtemp owsec ";" owtemp
+  if owsec=owfrom then owr=0
+ end /* do */
+return owr

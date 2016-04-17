@@ -1,0 +1,25 @@
+/** _getviews v.1 **/
+/*- _getviews fname -*/
+_getviews: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _getviews"
+ fname=arg(1)
+ _vs.=0
+ _vn.="(na)"
+ _vi.=""
+ c=0
+ if _fileopenr(fname) then do
+  call zocwrite _ansi("clearline;bt;fwh")||"reading views... "
+  do while \_fileeof(fname)
+   line=linein(fname)
+   if line\="" then do
+    parse var line vs . s . note . . . . info
+    _vs.s=vs
+    _vn.s=note
+    _vi.s=info
+    c=c+1
+   end /*if*/
+  end /*do*/
+  call _fileclose(fname)
+  call zocwrite _ansi("clearline;bt;fwh")||c||" views read. "
+ end /*if*/
+return c

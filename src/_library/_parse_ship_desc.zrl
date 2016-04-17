@@ -1,0 +1,92 @@
+/* _parse_ship_desc v.1 */
+_parse_ship_desc:  procedure expose (globals)
+ buff=arg(1)
+ rslt=""
+
+/*-     Basic Hold Cost:      500   Initial Holds:      1 Maximum Shields:12,000 -*/
+ i=pos("Basic Hold Cost:",buff)
+ j=pos(d2c(13),buff,i)
+ line.1=strip(substr(buff,i,j-i))
+ parse var line.1 ":" basicholdcost . ":" initialholds . ":" maximumshields .
+ basicholdcost=_stripcomma(strip(basicholdcost))
+ maximumshields=_stripcomma(strip(maximumshields))
+
+/*-     Main Drive Cost:1,000,246    Max Fighters:100,000  Offensive Odds: 0.8:1 -*/
+ i=pos("Main Drive Cost:",buff,j+1)
+ j=pos(d2c(13),buff,i)
+ line.2=strip(substr(buff,i,j-i))
+ parse var line.2 ":" maindrivecost . ":" maxfighters . ":" offensiveodds .
+ maindrivecost=_stripcomma(strip(maindrivecost))
+ maxfighters=_stripcomma(strip(maxfighters))
+ offensiveodds=_dword(strip(offensiveodds),1,":")
+
+/*-       Computer Cost:    4,700  Turns Per Warp:      6  Defensive Odds: 0.8:1 -*/
+ i=pos("Computer Cost:",buff,j+1)
+ j=pos(d2c(13),buff,i)
+ line.3=strip(substr(buff,i,j-i))
+ parse var line.3 ":" computercost . ":" turnsperwarp . ":" defensiveodds .
+ computercost=_stripcomma(strip(computercost))
+ defensiveodds=_dword(strip(defensiveodds),1,":")
+
+/*-      Ship Hull Cost:    5,000        Mine Max:      0      Beacon Max:     0 -*/
+ i=pos("Ship Hull Cost:",buff,j+1)
+ j=pos(d2c(13),buff,i)
+ line.4=strip(substr(buff,i,j-i))
+ parse var line.4 ":" shiphullcost . ":" minemax . ":" beaconmax .
+ shiphullcost=_stripcomma(strip(shiphullcost))
+ minemax=strip(minemax)
+ beaconmax=strip(beaconmax)
+
+/*-      Ship Base Cost:   14,446     Genesis Max:      0 Long Range Scan:   Yes -*/
+ i=pos("Ship Base Cost:",buff,j+1)
+ j=pos(d2c(13),buff,i)
+ line.5=strip(substr(buff,i,j-i))
+ parse var line.5 ":" shipbasecost . ":" genesismax . ":" longrangescan .
+ shipbasecost=_stripcomma(strip(shipbasecost))
+ genesismax=strip(genesismax)
+ longrangescan=pos("Y",strip(longrangescan))
+
+/*- Max Figs Per Attack:1,000,000 TransWarp Drive:     No  Planet Scanner:    No -*/
+ i=pos("Max Figs Per Attack:",buff,j+1)
+ j=pos(d2c(13),buff,i)
+ line.6=strip(substr(buff,i,j-i))
+ parse var line.6 ":" maxfigsperattack . ":" transwarpdrive . ":" planetscanner .
+ maxfigsperattack=_stripcomma(strip(maxfigsperattack))
+ transwarpdrive=pos("Y",strip(transwarpdrive))
+ planetscanner=pos("Y",strip(planetscanner))
+
+/*-       Maximum Holds:        5 Transport Range:      0 Photon Missiles:    No -*/
+ i=pos("Maximum Holds:",buff,j+1)
+ j=pos(d2c(13),buff,i)
+ line.7=strip(substr(buff,i,j-i))
+ parse var line.7 ":" maximumholds . ":" transportrange . ":" photonmissiles .
+ maximumholds=strip(maximumholds)
+ transportrange=strip(transportrange)
+ photonmissiles=pos("Y",strip(photonmissiles))
+
+ rslt=shipbasecost maxfigsperattack maximumholds initialholds maxfighters turnsperwarp minemax genesismax ,
+      transwarpdrive transportrange maximumshields offensiveodds defensiveodds beaconmax longrangescan ,
+      planetscanner photonmissiles
+ rslt=translate(rslt,";"," ")
+
+return rslt
+
+/*
+
+Which ship are you interested in (?=List) ?
+You shut off the Vid Term.
+
+Computer command [TL=00:00:00]:[3156] (?=Help)? ;
+
+                              Corporate FlagShip
+
+     Basic Hold Cost:   10,000   Initial Holds:     20 Maximum Shields: 1,500
+     Main Drive Cost:    5,000    Max Fighters: 20,000  Offensive Odds: 1.2:1
+       Computer Cost:  120,000  Turns Per Warp:      3  Defensive Odds: 1.2:1
+      Ship Hull Cost:   28,500        Mine Max:    100      Beacon Max:   100
+      Ship Base Cost:  163,500     Genesis Max:     10 Long Range Scan:   Yes
+ Max Figs Per Attack:     6000 TransWarp Drive:    Yes  Planet Scanner:   Yes
+       Maximum Holds:       85 Transport Range:     10 Photon Missiles:    No
+
+Computer command [TL=00:00:00]:[3156] (?=Help)?
+*/

@@ -1,0 +1,31 @@
+/* REXX-Program: LOGIN.ZRX */
+
+CALL ZocCls                 /* clear screen */
+
+CALL ZocTimeout 60          /* max. time to wait for something */
+
+CALL ZocWait "Press <ESC>"
+CALL ZocSend "^["           /* ^[ is the code for the ESC key */
+
+CALL ZocWait "Name?"
+CALL ZocSend "Joe User^M"   /* don't forget ^M after the name */
+
+CALL ZocWait "[Yes/No]"
+CALL ZocSend "Yes^M"
+
+CALL ZocWait "Password?"
+CALL ZocSend "secret^M"
+
+/* the next command means that ZOC should 
+   automatically send a ^M (Enter) every time 
+   the text "Press Enter to continue" arrives.
+   This way all the news screens are skipped,
+   no matter how many of them appear */
+CALL ZocReply "Enter", "^M"
+
+/* Wait for the main menu */
+CALL ZocWait "Main Menu"
+
+/* Cancel the previous REPLY command so ZOC won't 
+   kick in if we received that text later */
+CALL ZocReply "Enter"

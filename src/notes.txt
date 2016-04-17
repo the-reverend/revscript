@@ -1,0 +1,158 @@
+pt^M^Ml40^Mtnl1114^Mcb1^Myl1^Mt^Mn1yyl39^Msnl1^Mq/
+
+o115^Mqpt^M^Ml2^Mtnl1120^Mcb1^Myl1^Mt^Mn1yyl2^Msnl1^Mqcr^Mq
+
+// 3 rounds colo, 3 hops from terra, navpoint 4, no pscanner
+tnt118^Mcb1^Mylt^Mn4yylsnl1^Mcb1^Mylt^Mn4yylsnl1^Mcb1^Mylt^Mn4yylsnl1^M
+
+// 2 rounds colo, 4 hops from terra, navpoint 4, pscanner, planet 21
+tnt124^Mcb1^Myl1^Mt^Mn4yyl21^Msnl1^Mcb1^Myl1^Mt^Mn4yyl21^Msnl1^M
+
+[westminster]
+216.107.84.227
+
+[battlestar]
+make base-star better odds, ig
+improve gunship odds some
+lower tholian odds some
+
+[zyrain]
+
+
+[drop]
+drop menu outline:
+
+)Main(
+C - Connections
+    )Connections(
+    C - Connect
+    D - Disconnect
+    L - List Connections
+    K - Kill External Connection
+    B - Ban Ip
+    R - Readonly Toggle
+G - Game
+    )Game(
+    S - Server
+    P - Port
+    L - Logging
+    R - Reconnect Script
+    E - Allow External Connections
+S - Script
+    )Script(
+    A - Abort Script
+    D - Display Available Scripts
+    K - Kill All Scripts
+    L - List Active Scripts
+    R - Restart Last Script
+    S - Start Script
+M - Manage Games
+    )Manage Games(
+    D - Delete Game
+    N - New Game
+    L - List Games
+
+Our Father, who 0wnz heaven, j00 r0ck! May all 0ur base someday be belong to you! May j00 0wn earth just like j00 0wn heaven. Give us this day our warez, mp3z, and pr0n through a phat pipe. And cut us some slack when we act like n00b lamerz, just as we teach n00bz when they act lame on us. Please don't give us root access on some poor d00d'z box when we're too pissed off to think about what's right and wrong, and if you could keep the f3i off our backs, we'd appreciate it. For j00 0wn r00t on all our b0x3n 4ever and ever, 4m3n.
+
+[08:36] the reverend: pres's planet locker sends unyunyunyunyuny.^Mc
+[08:36] the reverend: er .^Mcq
+[08:36] Dr. Bad: its about the one way we'll win this- assuming we got about 7 moths worth of fuel left, but the enemies only have 24 slots with no citadels
+[08:36] Dr. Bad: I do:  
+
+call zocsend "UYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYNUYN" 
+
+call zocsend ".^MZC^M"
+[08:37] Dr. Bad: and repeat it 4 times before putting a wait in
+[08:37] the reverend: ah ok i was gonna add .^Mcqzn
+[08:38] Dr. Bad: doesn't really matter what so long as it loops- main thing is to have a whole lot of UYN's before the naming bit so you spend most of the running time processing UYN
+[08:38] the reverend: well mines gonna basically do that from remote mode - will run until it sees a 'stop ::
+[08:39] the reverend: send
+ 'plock ::
+ 'stop ::
+[08:39] Dr. Bad: k
+
+dupe destroyed 200 of your fighters on planet rev's home planet
+dupe invaded and captured rev's home planet
+dupe lands on rev's home planet.
+dupe claimed rev's home planet
+
+[ftp commands]
+! ? append ascii bell binary bye cd close debug delete dir disconnect get glob hash help lcd literal ls mdelete mdir mget mkdir mls mput open prompt put pwd quit quote recv remotehelp rename rmdir send status trace type user verbose
+
+[revstock ladder]
+for next year:  less fedparking (2?), rethink win criteria, 
+
+[rev-helper]
+ rewrite _login()
+ add _view management to _eprobe
+
+[fixes]
+-- makeplanet kills colos
+-- colo ore from a port?
+
+[pmap]
+-- log output
+
+[script ideas]
+-- pmaint script
+   Founder: If you can with that planet-maint script develop a routing for 
+   stripping planets into it.. =)  Want to be able to strip an opponents 
+   sector of colo's and product and warp it back to my sector (assuming 
+   don't have level 4's at the time) with the option of choosing to pick up 
+   ore in their sector or from my sector to get back and forth with it.
+-- buydown-distant, productmover-distant
+-- autofurber (Colin Stagner) - respond to subspace, get name, ta, warp to dock, buy, tow to ta, get fuel, etc.
+-- attack script
+-- cap script
+
+[terra]
+tedit port 2002 
+pw: tester - access to games X,Y,Z (Beta Test Games) 
+pw: ch33tah - access to main games (Ladder, Cartoon, Deathmatch) 
+
+[game notes]
+  0 = Empty Sector, Yes Anom = Cloaked Ship
+  1 = Marker Beacon
+  2 = Limpet Mine, Yes Anom
+  5 = Single Fighter
+ 10 = Single Armid Mine
+ 21 = Navigational Hazard ( per 1 percent )
+ 38 = Unmanned Ship
+ 40 = Manned Ship - Trader, Alien,or Ferrengi Assault Trader
+ 50 = Destroyed Starport
+ 77 = Ferrengi Scorpion Ship
+100 = Startport, Ferrengi Battle Cruiser or Ferrengi Dreadnaught
+210 = Destroyed Planet ( due to 10% Nav Haz )
+462 = Federation Starship under Admiral Nelson
+489 = Federation Starship under Captain Zyrain
+500 = Planet
+512 = Federation Starship under Admiral Clausewitz
+
+EXPERIENCE GAIN FOR STEALING:
+ lose 9 aln per  50 holds stolen
+ gain 9 exp per 100 holds stolen
+ lose 9 aln per 100 holds busted
+ lose 9 exp per 200 holds busted
+
+EXPERIENCE GAIN FOR ROBBING:
+ gain 1/2000 exp per cred stolen
+ lose 1/1000 aln per cred stolen
+ e.g. steal 107,298 creds, lose 107 aln, gain 53 exp
+
+EXPERIENCE GAIN FOR UPGRADING:
+ ore: cost 250/unit, 2 exp, 1 aln per 20 units, or 5000 creds
+ org: cost 500/unit, 2 exp, 1 aln per 10 units, or 5000 creds
+ equ: cost 900/unit, 2 exp, 1 aln per  7 units, or 6300 creds
+
+EXPERIENCE LOSS FOR MIXED CORPS
+the exp loss is one fourth of the least extreme alignment on the corp if it is a mixed corp.
+
+EXAMPLE 1:  Reds w/ -10k,-9k,-5k and blues w/ 1k,200,2k
+extreme aligns: -10k, 2k
+least extreme: 2k
+loss: 2k/4 -> 500 exp
+
+EXAMPLE 2:  Reds w/ -1k,-4k,-500 and blues w/ 6k,7k,5k
+extreme aligns: -4k, 7k
+least extreme: -4k
+loss: 4k/4 -> 1000 exp

@@ -1,0 +1,15 @@
+/** _yesno v.3 **/
+/*- _yesno [msg] [, mode] -*/
+/*- v.3 tested -*/
+_yesno: procedure expose (globals)
+ if arg(1,"E") then msg=arg(1)
+ else msg="yes or no"
+ if arg(2)="yn" then rslt=zocrequest(msg||" (ESC=no)", "yes", "no")
+                else rslt=zocrequest(msg, "yes", "no", "cancel")
+ select
+  when rslt="cancel" then call _quit "script cancelled by user.", "nocopy"
+  when rslt="##CANCEL##" & arg(2)\="yn" then call _quit "script cancelled by user.", "nocopy"
+  when rslt="yes" then rslt=1
+  otherwise rslt=0
+ end /*select*/
+return rslt

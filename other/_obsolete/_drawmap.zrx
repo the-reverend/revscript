@@ -1,0 +1,659 @@
+/* REXX _drawmap by the reverend (build 21) */
+
+fname="log\wtc.map"
+reclen=_mapinit(fname)
+
+/* sector lists */
+location.=""
+nw.=0
+
+/* grid lists */
+links.="0,0,0,0,0,0,0,0"
+oneways.="0,0,0,0,0,0,0,0"
+g.=0
+ga.=8
+
+minx=25
+miny=25
+maxx=25
+maxy=25
+
+homesec=_asknum("map from what sector?",1,"c")
+maxdepth=_asknum("depth?",1)
+
+sector=homesec
+call _mapseek fname, reclen, sector
+location.sector=minx||","||miny
+g.minx.miny=homesec
+call _assignlinks sector
+/*
+list=s.sector
+do while list\=""
+ parse var list sector2 ";" list
+ call _assignlinks sector2
+end
+*/
+do j=miny to maxy
+ line1=""
+ line2=""
+ line3=""
+ do i=minx to maxx
+  n=g.i.j
+  parse value _getmapcell(i","j";"g.i.j";"lower(left(p.n,3))";0;"links.n";0,0,0,0,0,0,0,0") with line1a ";" line2a ";" line3a
+  line1=line1||line1a
+  line2=line2||line2a
+  line3=line3||line3a
+ end
+ call zocwriteln line1
+ call zocwriteln line2
+ call zocwriteln line3
+end
+
+exit
+
+lines=_getmapcell("25,25;123;sss;1;1,1,1,1,1,1,1,1;0,0,0,0,0,0,0,0")
+
+call zocwriteln
+do while lines\=""
+ parse var lines line ";" lines
+ call zocwriteln line
+end
+
+exit
+
+_assignlinks:
+ sec=arg(1)
+ adjacent=s.sec
+ parse var location.sec ax "," ay
+
+ /* get adjacent sectors and calc numwarps */
+ asec.=""
+ ai=0
+ do while adjacent\=""
+  ai=ai+1
+  parse var adjacent asec ";" adjacent
+  call _mapseek fname, reclen, asec
+  if s.asec="" then ac=0
+  else do
+   ac=1
+   ap=pos(";",s.asec)
+   do while ap>0
+    ac=ac+1
+    ap=pos(";",s.asec,ap+1)
+   end /* do */
+  end /* else */
+  nw.asec=ac
+ end /* do */
+ nw.sec=ai
+
+ /* assign links */
+ do ai=6 to 1 by -1
+  adjacent=s.sec
+  alist=""
+  do aj=1 to nw.sec
+   parse var adjacent asec ";" adjacent
+   if location.asec="" then do
+    if nw.asec=ai then do
+     next=_pickdirection(links.sec)
+     parse var location.sec sx "," sy
+     parse value _getoffset(next) with ox "," oy
+     nx=sx+ox
+     ny=sy+oy
+     location.asec=nx||","||ny
+     if nx<minx then minx=nx
+     if ny<miny then miny=ny
+     if nx>maxx then maxx=nx
+     if ny>maxy then maxy=ny
+     g.nx.ny=asec
+     call _setlinks next, sec, asec
+    end
+   end
+  end
+ end
+return
+
+_setlinks:
+ s1=arg(2)
+ s2=arg(3)
+ sl1=arg(1)
+ sl2=arg(1)+4
+ if sl2>8 then sl2=sl2-8
+ links.s1=left(links.s1,(sl1-1)*2)||"1"||substr(links.s1,sl1*2)
+ links.s2=left(links.s2,(sl2-1)*2)||"1"||substr(links.s2,sl2*2)
+return
+
+_getoffset:
+ select
+  when arg(1)=1 then gor=-1||","||-1
+  when arg(1)=2 then gor=0||","||-1
+  when arg(1)=3 then gor=1||","||-1
+  when arg(1)=4 then gor=1||","||0
+  when arg(1)=5 then gor=1||","||1
+  when arg(1)=6 then gor=0||","||1
+  when arg(1)=7 then gor=-1||","||1
+  when arg(1)=8 then gor=-1||","||0
+ end
+return gor
+
+_pickdirection:
+ plinks=arg(1)
+ select
+  when plinks="0,0,0,0,0,0,0,0" then pr=4
+  when plinks="0,0,0,0,0,0,0,1" then pr=4
+  when plinks="0,0,0,0,0,0,1,0" then pr=3
+  when plinks="0,0,0,0,0,0,1,1" then pr=3
+  when plinks="0,0,0,0,0,1,0,0" then pr=2
+  when plinks="0,0,0,0,0,1,0,1" then pr=3
+  when plinks="0,0,0,0,0,1,1,0" then pr=2
+  when plinks="0,0,0,0,0,1,1,1" then pr=3
+  when plinks="0,0,0,0,1,0,0,0" then pr=1
+  when plinks="0,0,0,0,1,0,0,1" then pr=2
+  when plinks="0,0,0,0,1,0,1,0" then pr=2
+  when plinks="0,0,0,0,1,0,1,1" then pr=3
+  when plinks="0,0,0,0,1,1,0,0" then pr=1
+  when plinks="0,0,0,0,1,1,0,1" then pr=2
+  when plinks="0,0,0,0,1,1,1,0" then pr=2
+  when plinks="0,0,0,0,1,1,1,1" then pr=2
+  when plinks="0,0,0,1,0,0,0,0" then pr=8
+  when plinks="0,0,0,1,0,0,0,1" then pr=6
+  when plinks="0,0,0,1,0,0,1,0" then pr=1
+  when plinks="0,0,0,1,0,0,1,1" then pr=3
+  when plinks="0,0,0,1,0,1,0,0" then pr=1
+  when plinks="0,0,0,1,0,1,0,1" then pr=2
+  when plinks="0,0,0,1,0,1,1,0" then pr=2
+  when plinks="0,0,0,1,0,1,1,1" then pr=2
+  when plinks="0,0,0,1,1,0,0,0" then pr=8
+  when plinks="0,0,0,1,1,0,0,1" then pr=1
+  when plinks="0,0,0,1,1,0,1,0" then pr=1
+  when plinks="0,0,0,1,1,0,1,1" then pr=2
+  when plinks="0,0,0,1,1,1,0,0" then pr=1
+  when plinks="0,0,0,1,1,1,0,1" then pr=1
+  when plinks="0,0,0,1,1,1,1,0" then pr=1
+  when plinks="0,0,0,1,1,1,1,1" then pr=2
+  when plinks="0,0,1,0,0,0,0,0" then pr=7
+  when plinks="0,0,1,0,0,0,0,1" then pr=1
+  when plinks="0,0,1,0,0,0,1,0" then pr=5
+  when plinks="0,0,1,0,0,0,1,1" then pr=4
+  when plinks="0,0,1,0,0,1,0,0" then pr=8
+  when plinks="0,0,1,0,0,1,0,1" then pr=2
+  when plinks="0,0,1,0,0,1,1,0" then pr=2
+  when plinks="0,0,1,0,0,1,1,1" then pr=3
+  when plinks="0,0,1,0,1,0,0,0" then pr=8
+  when plinks="0,0,1,0,1,0,0,1" then pr=1
+  when plinks="0,0,1,0,1,0,1,0" then pr=1
+  when plinks="0,0,1,0,1,0,1,1" then pr=2
+  when plinks="0,0,1,0,1,1,0,0" then pr=1
+  when plinks="0,0,1,0,1,1,0,1" then pr=1
+  when plinks="0,0,1,0,1,1,1,0" then pr=1
+  when plinks="0,0,1,0,1,1,1,1" then pr=2
+  when plinks="0,0,1,1,0,0,0,0" then pr=7
+  when plinks="0,0,1,1,0,0,0,1" then pr=7
+  when plinks="0,0,1,1,0,0,1,0" then pr=8
+  when plinks="0,0,1,1,0,0,1,1" then pr=5
+  when plinks="0,0,1,1,0,1,0,0" then pr=8
+  when plinks="0,0,1,1,0,1,0,1" then pr=8
+  when plinks="0,0,1,1,0,1,1,0" then pr=1
+  when plinks="0,0,1,1,0,1,1,1" then pr=2
+  when plinks="0,0,1,1,1,0,0,0" then pr=8
+  when plinks="0,0,1,1,1,0,0,1" then pr=8
+  when plinks="0,0,1,1,1,0,1,0" then pr=8
+  when plinks="0,0,1,1,1,0,1,1" then pr=1
+  when plinks="0,0,1,1,1,1,0,0" then pr=8
+  when plinks="0,0,1,1,1,1,0,1" then pr=1
+  when plinks="0,0,1,1,1,1,1,0" then pr=1
+  when plinks="0,0,1,1,1,1,1,1" then pr=1
+  when plinks="0,1,0,0,0,0,0,0" then pr=6
+  when plinks="0,1,0,0,0,0,0,1" then pr=1
+  when plinks="0,1,0,0,0,0,1,0" then pr=8
+  when plinks="0,1,0,0,0,0,1,1" then pr=2
+  when plinks="0,1,0,0,0,1,0,0" then pr=4
+  when plinks="0,1,0,0,0,1,0,1" then pr=4
+  when plinks="0,1,0,0,0,1,1,0" then pr=3
+  when plinks="0,1,0,0,0,1,1,1" then pr=3
+  when plinks="0,1,0,0,1,0,0,0" then pr=7
+  when plinks="0,1,0,0,1,0,0,1" then pr=1
+  when plinks="0,1,0,0,1,0,1,0" then pr=1
+  when plinks="0,1,0,0,1,0,1,1" then pr=1
+  when plinks="0,1,0,0,1,1,0,0" then pr=1
+  when plinks="0,1,0,0,1,1,0,1" then pr=2
+  when plinks="0,1,0,0,1,1,1,0" then pr=2
+  when plinks="0,1,0,0,1,1,1,1" then pr=3
+  when plinks="0,1,0,1,0,0,0,0" then pr=7
+  when plinks="0,1,0,1,0,0,0,1" then pr=6
+  when plinks="0,1,0,1,0,0,1,0" then pr=8
+  when plinks="0,1,0,1,0,0,1,1" then pr=8
+  when plinks="0,1,0,1,0,1,0,0" then pr=8
+  when plinks="0,1,0,1,0,1,0,1" then pr=5
+  when plinks="0,1,0,1,0,1,1,0" then pr=1
+  when plinks="0,1,0,1,0,1,1,1" then pr=3
+  when plinks="0,1,0,1,1,0,0,0" then pr=8
+  when plinks="0,1,0,1,1,0,0,1" then pr=7
+  when plinks="0,1,0,1,1,0,1,0" then pr=8
+  when plinks="0,1,0,1,1,0,1,1" then pr=1
+  when plinks="0,1,0,1,1,1,0,0" then pr=8
+  when plinks="0,1,0,1,1,1,0,1" then pr=1
+  when plinks="0,1,0,1,1,1,1,0" then pr=1
+  when plinks="0,1,0,1,1,1,1,1" then pr=2
+  when plinks="0,1,1,0,0,0,0,0" then pr=6
+  when plinks="0,1,1,0,0,0,0,1" then pr=8
+  when plinks="0,1,1,0,0,0,1,0" then pr=6
+  when plinks="0,1,1,0,0,0,1,1" then pr=1
+  when plinks="0,1,1,0,0,1,0,0" then pr=7
+  when plinks="0,1,1,0,0,1,0,1" then pr=1
+  when plinks="0,1,1,0,0,1,1,0" then pr=5
+  when plinks="0,1,1,0,0,1,1,1" then pr=4
+  when plinks="0,1,1,0,1,0,0,0" then pr=7
+  when plinks="0,1,1,0,1,0,0,1" then pr=8
+  when plinks="0,1,1,0,1,0,1,0" then pr=7
+  when plinks="0,1,1,0,1,0,1,1" then pr=1
+  when plinks="0,1,1,0,1,1,0,0" then pr=8
+  when plinks="0,1,1,0,1,1,0,1" then pr=1
+  when plinks="0,1,1,0,1,1,1,0" then pr=1
+  when plinks="0,1,1,0,1,1,1,1" then pr=2
+  when plinks="0,1,1,1,0,0,0,0" then pr=7
+  when plinks="0,1,1,1,0,0,0,1" then pr=6
+  when plinks="0,1,1,1,0,0,1,0" then pr=7
+  when plinks="0,1,1,1,0,0,1,1" then pr=6
+  when plinks="0,1,1,1,0,1,0,0" then pr=7
+  when plinks="0,1,1,1,0,1,0,1" then pr=7
+  when plinks="0,1,1,1,0,1,1,0" then pr=8
+  when plinks="0,1,1,1,0,1,1,1" then pr=5
+  when plinks="0,1,1,1,1,0,0,0" then pr=7
+  when plinks="0,1,1,1,1,0,0,1" then pr=7
+  when plinks="0,1,1,1,1,0,1,0" then pr=8
+  when plinks="0,1,1,1,1,0,1,1" then pr=7
+  when plinks="0,1,1,1,1,1,0,0" then pr=8
+  when plinks="0,1,1,1,1,1,0,1" then pr=8
+  when plinks="0,1,1,1,1,1,1,0" then pr=8
+  when plinks="0,1,1,1,1,1,1,1" then pr=1
+  when plinks="1,0,0,0,0,0,0,0" then pr=5
+  when plinks="1,0,0,0,0,0,0,1" then pr=8
+  when plinks="1,0,0,0,0,0,1,0" then pr=8
+  when plinks="1,0,0,0,0,0,1,1" then pr=1
+  when plinks="1,0,0,0,0,1,0,0" then pr=7
+  when plinks="1,0,0,0,0,1,0,1" then pr=1
+  when plinks="1,0,0,0,0,1,1,0" then pr=1
+  when plinks="1,0,0,0,0,1,1,1" then pr=1
+  when plinks="1,0,0,0,1,0,0,0" then pr=3
+  when plinks="1,0,0,0,1,0,0,1" then pr=4
+  when plinks="1,0,0,0,1,0,1,0" then pr=3
+  when plinks="1,0,0,0,1,0,1,1" then pr=3
+  when plinks="1,0,0,0,1,1,0,0" then pr=2
+  when plinks="1,0,0,0,1,1,0,1" then pr=3
+  when plinks="1,0,0,0,1,1,1,0" then pr=2
+  when plinks="1,0,0,0,1,1,1,1" then pr=3
+  when plinks="1,0,0,1,0,0,0,0" then pr=6
+  when plinks="1,0,0,1,0,0,0,1" then pr=5
+  when plinks="1,0,0,1,0,0,1,0" then pr=8
+  when plinks="1,0,0,1,0,0,1,1" then pr=8
+  when plinks="1,0,0,1,0,1,0,0" then pr=8
+  when plinks="1,0,0,1,0,1,0,1" then pr=7
+  when plinks="1,0,0,1,0,1,1,0" then pr=8
+  when plinks="1,0,0,1,0,1,1,1" then pr=1
+  when plinks="1,0,0,1,1,0,0,0" then pr=8
+  when plinks="1,0,0,1,1,0,0,1" then pr=7
+  when plinks="1,0,0,1,1,0,1,0" then pr=1
+  when plinks="1,0,0,1,1,0,1,1" then pr=3
+  when plinks="1,0,0,1,1,1,0,0" then pr=1
+  when plinks="1,0,0,1,1,1,0,1" then pr=2
+  when plinks="1,0,0,1,1,1,1,0" then pr=2
+  when plinks="1,0,0,1,1,1,1,1" then pr=2
+  when plinks="1,0,1,0,0,0,0,0" then pr=6
+  when plinks="1,0,1,0,0,0,0,1" then pr=8
+  when plinks="1,0,1,0,0,0,1,0" then pr=5
+  when plinks="1,0,1,0,0,0,1,1" then pr=8
+  when plinks="1,0,1,0,0,1,0,0" then pr=7
+  when plinks="1,0,1,0,0,1,0,1" then pr=8
+  when plinks="1,0,1,0,0,1,1,0" then pr=7
+  when plinks="1,0,1,0,0,1,1,1" then pr=1
+  when plinks="1,0,1,0,1,0,0,0" then pr=7
+  when plinks="1,0,1,0,1,0,0,1" then pr=1
+  when plinks="1,0,1,0,1,0,1,0" then pr=4
+  when plinks="1,0,1,0,1,0,1,1" then pr=4
+  when plinks="1,0,1,0,1,1,0,0" then pr=8
+  when plinks="1,0,1,0,1,1,0,1" then pr=2
+  when plinks="1,0,1,0,1,1,1,0" then pr=2
+  when plinks="1,0,1,0,1,1,1,1" then pr=3
+  when plinks="1,0,1,1,0,0,0,0" then pr=7
+  when plinks="1,0,1,1,0,0,0,1" then pr=6
+  when plinks="1,0,1,1,0,0,1,0" then pr=6
+  when plinks="1,0,1,1,0,0,1,1" then pr=5
+  when plinks="1,0,1,1,0,1,0,0" then pr=7
+  when plinks="1,0,1,1,0,1,0,1" then pr=7
+  when plinks="1,0,1,1,0,1,1,0" then pr=8
+  when plinks="1,0,1,1,0,1,1,1" then pr=7
+  when plinks="1,0,1,1,1,0,0,0" then pr=7
+  when plinks="1,0,1,1,1,0,0,1" then pr=7
+  when plinks="1,0,1,1,1,0,1,0" then pr=8
+  when plinks="1,0,1,1,1,0,1,1" then pr=6
+  when plinks="1,0,1,1,1,1,0,0" then pr=8
+  when plinks="1,0,1,1,1,1,0,1" then pr=8
+  when plinks="1,0,1,1,1,1,1,0" then pr=1
+  when plinks="1,0,1,1,1,1,1,1" then pr=2
+  when plinks="1,1,0,0,0,0,0,0" then pr=5
+  when plinks="1,1,0,0,0,0,0,1" then pr=8
+  when plinks="1,1,0,0,0,0,1,0" then pr=7
+  when plinks="1,1,0,0,0,0,1,1" then pr=8
+  when plinks="1,1,0,0,0,1,0,0" then pr=5
+  when plinks="1,1,0,0,0,1,0,1" then pr=8
+  when plinks="1,1,0,0,0,1,1,0" then pr=8
+  when plinks="1,1,0,0,0,1,1,1" then pr=1
+  when plinks="1,1,0,0,1,0,0,0" then pr=6
+  when plinks="1,1,0,0,1,0,0,1" then pr=1
+  when plinks="1,1,0,0,1,0,1,0" then pr=8
+  when plinks="1,1,0,0,1,0,1,1" then pr=2
+  when plinks="1,1,0,0,1,1,0,0" then pr=4
+  when plinks="1,1,0,0,1,1,0,1" then pr=4
+  when plinks="1,1,0,0,1,1,1,0" then pr=3
+  when plinks="1,1,0,0,1,1,1,1" then pr=3
+  when plinks="1,1,0,1,0,0,0,0" then pr=6
+  when plinks="1,1,0,1,0,0,0,1" then pr=5
+  when plinks="1,1,0,1,0,0,1,0" then pr=7
+  when plinks="1,1,0,1,0,0,1,1" then pr=7
+  when plinks="1,1,0,1,0,1,0,0" then pr=6
+  when plinks="1,1,0,1,0,1,0,1" then pr=5
+  when plinks="1,1,0,1,0,1,1,0" then pr=8
+  when plinks="1,1,0,1,0,1,1,1" then pr=8
+  when plinks="1,1,0,1,1,0,0,0" then pr=7
+  when plinks="1,1,0,1,1,0,0,1" then pr=6
+  when plinks="1,1,0,1,1,0,1,0" then pr=8
+  when plinks="1,1,0,1,1,0,1,1" then pr=8
+  when plinks="1,1,0,1,1,1,0,0" then pr=8
+  when plinks="1,1,0,1,1,1,0,1" then pr=3
+  when plinks="1,1,0,1,1,1,1,0" then pr=1
+  when plinks="1,1,0,1,1,1,1,1" then pr=3
+  when plinks="1,1,1,0,0,0,0,0" then pr=6
+  when plinks="1,1,1,0,0,0,0,1" then pr=7
+  when plinks="1,1,1,0,0,0,1,0" then pr=5
+  when plinks="1,1,1,0,0,0,1,1" then pr=8
+  when plinks="1,1,1,0,0,1,0,0" then pr=6
+  when plinks="1,1,1,0,0,1,0,1" then pr=8
+  when plinks="1,1,1,0,0,1,1,0" then pr=5
+  when plinks="1,1,1,0,0,1,1,1" then pr=8
+  when plinks="1,1,1,0,1,0,0,0" then pr=6
+  when plinks="1,1,1,0,1,0,0,1" then pr=8
+  when plinks="1,1,1,0,1,0,1,0" then pr=6
+  when plinks="1,1,1,0,1,0,1,1" then pr=1
+  when plinks="1,1,1,0,1,1,0,0" then pr=7
+  when plinks="1,1,1,0,1,1,0,1" then pr=1
+  when plinks="1,1,1,0,1,1,1,0" then pr=4
+  when plinks="1,1,1,0,1,1,1,1" then pr=4
+  when plinks="1,1,1,1,0,0,0,0" then pr=6
+  when plinks="1,1,1,1,0,0,0,1" then pr=6
+  when plinks="1,1,1,1,0,0,1,0" then pr=6
+  when plinks="1,1,1,1,0,0,1,1" then pr=5
+  when plinks="1,1,1,1,0,1,0,0" then pr=7
+  when plinks="1,1,1,1,0,1,0,1" then pr=6
+  when plinks="1,1,1,1,0,1,1,0" then pr=6
+  when plinks="1,1,1,1,0,1,1,1" then pr=5
+  when plinks="1,1,1,1,1,0,0,0" then pr=7
+  when plinks="1,1,1,1,1,0,0,1" then pr=6
+  when plinks="1,1,1,1,1,0,1,0" then pr=7
+  when plinks="1,1,1,1,1,0,1,1" then pr=6
+  when plinks="1,1,1,1,1,1,0,0" then pr=7
+  when plinks="1,1,1,1,1,1,0,1" then pr=7
+  when plinks="1,1,1,1,1,1,1,0" then pr=8
+  when plinks="1,1,1,1,1,1,1,1" then pr=0
+ end /* select */
+return pr  
+
+_getmapcell:
+ parse value arg(1) with dmcx "," dmcy ";" dmcsector ";" dmcport ";" dmcexpl ";" dmcdmclinks ";" dmcdmconeways
+
+ if dmcsector=0 then do
+  dmcline1="         "
+  dmcline2="         "
+  dmcline3="         "
+ end
+ else do
+  do dmci=1 to 8
+   parse var dmcdmclinks dmclink.dmci "," dmcdmclinks
+   parse var dmcdmconeways dmconeway.dmci "," dmcdmconeways
+  end
+
+  if dmclink.1 then do
+   if dmconeway.1 then dmcline1="X   "
+   else dmcline1="\   "
+  end
+  else dmcline1="    "
+
+  if dmclink.2 then do
+   if dmconeway.2 then dmcline1=dmcline1||"v   "
+   else dmcline1=dmcline1||"|   "
+  end
+  else dmcline1=dmcline1||"    "
+
+  if dmclink.3 then do
+   if dmconeway.3 then dmcline1=dmcline1||"X"
+   else dmcline1=dmcline1||"/"
+  end
+  else dmcline1=dmcline1||" "
+
+  if dmclink.8 then do
+   if dmconeway.8 then dmcline2=">"
+   else dmcline2="-"
+  end
+  else dmcline2=" "
+
+  if dmcexpl then dmcline2=dmcline2||center(dmcsector,7," ")
+  else dmcline2=dmcline2||"("||center(dmcsector,5," ")||")"
+
+  if dmclink.4 then do
+   if dmconeway.4 then dmcline2=dmcline2||"<"
+   else dmcline2=dmcline2||"-"
+  end
+  else dmcline2=dmcline2||" "
+
+  if dmclink.7 then do
+   if dmconeway.7 then dmcline3="X"
+   else dmcline3="/"
+  end
+  else dmcline3=" "
+
+  if dmcport="" then dmcline3=dmcline3||"   "
+  else dmcline3=dmcline3||dmcport
+
+  if dmclink.6 then do
+   if dmconeway.6 then dmcline3=dmcline3||"^^   "
+   else dmcline3=dmcline3||"|   "
+  end
+  else dmcline3=dmcline3||"    "
+
+  if dmclink.5 then do
+   if dmconeway.5 then dmcline3=dmcline3||"X"
+   else dmcline3=dmcline3||"\"
+  end
+  else dmcline3=dmcline3||" "
+
+ end /* else */ 
+ dmcr=dmcline1||";"||dmcline2||";"||dmcline3
+return dmcr
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*    last updated: 21 Aug 2001, 15:57:33     */
+
+/** _asknum v.3 **/
+    _asknum:
+     aninit=arg(2)
+     andone=0
+     do while \andone
+      anans=zocask(arg(1), aninit)
+      if anans="##CANCEL##" then andone=1
+      else do
+       anans=_stripint(anans)
+       if anans\="" then andone=1
+      end /* else */
+      if \andone then aninit="please enter a number or ESC to cancel."
+     end /* do */
+     if lower(arg(3))="c" & anans="##CANCEL##" then call _quit "script cancelled by user."
+    return anans
+
+/** _beep v.1 **/
+    _beep:
+     bpfile=arg(1)
+     if bpfile\="" then if \_fileexists(bpfile) then bpfile=""
+     if bpfile="" then call zocwrite d2c(7)
+     else do
+      bptemp=zocgetprogramoption("SoundBellWav")
+      parse var bptemp 'SoundBellWav="' bptemp '"'
+      call zocsetglobaloption('SoundBellWav="'||bpfile||'"')
+      call zocwrite d2c(7)
+      call zocsetglobaloption('SoundBellWav="'||bptemp||'"')
+     end /* else */
+    return
+
+/** _error v.3 **/
+    _error:
+     if arg(1)="" then call zocterminate
+     else errmsg="<< script error:  "||arg(1)||" >>"
+     errmail="<< if this is a serious problem, email me at: tw.the_reverend@excite.com >> "
+
+     eline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(eline)>0 then call zocwriteln
+     call zocwriteln "^[[1;31m"||errmsg||"^[[0;35m"
+     if arg(1)\="timeout" then call zocwriteln "^[[1;33m"||errmail||"^[[0;35m"
+     if length(eline)>0 then call zocwrite eline
+     call _beep "error.wav"
+     exit
+    return
+
+/** _fileclose v.1 **/
+    _fileclose:
+     call stream arg(1), "C", "CLOSE"
+    return
+
+/** _fileeof v.1 **/
+    _fileeof:
+     if stream(arg(1), "S")="READY" then feofr=0
+     else feofr=1
+    return feofr
+
+/** _fileexists v.1 **/
+    _fileexists:
+     if stream(arg(1), "C", "QUERY EXISTS")="" then fer=0
+     else fer=1
+    return fer
+
+/** _fileopenr v.1 **/
+    _fileopenr:
+     for=1
+     foname=arg(1)
+     if foname="" then call _error "no filename"
+     for=_fileexists(foname)
+     if for then do
+      call stream foname, "C", "OPEN READ"
+      for=\_fileeof(foname)
+      if \for then call _fileclose foname
+     end /* if */
+    return for
+
+/** _mapinit v.1 **/
+    _mapinit:
+     md.=0
+     miname=arg(1)
+     call _fileopenr(miname)
+     mireclen=c2d(charin(miname))
+    return mireclen
+
+/** _mapseek v.1 **/
+    _mapseek:
+     msname=arg(1)
+     msreclen=arg(2)
+     mssector=arg(3)
+
+     if s.mssector="S."||mssector | s.mssector="" then do
+
+      call stream msname, "C", "SEEK "||(mssector-1)*msreclen+2
+ 
+      msexp=0
+      mspex=0
+      mspav=0
+      msbequ=0
+      msborg=0
+      msbore=0
+      msflags=c2d(charin(msname))
+      if msflags%32=1 then do
+       msexp=1
+       msflags=msflags-32
+      end /* if */
+      if msflags%16=1 then do
+       mspex=1
+       msflags=msflags-16
+      end /* if */
+      if msflags%8=1 then do
+       mspav=1
+       msflags=msflags-8
+      end /* if */
+      if msflags%4=1 then do
+       msbore=1
+       msflags=msflags-4
+      end /* if */
+      if msflags%2=1 then do
+       msborg=1
+       msflags=msflags-2
+      end /* if */
+      if msflags%1=1 then do
+       msbequ=1
+       msflags=msflags-1
+      end /* if */
+ 
+      if mspex then do
+       if msbore then p.mssector="B"
+       else p.mssector="S"
+       if msborg then p.mssector=p.mssector||"B"
+       else p.mssector=p.mssector||"S"
+       if msbequ then p.mssector=p.mssector||"B"
+       else p.mssector=p.mssector||"S"
+       do msi=1 to 3
+        ms1=charin(msname)
+        ms2=charin(msname)
+        ms3=charin(msname)
+        p.mssector=p.mssector||";"c2d(ms1)+c2d(ms2)*256||","||c2d(ms3)
+       end /* do */
+      end /* if */
+      else do
+       p.mssector=""
+       call stream msname, "C", "SEEK "||(mssector-1)*msreclen+2+10
+      end /* else */
+ 
+      ms1=c2d(charin(msname))+c2d(charin(msname))*256
+      if ms1=0 then s.mssector=""
+      else do
+       s.mssector=ms1
+       do msi=1 to 5
+        ms1=c2d(charin(msname))+c2d(charin(msname))*256
+        if ms1>0 then s.mssector=s.mssector||";"||ms1
+       end /* do */
+      end /* else */
+
+     end /* if */
+    return
+
+/** _quit v.3 **/
+    _quit:
+     if arg(1)=="" then qmsg="<< script ended. >>"
+     else qmsg="<< script ended:  "||arg(1)||" >>"
+     qline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(qline)>0 then call zocwriteln
+     call zocwriteln "^[[1;32m"||qmsg||"^[[0;35m"
+     if length(qline)>0 then call zocwrite qline
+     if arg(1)="script cancelled by user." then call _beep "cancel.wav"
+     else call _beep "quit.wav"
+     exit
+    return 1
+
+/** _stripint v.2 **/
+    _stripint:
+     stint=""
+     sttemp=strip(arg(1))
+     if bdflag=1 then call _error
+     do sti=1 to length(sttemp)
+      stchar=substr(sttemp,sti,1)
+      if length(stint)=0 then do
+       if verify(stchar,"1234567890-")=0 then stint=stint||stchar
+      end /* if */
+      else if verify(stchar,"1234567890")=0 then stint=stint||stchar
+     end /* do */
+     if \datatype(stint,"W") then stint=""
+    return stint
+

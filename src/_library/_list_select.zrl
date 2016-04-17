@@ -1,0 +1,11 @@
+/* _list_select v.2 */
+_list_select: procedure expose (globals)
+ f=arg(1)
+ a=arg(2)
+ b=arg(3)
+ if arg(4,"E") then d=arg(4); else d=";"
+ if arg(5,"E") then rslt=arg(5); else rslt=""
+ do i=1 to _dwords(a,d)
+  if f=_dword(a,i,d) then do; rslt=_dword(b,i,d); leave; end
+ end /*do*/
+return rslt

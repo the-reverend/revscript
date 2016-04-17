@@ -1,0 +1,153 @@
+/** _pickship v.3 **/
+_pickship: procedure expose (globals)
+ msg=arg(1)
+ if msg="" then msg="choose ship:"
+ shiplist=arg(2)
+ premenu=arg(3)
+ maxdist=arg(4)
+ if maxdist="" then maxdist=255
+ includecurrent=arg(5)
+ if includecurrent="" then includecurrent=1
+ buflen=16*1024
+
+ last=_iniv("!bust","!last")
+ if _undef(last) then last=0
+
+ c=0
+ if includecurrent then do
+  /* get current ship from CZQ list */
+  call zocreceivebuf buflen
+  call zocsend "cz"
+  if _wait("<Active Ship Scan>")=640 then call _error "timeout"
+  if _wait("(?=Help)?")=640 then call _error "timeout"
+  buff=translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10))
+  call zocsend "q"
+  if length(buff)=buflen then call _error "buffer overflow"
+  i=pos("----------",buff)
+  if i>0 then i=pos(d2c(13),buff,i)+1
+  if i>1 then j=pos(d2c(13),buff,i)
+  do while i>0 & j>0
+   line=strip(substr(buff,i,j-i))
+   if line="" then leave
+   parse var line shipnum shiploc
+   if pos("+",shiploc)>0 then do
+    c=c+1
+    plus=pos("+",line)
+    current.c=1
+    line=left(line,plus-1)||" "||substr(line,plus+1)
+    parse var line shipnum.c shiploc.c line
+    shipname.c=left(line,20)
+    line=substr(line,21)
+    if right(shipname.c,4)="Corp" then shipname.c=left(shipname.c,length(shipname.c)-5)
+    parse var line figs.c shields.c hops.c shiptype.c
+    shipname.c=strip(shipname.c)
+    shiptype.c=strip(shiptype.c)
+    if pos("T",figs.c)>0 then figs.c=strip(translate(figs.c," ", "T"))*1000
+    if pos("T",shields.c)>0 then shields.c=strip(translate(shields.c," ", "T"))*1000
+    if shiplist\="" then do
+     found=0
+     do k=1 to _dwords(shiplist,";")
+      if pos(lower(_dword(shiplist,k,";")),lower(shiptype.c))>0 then found=1
+      if found then leave
+     end /*do*/
+     if \found then c=c-1
+    end /*if*/
+   end /*if*/
+   i=j+1
+   j=pos(d2c(13),buff,i)
+  end /*do*/
+ end /*if*/
+
+ /* get ships from XQ */
+ call zocreceivebuf buflen
+ call zocsend "x  ?"
+ if _wait("<Q> Exit Transporter")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10))
+ call zocsend "^M"
+ if length(buff)=buflen then call _error "buffer overflow"
+ i=pos("----------",buff)
+ if i>0 then i=pos(d2c(13),buff,i)+1
+ if i>1 then j=pos(d2c(13),buff,i)
+ do while i>0 & j>0
+  line=strip(substr(buff,i,j-i))
+  if line="" then leave
+  c=c+1
+  current.c=0
+  parse var line shipnum.c shiploc.c line
+  shipname.c=left(line,20)
+  line=substr(line,21)
+  if right(shipname.c,4)="Corp" then shipname.c=left(shipname.c,length(shipname.c)-5)
+  parse var line figs.c shields.c hops.c shiptype.c
+  shipname.c=strip(shipname.c)
+  shiptype.c=strip(shiptype.c)
+  if pos("T",figs.c)>0 then figs.c=strip(translate(figs.c," ", "T"))*1000
+  if pos("T",shields.c)>0 then shields.c=strip(translate(shields.c," ", "T"))*1000
+  if hops.c>maxdist then c=c-1
+  else do
+   if shiplist\="" then do
+    found=0
+    do k=1 to _dwords(shiplist,";")
+     if pos(lower(_dword(shiplist,k,";")),lower(shiptype.c))>0 then found=1
+     if found then leave
+    end /*do*/
+    if \found then c=c-1
+   end /*if*/
+  end /*else*/
+  i=j+1
+  j=pos(d2c(13),buff,i)
+ end /*do*/
+
+ /* sort ship list by ship number */
+ do i=1 to c
+  do j=i+1 to c
+   if shipnum.i>shipnum.j then do
+    temp=shipnum.i
+    shipnum.i=shipnum.j
+    shipnum.j=temp
+    temp=shiploc.i
+    shiploc.i=shiploc.j
+    shiploc.j=temp
+    temp=shipname.i
+    shipname.i=shipname.j
+    shipname.j=temp
+    temp=shiptype.i
+    shiptype.i=shiptype.j
+    shiptype.j=temp
+    temp=figs.i
+    figs.i=figs.j
+    figs.j=temp
+    temp=shields.i
+    shields.i=shields.j
+    shields.j=temp
+    temp=current.i
+    current.i=current.j
+    current.j=temp
+   end /*if*/
+  end /*do*/
+ end /*do*/
+
+ /* pick ships */
+ menu=""
+ pmc=_dwords(premenu,";")
+ if premenu\="" then do
+  do i=1 to pmc
+   menu=menu||";                    "||_dword(premenu,i,";")
+  end /*do*/
+ end /*if*/
+ do i=1 to c
+  menu=menu||";"||_pad(shipnum.i,3,"R")
+  menu=menu||_pad(shiploc.i,6,"R")
+  menu=menu||"  "||shiptype.i
+  if current.i then menu=menu||" **"
+  num=shiploc.i
+  if \_undef(_iniv("!bust","!"||num)) then menu=menu||" B"
+  if _listin(num,last," ") then menu=menu||" L"
+ end /*do*/
+ menu=substr(menu,2)
+ i=_drequestlisti(msg,menu,";","c")
+ if i<=pmc then rslt=_dword(premenu,i,";")
+ else do
+  j=i-pmc
+  rslt=shipnum.j||","||shiploc.j||","||shiptype.j||","||shipname.j
+ end /*else*/
+return rslt

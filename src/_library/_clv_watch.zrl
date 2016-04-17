@@ -1,0 +1,74 @@
+_clv_watch: procedure expose (globals)
+ if arg(2,"E") then suppress=arg(2); else suppress=0
+
+ /* setup first run */
+    if \_undef(_clv.!reset) then _clv.="##UNDEF##"
+
+ /* grab lines */
+    if suppress then call zocwrite _ansi("bt;fwh")||"."
+    if suppress then call zocsuppressoutput 1
+    if arg(1,"E") then pmt=arg(1); else pmt=_synchronize(0)
+    if \_listin(pmt,"computer;computer_cit") then do
+     if suppress then call zocsuppressoutput 0
+#    if suppress then call zocwrite _ansi("bt;fwh")||"x"
+     return 0
+    end /*if*/
+    if _sendwait("lv","Trader Rankings")=640 then call _error "timeout"
+    if _wait("---")=640 then call _error "timeout"
+    if _wait("^M")=640 then call _error "timeout"
+    c=0
+    do until ans>0
+     ans=_waitmux("^M|Computer command [")
+     c=c+1
+     line.c=_lastline()
+    end /*do*/
+    if suppress then call zocsuppressoutput 0
+    if ans=640 then call _error "timeout"
+
+ /* analyze list */
+    j=0
+    do i=1 to c
+     select
+      when line.i="" then nop
+      when line.i="Computer command [" then nop
+      otherwise do
+       parse var line.i rank 4 exp 14 aln 25 corp 29 name 61 ship
+       rank=strip(rank); aln=_stripcomma(strip(aln)); exp=_stripcomma(strip(exp)); corp=strip(corp); name=strip(name)
+       if _undef(_clv.name.!aln) then _clv.name.!aln=aln
+       if _undef(_clv.name.!exp) then _clv.name.!exp=exp
+       if _undef(_clv.name.!corp) then _clv.name.!corp=corp
+       if _undef(_clv.name.!ship) then _clv.name.!ship=ship
+       if _clv.name.!aln\=aln then do
+        j=j+1
+        msg.j="CLV :" name ": ALN :" aln-_clv.name.!aln
+        _clv.name.!aln=aln
+       end /*if*/
+       if _clv.name.!exp\=exp then do
+        j=j+1
+        msg.j="CLV :" name ": EXP :" exp-_clv.name.!exp
+        _clv.name.!exp=exp
+       end /*if*/
+       if _clv.name.!corp\=corp then do
+        j=j+1
+        msg.j="CLV :" name ": CORP :" _clv.name.!corp "-->" corp
+        _clv.name.!corp=corp
+       end /*if*/
+       if _clv.name.!ship\=ship then do
+        j=j+1
+        msg.j="CLV :" name ": SHIP :" _clv.name.!ship "-->" ship
+        _clv.name.!ship=ship
+       end /*if*/
+      end /*otherwise*/
+     end /*select*/
+    end /*do*/
+
+ /* report changes */
+    if j>0 then do
+     call _beep "alert.wav"
+     call zocsend "'^M"
+     do i=1 to j
+      call zocsend " "||msg.i||"^M"
+     end /*do*/
+     call zocsend "^M"
+    end /*if*/
+return 1

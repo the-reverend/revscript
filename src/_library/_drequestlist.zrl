@@ -1,0 +1,25 @@
+/** _drequestlist v.3 **/
+/*- _drequestlist title, list, delimiter [, "c"]-*/
+/*- v.3 tested -*/
+_drequestlist: procedure expose (globals)
+/*- this section works great                       -*/
+/*- cmd='i=zocrequestlist(arg(1)'                  -*/
+/*- do i=1 to _dwords(arg(2),arg(3))               -*/
+/*-  cmd=cmd||',"'||_dword(arg(2),i,arg(3))||'"'   -*/
+/*- end /*do*/                                     -*/
+/*- cmd=cmd||')+1'                                 -*/
+/*- interpret(cmd)                                 -*/
+/*-                                                -*/
+/*- this section doesn't work - the interpreter is -*/
+/*- funny with native zoc functions                -*/
+/*- cmd='i=zocrequestlist(arg(1),"'||zocstring("REPLACE",arg(2),arg(3),'","')||'")+1' -*/
+/*- interpret(cmd)                                 -*/
+/*-                                                -*/
+/*- use this section below when 4.04 comes out.    -*/
+ i=zocrequestlist(arg(1),translate(arg(2),"|"||arg(3),arg(3)||"|"))
+ select
+  when i<0 & lower(arg(4))="c" then call _quit "script cancelled by user.", "nocopy"
+  when i<0 then rslt="##CANCEL##"
+  otherwise rslt=_dword(arg(2),i+1,arg(3))
+ end /*select*/
+return rslt

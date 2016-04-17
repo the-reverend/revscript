@@ -1,0 +1,30 @@
+/** _route_get_next v.1 **/
+_route_get_next: procedure expose (globals)
+ home=arg(1)
+ ns=arg(2)
+ if arg(3,"E") then holds=arg(3); else holds=250
+ if arg(4,"E") then cutoffp=min(arg(4),99); else cutoffp=0
+
+ bestratio=999999999
+ bestsector=0
+ call _mapdist home, 0, mname, reclen, 0, 255
+ do i=1 to ns
+  turncost.home.i=0
+  redeem.home.i=0
+  do p=1 to 3
+   if _sl.!quant.i.p>0 & _sl.!perct.i.p>cutoffp & _sl.!prod.p>0 & \_ex.i then do
+    sell=min(_sl.!prod.p, _sl.!quant.i.p)
+    sellf=sell*_sl.!mfudge.i.p
+    turncost.home.i=turncost.home.i + _dist.home.i*(400/holds) + 1 + _sl.!pfudge.i.p*sellf/holds
+                                                                  /* ^ turn replacement cost for low % sales */
+    redeem.home.i=redeem.home.i + sellf/holds
+   end /*if*/
+  end /*if*/
+  if turncost.home.i>0 then do
+   ratio=turncost.home.i/redeem.home.i
+   if ratio<bestratio then bestsector=i
+   bestratio=min(bestratio,ratio)
+  end /*if*/
+ end /*do*/
+
+return bestsector bestratio

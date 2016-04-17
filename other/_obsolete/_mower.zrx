@@ -1,0 +1,94 @@
+/* REXX */
+
+call zoctimeout 60
+call zocsynctime 500
+call on halt name _halt
+call zockeyboard "LOCK"
+
+if \_pcheck("Citadel command") then call _error "please start in the citadel."
+
+call _newline _ansi("b", "green")
+parse value _getgameinfo() with spath ";" iname ";" game
+sd=_ini_askint("stardock?", 1, iname, game, "sd")
+cr=_ini_askint("cr?", 600, iname, game, "cr")
+fname=_ini_askstr("enter cim filename (no extension):", "cim", iname, game, "cim")
+parse value _get_log_info() with lpath ";" ldefault
+figname=lpath||fname||"_figs.txt"
+fname=lpath||fname||".map"
+if \_fileexists(fname) then call _error "file not found: "||fname
+
+if ship2=0 then call _quit "script cancelled by user."
+
+parse value _getinfo("sect;aln;ore;org;equ;col;ship") with sector ";" align ";" ore ";" org ";" equ ";" colos ";" ship1
+ship2=_asknum("enter second ship number:",0)
+
+cal zocreceivebuf 3*1024
+call zocsend "qdc"
+if zocwait("Planet command")=640 then call _error "timeout"
+if zocwait("Citadel command")=640 then call _error "timeout"
+buff=zocreceivebuf(0)
+/* get planet number, check citadel level, shields */
+
+comm=""
+if org>0 then comm=comm||";tnl2^M"
+if equ>0 then comm=comm||";tnl3^M"
+if colos>0 then comm=comm||";snl1^M"
+if comm\="" then call zocsend "q"||substr(comm,2)||"c"
+
+/* 
+call zocsend "qq"
+call _getfigs figname, figmode
+call zocsend "l"||planet||"^Mc"
+if zocwait("Citadel command (?=help)")=640 then call _error "timeout"
+*/
+s.=""
+p.=""
+reclen=_mapinit(fname)
+
+/* setup holo array - figs/mines/planets */
+h.=""
+/* setup dens array - anoms */
+d.=""
+
+loop
+ scan from cit, - get warps
+ lift
+  holo?
+  dens?
+/* warps=_ds() */
+ land
+ choice -- which sector to move to?  press 1 2 3 4 5 6 Q FLEE
+ verify one-way?
+ lift
+  disrupt?  buy disrupters?
+  xport to ship2
+  loop
+   reload figs/shields?
+   move
+   attack
+   retreat?
+  end loop
+  deploy
+  xport back to ship1
+ land
+ pwarp to ship2
+end loop
+
+exit
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*    last updated: 21 Aug 2001, 15:57:46     */
+
+/** _halt **/
+/** _lockkeys **/
+/** _pcheck **/
+/** _error **/
+/** _getinfo **/
+/** _quit **/
+/** _newline **/
+/** _ansi **/
+/** _getgameinfo **/
+/** _ini_askint **/
+/** _ini_askstr **/
+/** _get_log_info **/
+/** _fileexists **/

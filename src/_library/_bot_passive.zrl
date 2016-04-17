@@ -1,0 +1,37 @@
+/** _bot_passive v.1 **/
+_bot_passive: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then return "INACTIVITY WARNING;lifts off from"
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ select
+  when ans=1 then call zocsend "^["
+  when ans=2 then do
+   if _synchronize()="citadel" then call zocsend "s ^M"
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=ans
+return rslt
+
+    /*
+           /* plock */
+              when cmd="plock" then call zocsend "'"||pre||" : "||cmd||" : this function disabled.^M"
+              when cmd="plock" then do
+               prompt=_synchronize()
+               select
+                when prompt="citadel" then do; call zocsend "qqzn"; prompt="command"; end
+                when prompt="planet"  then do; call zocsend "qzn"; prompt="command"; end
+                otherwise nop
+               end /*select*/
+               if prompt="command" then do
+                call _cn9 "spaces"
+                abort="##SPACES##"
+                call zocsend "'"||pre||" : "||cmd||" : send 'stop :; to stop the lock.^M"
+                call _planet_spammer
+                call zocsend "'"||pre||" : "||cmd||" : plock ended.^M"
+               end /*if*/
+               else call zocsend "'"||pre||" : "||cmd||" : failure, owner at "||prompt||" prompt.^M"
+              end /*when*/
+    */

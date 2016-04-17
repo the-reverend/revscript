@@ -1,0 +1,39 @@
+/** _bustcheck v.3 **/
+_bustcheck: procedure expose (globals)
+ info=arg(1)
+ sector=arg(2)
+
+ if sector="" then rslt=0
+ else do
+
+  parse var info name ";" clearfreq ";" extern
+ 
+  if name="" then call _error "no bust filename."
+  if clearfreq="" then clearfreq=1
+  clearfreq=(clearfreq-1)*24*60 /* convert to minutes */
+  if extern="" then extern=0
+  extern=extern*60              /* convert to minutes */
+ 
+  day=date("D")
+  ts1=time("M")
+  if ts1>=extern then lastextern=ts1-extern
+  else lastextern=24*60-extern+ts1
+ 
+  if _fileopenr(name) then do
+   rslt=0
+   do while \_fileeof(name) & \rslt
+    line=linein(name)
+    parse var line sector2 ";" day2 ";" ts2 ";" stamp
+    if sector2=sector then do
+     tsdiff=(day-day2)*60*24 + ts1-ts2
+     if tsdiff>(lastextern+clearfreq) then rslt=0
+     else rslt=1
+    end /*if*/
+   end /*do*/
+   call _fileclose name
+  end /*if*/
+  else rslt=0
+
+ end /*else*/
+
+return rslt

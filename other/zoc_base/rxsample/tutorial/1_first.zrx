@@ -1,0 +1,21 @@
+/* REXX */
+/* ^^^^^^ REXX programs always begin with /* REXX */ on the first line */
+
+/* clear the screen */
+CALL ZocCls
+
+/* set a variable */
+WHO= "World"
+
+/* output text and variable via string concatenation operator: || */
+CALL ZocWriteln "Hello "||WHO||"!"
+
+/* Ask user for his/her name */
+who= ZocAsk("What is your name")
+
+/* print some text to the ZOC window */
+/* (this time we're using REXX's internal SAY command) */
+SAY "Hello "||WHO||"!"
+
+EXIT
+

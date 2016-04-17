@@ -1,0 +1,20 @@
+/** _pausescript v.3 **/
+_pausescript: procedure expose (globals)
+ /* pause script for other players */
+ n=arg(1)%5
+ r=arg(1)//5
+ call _commsg "r", "script paused - "||arg(1)||" seconds remaining."
+ call zocdelay 5
+
+ do i=1 to n-1
+  remaining=arg(1)-5*i
+  call _commsg "r", "script paused - "||arg(1)-5*i||" seconds remaining."
+  call zocdelay 5
+ end /*do*/
+
+ if r>0 then do
+  call _commsg "r", "script paused - "||r||" seconds remaining."
+  call zocdelay r
+ end /*if*/
+ call _commsg "r", "script resumed."
+return

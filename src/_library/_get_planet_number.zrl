@@ -1,0 +1,27 @@
+/** _get_planet_number v.2 **/
+_get_planet_number: procedure expose (globals)
+ if arg(1,"E") then prompt=arg(1)
+               else prompt=_synchronize()
+ select
+  when prompt="citadel" then do
+   if _sendwait("qd","Planet #")=640 then call _error "timeout"
+   parse value _grabit("in sector") with planet " in sector"
+   if _sendwait("c","Citadel command (?=help)")=640 then call _error "timeout"
+  end /*when*/
+  when prompt="computer_cit" then do
+   if _sendwait("qqd","Planet #")=640 then call _error "timeout"
+   parse value _grabit("in sector") with planet " in sector"
+   if _sendwait("cc","Computer command [")=640 then call _error "timeout"
+  end /*when*/
+  when prompt="corporate_cit" then do
+   if _sendwait("qqd","Planet #")=640 then call _error "timeout"
+   parse value _grabit("in sector") with planet " in sector"
+   if _sendwait("cx","Computer command [")=640 then call _error "timeout"
+  end /*when*/
+  when prompt="planet" then do
+   if _sendwait("d","Planet #")=640 then call _error "timeout"
+   parse value _grabit("in sector") with planet " in sector"
+  end /*when*/
+  otherwise planet=0
+ end /*select*/
+return planet

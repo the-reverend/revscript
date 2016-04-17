@@ -1,0 +1,53 @@
+/** _buyhaggle2 v.2 **/
+_buyhaggle2: procedure expose (globals)
+ portoffer=arg(1)
+ offer=trunc(portoffer/1.06)
+
+ success=1
+
+ call zocsend offer||"^M"
+ iter=1
+
+ done=0
+ do while \done
+
+  ans=_waitmux("We'll sell them for|Our final offer|We're not interested.|You have")
+  select
+
+   when ans=0 then do
+    if _wait("Your offer [")=640 then call _error "timeout"
+    newportoffer=_stripint(_grabit("]"))
+    iter=iter+1
+    newoffer=trunc(offer*max(1.003,(newportoffer/portoffer)))
+    if newoffer<=offer then newoffer=offer+1
+    offer=newoffer
+    portoffer=newportoffer
+    call zocsend offer||"^M"
+   end /*when*/
+
+   when ans=1 then do
+    if _wait("Your offer [")=640 then call _error "timeout"
+    finalportoffer=_stripint(_grabit("]"))
+    iter=iter+1
+    factor=0.5
+    if iter<3 then factor=0.6
+    offer=trunc(offer*(1-factor) + finalportoffer*factor)
+    call zocsend offer||"^M"
+   end /*when*/
+
+   when ans=2 then do
+    done=1
+    success=0
+   end /*when*/
+
+   when ans=3 then done=1
+
+   when ans=640 then call _error "timeout"
+
+   otherwise nop
+
+  end /*select*/
+
+ end /*while*/
+
+return success

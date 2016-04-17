@@ -1,0 +1,95 @@
+/** _mapbubbles v.1 **/
+_mapbubbles: procedure expose (globals)
+
+ start=arg(1)
+ mapname=arg(2)
+ recordlen=arg(3)
+ ns=arg(4)
+
+ call _mapseek mapname, recordlen, start
+
+ /* initialize arrays */
+ queuedby.=0
+ queuecount.=0
+ queueparents.=0
+ parentof.=0
+ queue.=""
+ queue.1=start
+
+ parent=start
+ tail=1
+ do i=1 to words(_s.parent)
+
+  code=word(_s.parent,i)
+  warptype=code%20000
+  child=code//20000
+
+  if (warptype<2) then do
+   tail=tail+1
+   queue.tail=child
+   queueparents.tail=parent
+   parentof.child=parent
+  end /*if*/
+
+ end /*do*/
+
+ head=2
+ done=0
+
+ do while \done & tail>=head
+
+  parent=queue.head
+  call _mapseek mapname, recordlen, parent
+
+  do i=1 to words(_s.parent)
+
+   code=word(_s.parent,i)
+   warptype=code%20000
+   child=code//20000
+
+   /* if child not in queue, then add to tail */
+   if (warptype<2) & (\queuedby.child.parent) & \_listin(child, queueparents.head, " ") then do
+    queuedbyancestor=0
+    do j=1 to words(queueparents.head)
+     ancestor=word(queueparents.head,j)
+     if queuedby.child.ancestor then queuedbyancestor=1
+if queuedbyancestor then do; call zocwriteln child ancestor "(" queueparents.head ")"; leave; end
+    end
+    if \queuedbyancestor then do
+	    tail=tail+1
+	    queue.tail=child
+	    queueparents.tail=queueparents.head parent
+	    queuecount.child = queuecount.child + 1
+	    queuedby.child.parent=1
+	    if (parentof.child=0) then parentof.child=parent
+    end
+   end /*if*/
+
+  end /*do*/
+
+  select
+   when head=tail then done=1
+   otherwise head=head+1
+  end /*select*/
+
+ end /*do*/
+
+ change=1
+ do while change
+  change=0
+  do i = 1 to ns
+   j = parentof.i
+   k = parentof.j
+   if j>0 & k>0 & queuecount.i=1 & queuecount.j=1 then do
+    change=1
+    parentof.i=k
+   end
+  end
+ end
+
+ _bd.=0
+ do i = 1 to ns
+  if queuecount.i=1 then _bd.i = parentof.i
+ end
+
+return

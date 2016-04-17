@@ -1,0 +1,22 @@
+/** _rem_autoreply v.1 **/
+/*- _rem_autoreply trigger -*/
+/*- v.1 tested -*/
+_rem_autoreply: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _rem_autoreply"
+ trigger=arg(1)
+ reply=arg(2)
+ found=0
+ do i=0 to 31
+  ar_in="AutoReplyIn#"||copies("0",2-length(i))||i
+  ar_out="AutoReplyOut#"||copies("0",2-length(i))||i
+  parse value zocgetoption(ar_in) with . '="' ar_in_ '"'
+  parse value zocgetoption(ar_out) with . '="' ar_out_ '"'
+  if abbrev(trigger,ar_in_) then do; found=1; leave; end
+ end /*do*/
+ if found then do
+  call zocsetoption(ar_in'=""')
+  call zocsetoption(ar_out'=""')
+  rslt=1
+ end /*if*/
+ else rslt=0
+return rslt

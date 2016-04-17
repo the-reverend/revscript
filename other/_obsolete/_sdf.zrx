@@ -1,0 +1,35 @@
+SDF WORKER MODE
+  SETUP
+    pers fig
+    pers planet (drop figs, grab 20)
+    steal dump? depending on last steal
+    req adj fig pickup
+    drop corp
+    ping
+    join corp
+    pers fig
+    pers planet
+    drop corp
+  MAIN CYCLE
+    steal
+    dump (grab 1 fig)
+    ping
+    bust (report bust)
+  CLEANUP
+    req who is clear
+    if clear in same sector, ping
+    join corp
+    corp fig
+    corp planet
+    drop corp
+    ping
+    join corp
+    corp fig
+    corp planet (drop figs, grab 200)
+    corp fig
+SDF PINGER MODE
+  if ping request, ping
+  if fig pickup request, pickup fig
+  if who clear request, report if clear
+  if sdf request, start sdf
+  if bust report, note bust clear

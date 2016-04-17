@@ -1,0 +1,11 @@
+/** _factorial v.2 **/
+/*- _factorial n -*/
+/*- v.2 tested -*/
+_factorial: procedure expose (globals)
+ rslt=1
+ if fact>1 then do
+  do i=2 to arg(1)
+   rslt=rslt*i
+  end /*do*/
+ end /*if*/
+return rslt

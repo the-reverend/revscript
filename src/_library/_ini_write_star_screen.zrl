@@ -1,0 +1,127 @@
+/** _ini_write_star_screen v.2 **/
+/*- _ini_write_star_screen -*/
+/*- v.2 tested -*/
+_ini_write_star_screen: procedure expose (globals)
+
+ call zocreceivebuf 5*1024
+ if _sendwait("*^M","Game Stats:")=640 then call _error "timeout"
+ if _wait("End Stats.")=640 then call _error "timeout"
+ if _wait("Enter your choice:")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+
+ gname=arg(1)
+ dname=arg(2)
+ 
+ call zocwrite _ansi("bt;fwh")||"writing game info to "||gname||"."
+
+/*- MBBS Compatibility=True   -*/
+/*- Turn Base=5000 Turns      -*/
+/*- Time Online=Unlimited     -*/
+/*- Colonist Regen Rate=750   -*/
+/*- Trade Percent=100%        -*/
+/*- Production Rate=100       -*/
+/*- Max Production Regen=100  -*/
+/*- Clear Bust Days=1 Days    -*/
+/*- Steal Factor=70%          -*/
+/*- Rob Factor=50%            -*/
+/*- Port Production Max=32760 -*/
+/*- Ship Delay=None           -*/
+/*- Sectors=5000              -*/
+ j=1
+
+ i=pos("MBBS Compatibility=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "MBBS Compatibility=" vr
+ if lower(vr)="true" then mbbs=1
+                     else mbbs=0
+
+ i=pos("Turn Base=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Turn Base=" turns " Turns"
+ if lower(turns)="unlimited" then turns=0
+
+ i=pos("Colonist Regen Rate=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Colonist Regen Rate=" coloregen
+
+ i=pos("Trade Percent=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Trade Percent=" vr
+ tradep=_stripint(vr)
+
+ i=pos("Production Rate=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Production Rate=" vr
+ production=vr
+
+ i=pos("Clear Bust Days=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Clear Bust Days=" vr " Days"
+ bustclear=vr
+
+ i=pos("Steal Factor=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Steal Factor=" vr
+ sf=_stripint(vr)
+
+ i=pos("Rob Factor=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Rob Factor=" vr
+ rf=_stripint(vr)
+
+ i=pos("Port Production Max=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Port Production Max=" portmax
+
+ i=pos("Ship Delay=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Ship Delay Mode=" shipdelay
+
+ i=pos("Sectors=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Sectors=" ns
+
+ i=pos("Max Course Length=",buff,j)
+ j=pos(d2c(13),buff,i)
+ parse value substr(buff,i,j-i) with "Max Course Length=" mcl
+
+ select
+  when ns<=5000 then cr=600
+  otherwise cr=ns+1
+ end /*select*/
+
+ if \_ini_write(dname,"settings","ns",ns) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","cr",cr) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","max_course_length",mcl) then call _error "unable to write to "||sname
+
+ call zocwrite "."
+ if \_ini_write(dname,"settings","port_max",portmax) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","trade_percent",tradep) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","production_rate",production) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","colo_regen",coloregen) then call _error "unable to write to "||sname
+
+ call zocwrite "."
+ if \_ini_write(dname,"settings","turns",turns) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","mbbs",mbbs) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","shipdelay",shipdelay) then call _error "unable to write to "||sname
+
+ call zocwrite "."
+ if _ini_read(dname,"settings","extern")="##EOF##" then do
+  if \_ini_write(dname,"settings","extern",0) then call _error "unable to write to "||sname
+ end /*if*/
+ call zocwrite "."
+ if \_ini_write(dname,"settings","bust_clear",bustclear) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","rf",rf) then call _error "unable to write to "||sname
+ call zocwrite "."
+ if \_ini_write(dname,"settings","sf",sf) then call _error "unable to write to "||sname
+
+ call zocwrite "done "
+return

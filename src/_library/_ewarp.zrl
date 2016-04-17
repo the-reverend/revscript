@@ -1,0 +1,196 @@
+/** _ewarp v.2 **/
+/*- _ewarp dest, maxattack, odds [, cr] -*/
+/*- v.2 tested -*/
+_ewarp: procedure expose (globals)
+
+ /* handle arguments */
+    do i=1 to 3
+     if \arg(i,"E") | (_stripint(arg(i))=0 & _msg="##NAN##") then call _error "invalid or missing parameter in _ewarp"
+    end /*do*/
+    dest=_stripint(arg(1))
+    maxa=_stripint(arg(2))
+    odds=_stripnum(arg(3))
+    if \arg(4,"E") then crnum=99999
+                   else crnum=_stripint(arg(4))
+    if crnum=99999 then m="m"
+                   else m=""
+
+ /* modes */ 
+    pay=0
+    minevoid=0
+
+ /* crm */
+    if dest<crnum then crm="^M"
+                  else crm=""
+
+ pflag.=1
+ figtype="def"
+ msg="S"
+ done=0
+
+ /* move */
+    if _sendwait(m||dest||crm,"<Move>")=640 then call _error "timeout"
+/*- if _sendwait(m||dest||crm, "Warping to Sector")=640 then call _error "timeout" -*/
+/*- do while _stripint(_grabit("^M"))\=dest                                        -*/
+/*-   if _wait("Warping to Sector")=640 then call _error "timeout"               -*/
+/*- end                                                                            -*/
+
+ do while \done
+  ans=_waitmux("Your fighters:",
+            ||"|Mined Sector:",
+            ||"|*** Error - No route within",
+            ||"|Stop in this sector",
+            ||"|An Interdictor Generator in",
+            ||"|Command [",
+            ||"|[Toll]",
+            ||"|Sector  :",
+            ||"|Engage the Autopilot?",
+            ||"|engage the TransWarp drive?",
+            ||"|Quasar Blast!",
+            ||"|[Pause]",
+            ||"|Life Support knocked out!",
+            ||"|You fled from",
+            ||"|You fled in your Escape Pod",
+            ||"|Shipboard Computers")
+  select
+
+   /* Your fighters: */
+      when ans=0 & figtype="toll" & pay=1 then do
+        call zocsend "py"
+        figtype="def"
+        msg=msg||"T"
+      end /*when*/
+
+      when ans=0 then do
+        line=_grabit("^M")
+        parse var line f1 . . f2
+        f1=_stripint(f1)
+        f2=_stripint(f2)
+        if f1\="" & f2\="" then do
+         a=f2%odds+1
+         select
+           when a>f1 then do
+            call zocsend "r"
+            msg=msg||"R"
+           end /*when*/
+           when a>maxa then do
+            call zocsend "a"||maxa||"^M"
+            f1=f1-maxa
+            msg=msg||"K"
+           end /*when*/
+           otherwise do
+            call zocsend "a"||min(maxa,f1)||"^M"
+            f1=f1-a
+            msg=msg||"K"
+           end /*otherwise*/
+         end /*select*/
+         /* if f1<maxa then msg=msg||"L" */
+        end /*if*/
+      end /*when*/
+
+   /* Mined Sector: */
+      when ans=1 & minevoid then do
+        call zocsend "y"
+        _v.curremt=1
+      end /*when*/
+      when ans=1            then call zocsend "n"
+
+   /* *** Error - No route within ... Clear Avoids? */
+      when ans=2 then do
+        parse value _grabit("to sector") with . . . . current
+        current=_stripint(current)
+        call zocsend "n"
+        msg=msg||"V"
+      end /*when*/
+
+   /* Stop in this sector */
+      when ans=3 & pflag.3 then do
+       call zocsend "n"
+       pflag.3=0
+      end /*when*/
+
+   /* An Interdictor Generator in */
+      when ans=4 then msg=msg||"I"
+
+   /* Command [ */
+      when ans=5 then done=1
+
+   /* [Toll] */
+      when ans=6 then figtype="toll"
+
+   /* Sector  : */
+      when ans=7 then do
+       temp=_stripint(_grabit("in"))
+       if temp\=current then last=current
+       current=temp
+       figtype="def"
+       pflag.=1
+      end /*when*/
+
+   /* Engage the Autopilot? */
+      when ans=8 & pflag.1 then do
+       call zocsend "e"
+       pflag.1=0
+      end /*when*/
+
+   /* engage the TransWarp drive? */
+      when ans=9 & pflag.2 then do
+       call zocsend "n"
+       pflag.2=0
+      end /*when*/
+
+   /* Quasar Blast! */
+      when ans=10 then msg=msg||"Q"
+
+   /* [Pause] */
+      when ans=11 then call zocsend "^M"
+
+   /* You fled from */
+      when ans=13 then msg=msg||"F"
+
+   /* You fled in your Escape Pod / Life Support knocked out! */
+      when ans=14 | ans=12 then msg=msg||"P"
+
+   /* Shipboard Computers */
+      when ans=15 then msg=msg||"A"
+
+      when ans=640 then call _error "timeout"
+      otherwise nop
+
+  end /*select*/
+ end /*do*/
+
+ msg=msg||";"||current||";"||last
+/*- msg key A=attack   -*/
+/*-         F=flee     -*/
+/*-         I=idg      -*/
+/*-         K=kill     -*/
+/*-         P=pod      -*/
+/*-         Q=quasar   -*/
+/*-         R=retreat  -*/
+/*-         S=start    -*/
+/*-         T=toll     -*/
+/*-         V=void     -*/
+
+return msg
+/*-                                                                                         -*/
+/*-      EVENT-REACTION MATRIX FOR EXPRESS WARPING                                          -*/
+/*-                                                                                         -*/
+/*- EVENT         POSSIBLE REACTIONS...                                                     -*/
+/*- toll figs                 pay kill retreat?/void/nc                                quit -*/
+/*- def figs                      kill retreat?/void/nc                                quit -*/
+/*- off figs      ignore               retreat?/void/nc                                quit -*/
+/*- mines         ignore void          retreat?/void/nc                                quit -*/
+/*- enemy + figs  ignore               retreat?/void/nc                                quit -*/
+/*- enemy + flee  ignore               retreat?/void/nc                                quit -*/
+/*- enemy + stay  ignore               retreat?/void/nc                                quit -*/
+/*- idc                                                 xport run/repeat    attack cby quit -*/
+/*- idg                                                 xport run/repeat    land   cby quit -*/
+/*- idc + figs                pay kill retreat?/void/nc       run/repeat    attack     quit -*/
+/*- idg + figs                pay kill retreat?/void/nc       run/repeat               quit -*/
+/*- pod                                                 xport run/port/hide        cby quit -*/
+/*- quasar                             retreat?/void/nc                                quit -*/
+/*- no path       clear(all?)/nc/aggression                                            quit -*/
+/*- out of turns                                                                       quit -*/
+/*- photon                                                                         cby quit -*/
+/*- arrive                                                                             quit -*/

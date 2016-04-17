@@ -1,0 +1,158 @@
+/** _ini_write_ship_catalog v.1 **/
+/*- _ini_write_ship_catalog -*/
+/*- v.2 tested -*/
+_ini_write_ship_catalog: procedure expose (globals)
+ dname=arg(1)
+ call _twmsg "OFF"
+ call zocsend "cc"
+ if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+ 
+ /* setup ship array */
+ nextpage=0
+ ship.0=0
+ i=1
+ buflen=8*1024
+ done=0
+ do while \done
+ 
+  /* read catalog page into buffer */
+  call zocreceivebuf buflen
+  if i=1 then call zocsend "?"
+  else call zocsend "+"
+  if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+  buff=translate(zocreceivebuf(buflen),"  ",d2c(0)||d2c(10))
+  if length(buff)=buflen then call _error "buffer overflow"
+ 
+  /* parse ship catalog page */
+  j=ship.0
+  jj=1
+  ii=pos("<",buff,jj)
+  if ii>0 then jj=pos(d2c(13),buff,ii)
+  do while ii>0 & jj>0
+   parse value substr(buff,ii,jj-ii) with "<" letter "> " shipname
+   select
+    when i>1 & letter="A" & shipname=_dword(ship.1,3,";") then do
+     done=1
+     leave
+    end /*when*/
+    when shipname="Next Page" then nextpage=1
+    when shipname="To Leave" then nop
+    otherwise do
+     j=j+1
+     ship.j=i||";"||letter||";"||shipname
+    end /*otherwise*/
+   end /*select*/
+   ii=pos("<",buff,jj)
+   if ii>0 then jj=pos(d2c(13),buff,ii)
+   else jj=0
+  end /*do*/
+  ship.0=j
+ 
+  if \nextpage then done=1
+  i=i+1
+ 
+ end /*do*/
+ 
+ currentpage=1
+ do i=1 to ship.0
+ 
+  mshlds=0
+  mfigs=0
+  mfigattack=0
+  offodds=0
+  defodds=0
+  
+  /* get ship description */
+  parse var ship.i page ";" letter ";" shipname
+  if page>currentpage then do
+   currentpage=page
+   call zocsend "+"
+   if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+   buff=translate(zocreceivebuf(buflen),"  ",d2c(0)||d2c(10))
+   if length(buff)=buflen then call _error "buffer overflow"
+  end /*if*/
+  call zocsend letter
+  if _wait("Which ship are you interested in (?=List) ?")=640 then call _error "timeout"
+  buff=translate(zocreceivebuf(buflen),"  ",d2c(0)||d2c(10))
+  if length(buff)=buflen then call _error "buffer overflow"
+ 
+  line.i=_parse_ship_desc(buff)
+ 
+  /* parse ship description
+  ii=pos("Maximum Shields:",buff)
+  if ii>0 then jj=pos(d2c(13),buff,ii)
+  else jj=0
+  if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii)with "Maximum Shields:" mshlds
+ 
+  ii=pos("Max Fighters:",buff)
+  if ii>0 then jj=pos("Offensive Odds:",buff,ii)
+  else jj=0
+  if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Max Fighters:" mfigs
+  if jj>0 then kk=pos(":1",buff,jj)
+  else kk=0
+  if jj>0 & kk>0 then parse value substr(buff,jj,kk-jj) with "Offensive Odds:" offodds
+ 
+  ii=pos("Turns Per Warp:",buff)
+  if ii>0 then jj=pos("Defensive Odds:",buff,ii)
+  else jj=0
+  if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Turns Per Warp:" tpw
+  if jj>0 then kk=pos(":1",buff,jj)
+  else kk=0
+  if jj>0 & kk>0 then parse value substr(buff,jj,kk-jj) with "Defensive Odds:" defodds
+ 
+  ii=pos("Max Figs Per Attack:",buff)
+  if ii>0 then jj=pos("TransWarp Drive:",buff,ii)
+  else jj=0
+  if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Max Figs Per Attack:" mfigattack
+ 
+  ii=pos("Maximum Holds:",buff)
+  if ii>0 then jj=pos("Transport Range:",buff,ii)
+  else jj=0
+  if ii>0 & jj>0 then parse value substr(buff,ii,jj-ii) with "Maximum Holds:" mholds
+  if jj>0 then kk=pos("Photon Missiles:",buff,jj)
+  else kk=0
+  if jj>0 & kk>0 then parse value substr(buff,jj,kk-jj) with "Transport Range:" range
+ 
+  mshlds=_space(translate(mshlds," ",","),0)
+  mfigs=_space(translate(mfigs," ",","),0)
+  mfigattack=_space(translate(mfigattack," ",","),0)
+  offodds=strip(offodds)
+  defodds=strip(defodds)
+  mholds=strip(mholds)
+  range=strip(range)
+  tpw=strip(tpw)
+  line.i=mshlds||";"||mfigs||";"||mfigattack||";"||offodds||";"||defodds||";"||mholds||";"||range||";"||tpw
+  */
+
+ end /*do*/
+ 
+ /* exit ship catalog */
+ call zocsend "qq"
+ if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+ call zocsend "|"
+ if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+ 
+ call _newline _ansi("bt;fwh")||"writing ship catalog to "||dname
+
+ shiplist="";
+ do i=ship.0 to 1 by -1
+  call zocwrite "."
+  shiptype=translate(strip(_dword(ship.i,3,";")),"____","|;=.")
+  if \_ini_write(dname,"settings","ship."||shiptype,line.i) then call _error "unable to write to "||dname
+  shiplist=shiptype||";"||shiplist
+ end /*do*/
+ if \_ini_write(dname,"settings","ship.key_long","base cost;max figs per attack;max holds;initial holds;max fighters;turns per warp;max mines;max genesis torps;transwarp drive;transport range;max shields;offensive odds;defensive odds;max beacons;long range scan;planet scanner;photon missiles") then call _error "unable to write to "||dname
+ if \_ini_write(dname,"settings","ship.key","1bcst;2mfgpa;3mhlds;4ihlds;5mfg;6tpw;7mmine;8mgent;9tw;10trng;11mshlds;12offodds;13defodds;14mbeac;15lrs;16ps;17phot") then call _error "unable to write to "||dname
+ pods=_mrequestlist("which ships are pods, or have no pod?",shiplist,";","c")
+ podlist=""
+ do i=1 to _dwords(pods,";")
+  if _dword(pods,i,";") then podlist=podlist||";"||_dword(shiplist,i,";")
+ end /*do*/
+ podlist=substr(podlist,2)
+ shiplist=_list_sort_by_length(left(shiplist,length(shiplist)-1),";")
+ call zocwrite "."
+ if \_ini_write(dname,"settings","shiplist",shiplist) then call _error "unable to write to "||dname
+ if \_ini_write(dname,"settings","podless",podlist) then call _error "unable to write to "||dname
+ call zocwriteln "."
+
+return

@@ -1,0 +1,24 @@
+/** _stripnum v.3 **/
+/*- _stripnum number -*/
+/*- v.3 tested -*/
+_stripnum: procedure expose (globals)
+ w=9
+ mask=_space(translate(arg(1)," ","-0123456789.,"," "),0)
+ rslt=word(_space(translate(_stripcomma(arg(1))," ",mask," ")),1)
+ if rslt="" | rslt="-" then do; call _set_msg "##NAN##", "_stripnum"; rslt=0; end
+ else do
+  if left(rslt,1)="-" then neg="-"; else neg=""
+  rslt=_space(translate(rslt," ","-"),0)
+  if left(rslt,1)="." then rslt="0"||rslt
+  r=_dword(rslt,1,".")
+  m=_dword(rslt,2,".")
+  select
+   when r=0 & length(m)>w then m=left(m,w)
+   when length(r)>w then do; r=left(r,w); m=""; end
+   when length(r)=w then m=""
+   when length(m)>(w-length(r)) then m=left(m,w-length(r))
+   otherwise nop
+  end /*select*/
+  if m="" then rslt=neg||r; else rstl=neg||r||"."||m
+ end /*else*/
+return rslt

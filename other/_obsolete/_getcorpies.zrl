@@ -1,0 +1,34 @@
+/** _getcorpies v.2 **/
+_getcorpies:
+ call zocsend "ta"
+ if zocwait("-----^M")=640 then call _error "timeout"
+ gcdone=0
+ gclist=""
+ do while \gcdone
+  if zocwait("^M")=640 then call _error "timeout"
+  gcline=zoclastline()
+  if left(gcline,3)="   " then gcdone=1
+  else do
+   if gclist="" then gclist=strip(left(gcline,39),"B")
+   else gclist=gclist||";"||strip(left(gcline,39),"B")
+  end /* do */
+ end /* do */
+ call zocsend "q"
+ if zocwait("Command [")=640 then call _error "timeout"
+return gclist
+/** _error **/
+
+_addcorpie:
+ acfound=0
+ aclist=arg(1)
+ parse var aclist ac1 ";" ac2
+ if ac2=arg(2) then acfound=1
+ do while ac2\="" & \acfound
+  parse var ac2 ac1 ";" ac2
+  if ac2=arg(2) then acfound=1
+ end /* do */
+ if \acfound then do
+  if aclist="" then aclist=arg(1)
+  else aclist=aclist||";"||arg(1)
+ end /* if */
+return aclist

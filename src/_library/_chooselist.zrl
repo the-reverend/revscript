@@ -1,0 +1,62 @@
+/** _chooselist v.6 **/
+_chooselist: procedure expose (globals)
+ prompt=arg(1)
+ if arg(2,"E") then list=arg(2); else list=""
+ if list="" then call _error "no list"
+ if arg(3,"E") then delim=left(arg(3),1); else delim=";"
+
+ select
+  when _dwords(list,delim)=1 then rslt=zocrequest(prompt, list)
+  when _dwords(list,delim)=2 then rslt=zocrequest(prompt, _dword(list,1,delim), _dword(list,2,delim))
+  when _dwords(list,delim)=3 then rslt=zocrequest(prompt, _dword(list,1,delim), _dword(list,2,delim), _dword(list,3,delim))
+  when _dwords(list,delim)=4 then rslt=zocrequest(prompt, _dword(list,1,delim), _dword(list,2,delim), _dword(list,3,delim), _dword(list,4,delim))
+  otherwise do
+   ch.=""
+   i=_dwords(list,delim)
+   do j=1 to i
+    ch.j=_dword(list,j,delim)
+   end /*do*/
+  
+   if i<7 then max=1
+   if i<5 then max=0
+   if i>=7 then max=(i-5)%2+1
+  
+   done=0
+   loc=0
+   do while \done
+    if loc<0 then loc=0
+    if loc>max then loc=max
+  
+    select
+     when loc=0 then do
+      if max=0 then rslt=zocrequest(prompt, ch.1, ch.2, ch.3, ch.4)
+      else rslt=zocrequest(prompt, ch.1, ch.2, ch.3, "next")
+     end /*when*/
+     when loc=max then do
+      p1=(loc-1)*2+4
+      p2=p1+1
+      p3=p1+2
+      rslt=zocrequest(prompt, "back", ch.p1, ch.p2, ch.p3)
+     end /*when*/
+     otherwise do
+      p1=(loc-1)*2+4
+      p2=p1+1
+      rslt=zocrequest(prompt, "back", ch.p1, ch.p2, "next")
+     end /*otherwise*/
+    end /*select*/
+  
+    select
+     when rslt="next" then loc=loc+1
+     when rslt="back" then loc=loc-1
+     when rslt="##CANCEL##" then done=1
+     when rslt="" then nop
+     otherwise done=1
+    end /*select*/
+  
+   end /*do*/
+  end /*otherwise*/
+ end /*select*/
+  
+ if lower(arg(4))="c" & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+
+return rslt

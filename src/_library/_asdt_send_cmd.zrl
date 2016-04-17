@@ -1,0 +1,3 @@
+_asdt_send_cmd: procedure expose (globals)
+ call zocsend "'"||_g.!sname1 ":" asdt.!myname arg(1) "::^M"
+return 1

@@ -1,0 +1,23 @@
+/** _asknum v.4 **/
+/*- _asknum msg, default, flags -*/
+/*- v.4 tested -*/
+_asknum: procedure expose (globals)
+ do i=1 to 3
+  select
+   when i=1 & arg(i,"E") then msg=arg(i)
+   when i=1              then msg="enter an number:"
+   when i=2 & arg(i,"E") then default=arg(i)
+   when i=2              then default=""
+   when i=3 & arg(i,"E") then cflag=min(verify(lower(arg(i)),"c","M"),1)
+   when i=3              then cflag=0
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ rslt=strip(zocask(msg, default))
+ do while _stripnum(rslt)\=rslt | rslt=""
+  default=rslt||" [please enter a number or ESC to cancel.]"
+  if rslt="##CANCEL##" then leave
+  else rslt=strip(zocask(msg, default))
+ end /*do*/
+ if cflag & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+return rslt

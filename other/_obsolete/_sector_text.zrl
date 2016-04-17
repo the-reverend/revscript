@@ -1,0 +1,30 @@
+_sector_text: procedure expose (globals)
+/*- _sector_text num, expl, ptype, fig, armid, limpet, warp0 (cw fr 12 oclock), warp1, warp2, warp3, warp4, warp5, warp6, warp7 -*/
+ if arg(1,"E") then n=arg(1); else n=0
+ if arg(2,"E") then e=arg(2); else e=0
+ if arg(3,"E") then p=arg(3); else p=""
+ if arg(4,"E") then f=arg(4); else f=0
+ if arg(5,"E") then am=arg(5); else am=0
+ if arg(6,"E") then lm=arg(6); else lm=0
+ j=7; do i=0 to 7; if arg(i+j,"E") then w.i=arg(i+j); else w.i=0; end
+ select
+  when n=0  | n="##BLANK##"    then rslt="         ;         ;         "
+  when n=-1 | n="##PASSTHRU##" then do
+   if (w.5 | w.6 | w.7) then link1="o"; else link1=" "
+   if (w.5 | w.6 | w.7) & (w.0 | w.1 | w.2 | w.3 | w.4) then link2="--"; else link2="  "
+   if (w.1 | w.2 | w.3) & (w.0 | w.4 | w.5 | w.6 | w.7) then link4="--"; else link4="  "
+   if link2="--" | link4="--" then link3="o"; else link3=" "
+   if (w.1 | w.2 | w.3) then link5="o"; else link5=" "
+   line1=_dword(" ;\;\",w.7+1,";")||"   "||_dword(" ;|;|",w.0+1,";")||"   "||_dword(" ;/;/",w.1+1,";")
+   line2=_dword(" ;-;-",w.6+1,";")||link1||link2||link3||link4||link5||_dword(" ;-;-",w.2+1,";")
+   line3=_dword(" ;/;/",w.5+1,";")||"   "||_dword(" ;|;|",w.4+1,";")||"   "||_dword(" ;\;\",w.3+1,";")
+   rslt=line1||";"||line2||";"||line3
+  end /*when*/
+  otherwise do
+   line1=_dword(" ;\;x",w.7+1,";")||"   "||_dword(" ;|;v",w.0+1,";")||"   "||_dword(" ;/;x",w.1+1,";")
+   line2=_dword(" ;-;>",w.6+1,";")||_dword("(; ",e+1,";")||_pad(n,5,"r")||_dword("); ",e+1,";")||_dword(" ;-;<",w.2+1,";")
+   line3=_dword(" ;/;x",w.5+1,";")||_pad(p,3,"c")||_dword(" ;|;^^",w.4+1,";")||word("f",abs(f-2))||word("m",abs(am-2))||word("l",abs(lm-2))||_dword(" ;\;x",w.3+1,";")
+   rslt=line1||";"||line2||";"||line3
+  end /*otherwise*/
+ end /*select*/
+return rslt

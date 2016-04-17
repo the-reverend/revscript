@@ -1,0 +1,21 @@
+_snd_port_cim: procedure expose (globals)
+ ns=arg(1)
+ mname=arg(2)
+ reclen=arg(3)
+ call zocsend "'^M ##PORTCIM## *^M"
+ c=0
+ do i=1 to ns
+  call _mapseek mname, reclen, i
+  if _p.i\="" then do
+   c=c+1
+   p=translate(_p.i,"  ",";,")
+   line=d2x(i) word(p,1)
+   do j=2 to words(p)
+    line=line d2x(word(p,j))
+   end /*do*/
+   call zocsend line "*^M"
+   if c//50=0 then do; do while _waitmux(":|"||line)=0; nop; end; end
+  end /*if*/
+ end /*do*/
+ call zocsend " ##DONE## *^M^M"
+return 1

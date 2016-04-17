@@ -1,0 +1,44 @@
+/** _getmovepath v.3 **/
+_getmovepath: procedure expose (globals)
+ if arg(1)="" then call _error "no destination sector."
+
+ if arg(2)="" then do
+  gmp1=""
+  gmp2=arg(1)
+ end /*do*/
+ else do
+  gmp1=arg(1)
+  gmp2=arg(2)
+ end /*else*/
+
+ call zocsend "^^f"||gmp1||"^M"||gmp2||"^Mq"
+ if zocwait("TO >")=640 then call _error "timeout"
+ if zocwait("^M")=640 then call _error "timeout"
+
+ done=0
+ lin1.=""
+ i=1
+ do while \done
+  if zocwait("^M")=640 then call _error "timeout"
+  line.i=_lastline()
+  if line.i="" then done=1
+  else i=i+1
+ end /*do*/
+
+ if zocwait("ENDINTERROG")=640 then call _error "timeout"
+
+ /* create semi-colon list of sectors in path */
+ i=1
+ l=line.1
+ list=""
+ do while l\=""
+  parse var l sec ">" l
+  if list="" then list=_stripint(sec)
+  else list=list||";"||_stripint(sec)
+  if l="" then do
+   i=i+1
+   l=line.i
+  end /*if*/
+ end /*do*/
+
+return list

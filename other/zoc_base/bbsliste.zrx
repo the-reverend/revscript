@@ -1,0 +1,5 @@
+/*REXX*/
+
+Call ZocCls
+SAY ""
+SAY "Eine Liste mit deutschen Mailboxen finden Sie unter http://www.bbsliste.de"

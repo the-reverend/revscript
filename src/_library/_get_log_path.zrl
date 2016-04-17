@@ -1,0 +1,10 @@
+/** _get_log_path v.2 **/
+/*- _get_log_path -*/
+/*- v.2 tested -*/
+_get_log_path: procedure expose (globals)
+ parse value zocgetglobaloption("CapturePath") with . '="' lpath '"'
+ if left(zocgetinfo("VERSION"),1)>4 then lpath = zocfilename("RESOLV", lpath)
+ lpath=dosfname(lpath)
+ if right(lpath,1)\="\" then lpath=lpath||"\"
+ if \dosisdir(lpath) then call _error "invalid path in _get_log_path"
+return lpath

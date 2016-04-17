@@ -1,0 +1,13 @@
+/** _prompt v.1 **/
+_prompt: procedure expose (globals)
+	pmt=""
+	k=d2c(145)
+	call zocsend k
+	if zocwait(k)=0 then do
+		parse value zoclastline() with pmt (k)
+	end /*if*/
+# return the prompt string unless arg(1) exists then compare to arg(1) and return true/false
+	if arg(1)="" then rslt=pmt
+	else if pmt=arg(1) then rslt=1
+  else rslt=0
+return rslt

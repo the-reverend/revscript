@@ -1,0 +1,30 @@
+/** _planet_get_info v.1 **/
+_planet_get_info: procedure expose (globals)
+ if arg(1,"E") then pmt=arg(1); else pmt=_synchronize()
+ if pmt="planet" then do
+  if _sendwait("d","Planet #")=640 then call _error "timeout"
+  parse value _grabit(":") with n . . s ":"
+  if _wait("Fuel Ore")=640 then call _error "timeout"
+  parse value _stripcomma(_grabit("^M")) with c.1 cb.1 dp.1 pa.1 sa.1 pm.1 .
+  if _wait("Organics")=640 then call _error "timeout"
+  parse value _stripcomma(_grabit("^M")) with c.2 cb.2 dp.2 pa.2 sa.2 pm.2 .
+  if _wait("Equipment")=640 then call _error "timeout"
+  parse value _stripcomma(_grabit("^M")) with c.3 cb.3 dp.3 pa.3 sa.3 pm.3 .
+  if _wait("Fighters")=640 then call _error "timeout"
+  parse value _stripcomma(_grabit("^M")) with c.4 cb.4 dp.4 pa.4 sa.4 pm.4 .
+  cit=_waitmux("Planet command (?=help) [D]|level 1 Citadel|level 2 Citadel|level 3 Citadel|level 4 Citadel|level 5 Citadel|level 6 Citadel")
+  do i=1 to 4
+   if c.i="N/A"  then c.i=0
+   if cb.i="N/A" then cb.i=0
+  end /*do*/
+  rslt=n s cit c.1 cb.1 dp.1 pa.1 sa.1 pm.1 c.2 cb.2 dp.2 pa.2 sa.2 pm.2 c.3 cb.3 dp.3 pa.3 sa.3 pm.3 c.4 cb.4 dp.4 pa.4 sa.4 pm.4
+#  Item    Colonists  Colonists    Daily     Planet      Ship      Planet
+#           (1000s)   2 Build 1   Product    Amount     Amount     Maximum
+# -------  ---------  ---------  ---------  ---------  ---------  ---------
+#Fuel Ore          0          1          0          0          0  1,000,000
+#Organics          0          1          0          0          0  1,000,000
+#Equipment         0          1          0          0          0  1,000,000
+#Fighters        N/A        N/A          0          0      1,000  1,000,000
+ end /*if*/
+ else call _error "wrong prompt in _planet_get_info"
+return rslt

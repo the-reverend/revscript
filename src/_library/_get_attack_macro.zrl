@@ -1,0 +1,26 @@
+/* _get_attack_macro v.1 */
+_get_attack_macro: procedure expose (globals)
+
+ targets=arg(1)
+ tab=d2c(9)
+ rslt=""
+
+ parse value _get_attack_list() with myfigs (tab) list
+ if myfigs>0 then do
+
+  c=_dwords(list,tab)%4
+  menu=""
+  num=0
+  do i=1 to c
+   parse var list name.i (tab) ship.i (tab) unmanned.i (tab) hisfigs.i (tab) list
+   menu=menu||";"||name.i||"'s "||_dword("UNMANNED ;",abs(unmanned.i-1)+1,";")||ship.i||" ("||hisfigs.i||")"
+   if targets\="" & num=0 & \unmanned.i then ,
+    if _listinstr(targets, name.i) then num=i
+  end /*do*/
+
+  if targets="" then num=_drequestlisti("pick one to attack",menu,";")
+  if num>0 then rslt="a"||copies("n",num-1)||"y;"||ship.num||";"||hisfigs.num||";"||unmanned.i
+
+ end /*do*/
+
+return rslt

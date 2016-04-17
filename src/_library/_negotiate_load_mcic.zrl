@@ -1,0 +1,32 @@
+/** _negotiate_load_mcic v.1 **/
+_negotiate_load_mcic: procedure expose (globals)
+ _mcic.="##UNDEF##"
+ if arg(1,"E") then fname=arg(1); else return 0
+ if _fileopenr(fname) then do
+  insection=0
+  do while \_fileeof(fname)
+   line=strip(linein(fname))
+   if _ini_is_section(line) then do
+    insection=1
+    parse var line "[" section "]"
+    section=strip(section)
+    x=_list_select(section,"ore org equ","1 2 3"," ")
+   end /*if*/
+   else do
+    parse var line k "=" v
+    select
+     when x="" then nop
+     when k="mcic" then _mcic.x.101=v
+     when k="cop"  then _mcic.x.102=v
+     when _dword(k,1,".")="puo" then do
+      n=_dword(k,2,".")
+      _mcic.x.n=v
+     end /*when*/
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*while*/
+  call _fileclose fname
+  return 1
+ end /*if*/
+return 0

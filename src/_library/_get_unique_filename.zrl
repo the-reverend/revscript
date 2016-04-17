@@ -1,0 +1,28 @@
+/** _get_unique_filename v.1 **/
+/*- _get_unique_filename path prefix suffix maxlength extension -*/
+_get_unique_filename: procedure expose (globals)
+ do i=1 to 6
+  select
+   when i=1 & arg(i,"E") then path=arg(i)
+   when i=1              then path="\"
+   when i=2 & arg(i,"E") then prefix=arg(i)
+   when i=2              then prefix="_"
+   when i=3 & arg(i,"E") then suffix=arg(i)
+   when i=3              then suffix=""
+   when i=4 & arg(i,"E") then maxlength=arg(i)
+   when i=4              then maxlength=8
+   when i=5 & arg(i,"E") then extension=arg(i)
+   when i=5              then extension=".txt"
+   when i=6 & arg(i,"E") then appendExtension=arg(i)
+   when i=6              then appendExtension=0
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ if right(path,1)\="\" then path=path||"\"
+ num=0
+ do until \_fileexists(path||fname)
+  num = num + 1
+  fname=prefix||_pad(num,maxlength-length(prefix)-length(suffix),"R","0")||suffix||extension
+ end /*do*/
+ if appendExtension then return fname
+return prefix||_pad(num,maxlength-length(prefix)-length(suffix),"R","0")||suffix

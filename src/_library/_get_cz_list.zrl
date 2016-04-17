@@ -1,0 +1,36 @@
+/** _get_cz_list v.1 **/
+_get_cz_list: procedure expose (globals)
+ buflen=16*1024
+ call zocreceivebuf buflen
+ call zocsend "czq"
+ if zocwait("<Active Ship Scan>")=640 then call _error "timeout"
+ if zocwait("(?=Help)? :")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10))
+ if length(buff)=buflen then call _error "buffer overflow"
+ i=pos("----------",buff)
+ if i>0 then i=pos(d2c(13),buff,i)+1
+ if i>1 then j=pos(d2c(13),buff,i)
+ c=0
+ do while i>0 & j>0
+  line=translate(strip(substr(buff,i,j-i))," ","+")
+  if line="" then leave
+  c=c+1
+  parse var line shipnum.c shiploc.c line
+  shipname.c=left(line,20)
+  line=substr(line,21)
+  if right(shipname.c,4)="Corp" then shipname.c=left(shipname.c,length(shipname.c)-5)
+  parse var line figs.c shields.c hops.c shiptype.c
+  shipname.c=strip(shipname.c)
+  shiptype.c=strip(shiptype.c)
+  if pos("T",figs.c)>0 then figs.c=strip(translate(figs.c," ", "T"))*1000
+  if pos("T",shields.c)>0 then shields.c=strip(translate(shields.c," ", "T"))*1000
+  i=j+1
+  j=pos(d2c(13),buff,i)
+ end /*do*/
+
+rslt=""
+do i=1 to c
+ rslt=rslt||" "||shipnum.i||","||shiploc.i
+end /*do*/
+rslt=translate(strip(rslt),";"," ")
+return rslt

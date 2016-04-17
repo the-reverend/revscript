@@ -1,0 +1,10 @@
+/** _fileclose v.3 **/
+/*- _fileclose fname -*/
+/*- v.3 tested -*/
+_fileclose: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing argument in _fileclose"
+ select
+  when arg(1)="" then nop
+  otherwise call stream arg(1), "C", "CLOSE"
+ end /*select*/
+return

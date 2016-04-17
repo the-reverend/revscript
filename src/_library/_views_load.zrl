@@ -1,0 +1,22 @@
+/** _views_load v.1 **/
+/*- _views_load infile -*/
+_views_load: procedure expose (globals)
+ infile=arg(1)
+ _vs.=0
+ _vn.="(na)"
+ _vi.=""
+ c=0
+ if _fileopenr(infile) then do
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||"loading views from" infile "... "
+  do while \_fileeof(infile)
+   line=linein(infile)
+   if line\="" then do
+    parse var line vs . s . note . . . . info
+    _vs.s=vs; _vn.s=note; _vi.s=info
+    c=c+1
+   end /*if*/
+  end /*do*/
+  call _fileclose(infile)
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||c||" views loaded. "
+ end /*if*/
+return c

@@ -1,0 +1,886 @@
+/* REXX _tedit_revealer.zrx by the reverend (build 27)                        */
+/*-       built by rev-builder version 1.3a on 22 Mar 2014 at 00:15:40       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author.                -*/
+/*-                                                                          -*/
+/*- This script is provided to you WITHOUT ANY WARRANTY, even the implied    -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         -*/
+/*-                                                                          -*/
+/*-                       Copyright (C) 2009 Ron Wilson                      -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- -----------------*/ _g.!sname="_tedit_revealer.zrx" /*------------------ -*/
+/*- --------------*/ _g.!sbuild=27; _g.!sdate="2014-03-22" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+/* rev. 0 - initial release                                                   */
+
+globals=_setglobals()
+call _timeout 5
+call zocsynctime 500
+call on halt name _halt
+
+/* GET TWGS PATH FROM REGISTRY */
+
+infile="twgspath.txt"
+cmd='regedit.exe /E '||infile||' "HKEY_LOCAL_MACHINE\SOFTWARE\Epic Interactive Strategy\Trade Wars 2002 Game Server\Configuration\"'
+code=zocexec(cmd)
+if code\=0 then call _error "error reading registry"
+if _fileopenr(infile) then do
+	do while \_fileeof(infile)
+		line=linein(infile)
+		line=translate(line,"*"," ")
+		line=zocstring("REMOVE", line, d2c(0))
+		line=translate(line," ","*")
+		if left(line,14)='"ServerRoot"="' then do
+			parse var line '"ServerRoot"="' twgs.0 '"'
+			twgs.1=zocstring("REPLACE", twgs.0, "\\", "\")
+    end /*if*/
+	end /*while*/
+	call _fileclose infile
+end /*if*/
+
+/* FIND TWGS.EXE */
+
+twgs.1="C:\Program Files\Epic Interactive Strategy\TWGS\"
+twgs.2="C:\Program Files\EIS\TWGS\"
+twgs.3="C:\EIS\TWGS\"
+
+j=0
+do i=1 to 3
+	if _fileexists(twgs.i||"twgs.exe") then do; j=i; leave; end
+end /*do*/
+
+if j=0 then do
+	twgs.0=zocgetfilename("Please browse to TWGS.EXE.", "*.exe")
+	if twgs.0="##CANCEL##" then exit
+	twgs.0=substr(twgs.0,1,lastpos("\",twgs.0))
+end /*do*/
+
+path=twgs.j||"Game\ANSI\"
+header=_pad("- "||_g.!sname1||" build "||_g.!sbuild||" --- updated "||date('N') time('N')||" --- rev ---",77,"R","-")
+
+/* GENERAL EDITS */
+
+if _sendwait("?","Trade Wars 2002 Editor (?=Help) [?] :")=640 then call _quit "please start at the TEDIT prompt."
+
+/*
+---- H -----
+
+<S> Max Command/Cycle: 30
+<1> Processing Interval    : 1 Sec
+<0> Interactive Sub-Prompts: Yes
+<N> Turn Accumulation Days : 1 Day(s)
+*/
+
+if _sendwait("h","<1> Processing Interval    : ")=640 then call _error "timeout"
+processingInterval=_grabit(" Sec","s")
+if _wait("<0> Interactive Sub-Prompts: ")=640 then call _error "timeout"
+interactiveSubprompts=_waitmux("No|Yes")
+if interactiveSubprompts=640 then call _error "timeout"
+if _wait("<N> Turn Accumulation Days : ")=640 then call _error "timeout"
+turnBank=_waitmux("N/A| Day(s)")
+if turnBank then parse value _lastline() with turnBank .
+if _wait("<S> Max Command/Cycle: ")=640 then call _error "timeout"
+maxCommandsPerCycle=_grabit("   ","s")
+if _wait("General Editor Two: (Q=Quit) [Q] :")=640 then call _error "timeou6t"
+
+/*
+---- I ----
+
+<1> Max Terra Colonists  : 100,000,000
+<7> Death Delay          : Yes
+<0> FedSpace Photons     : Yes
+<[> Minimum Login Time   : None
+*/
+
+if _sendwait("qi","<1> Max Terra Colonists  : ")=640 then call _error "timeout"
+maxTerranColonists=_grabit("^M")
+if _wait("<7> Death Delay          : ")=640 then call _error "timeout"
+deathDelay=_waitmux("No|Yes")
+if deathDelay=640 then call _error "timeout"
+if _wait("<0> FedSpace Photons     : ")=640 then call _error "timeout"
+FedspacePhotons=_waitmux("No|Yes")
+if FedspacePhotons=640 then call _error "timeout"
+if _wait("<[> Minimum Login Time   : ")=640 then call _error "timeout"
+minimumLoginTime=translate(_grabit("^M"),"n","N")
+if _wait("General Editor Three: (Q to quit) [Q] :")=640 then call _error "timeout"
+
+/*
+---- N1 ----
+
+<H> Class        : 0 Class M, Earth Type
+*/
+
+if _sendwait("qn1^M","<H> Class        : ")=640 then call _error "timeout"
+parse value _grabit("^M") with terraPlanetTypeN terraPlanetType
+if _wait("Planet edit: (?) (<>) (X=Exit) [X] :")=640 then call _error "timeout"
+
+/* SHIP EDITS */
+
+if _sendwait("x1","ID : ")=640 then call _error "timeout"
+i=_stripint(_grabit("<A> Class"))
+j=-1
+
+do while i\=j
+	/*
+	----- 11 ----
+
+	<J> Cloaking Devices   5
+	<K> Atomic Detonators     5
+	<L> Corbomite Devices     1500
+	<M> SubSpace Ether Probes 25
+	<N> Mine Disruptors       10
+	<O> Photon Missiles       0
+	*/
+
+	if _wait("<K> Atomic Detonators     ")=640 then call _error "timeout"
+	atomicDetonators.i=_grabit(" ","s")
+	if _wait("<L> Corbomite Devices     ")=640 then call _error "timeout"
+	corbomiteDevices.i=_grabit(" ","s")
+	if _wait("<M> SubSpace Ether Probes ")=640 then call _error "timeout"
+	subspaceEtherProbes.i=_grabit(" ","s")
+	if _wait("<N> Mine Disruptors       ")=640 then call _error "timeout"
+	mineDisrupters.i=_grabit(" ","s")
+	if _wait("<O> Photon Missiles       ")=640 then call _error "timeout"
+	photonMissiles.i=_grabit(" ","s")
+	if _wait("<J> Cloaking Devices   ")=640 then call _error "timeout"
+	cloakingDevices.i=_grabit(" ","s")
+
+	/*
+	---- 12 ----
+
+	<H> Required experience          N/A
+	*/
+
+	if _sendwait("2","<H> Required experience          ")=640 then call _error "timeout"
+	requiredExperience.i=translate(_grabit(" ","s"), "na", "NA")
+
+	/*
+	---- 13 ----
+
+	.<C> Allow Density Scanner?       Yes
+	.<D> Allow Holographic Scanner?   Yes
+	.<H> Allow Interdictor Generator? No
+	.<I> Allow Combat Scanner?        No
+	<J> Used as Escape Pod?          Yes
+	.<K> Can land on a planet?        Yes
+	.<L> Defensive guardian bonus?    No
+	.<M> Fusion drive system?         No
+	.<N> Allow players to swap ships? Yes
+	.<O> Require Imperial commission? No
+	.<P> Require corporate status?    No
+	<R>  Require CEO status?         N/A
+	<S> Carries Escape Pod?          N/A
+	<T>  Escape pod                  N/A
+	*/
+
+	if _sendwait("3","<C> Allow Density Scanner?       ")=640 then call _error "timeout"
+	allowDensityScanner.i=_waitmux("No|Yes")
+	if allowDensityScanner.i=640 then call _error "timeout"
+	if _wait("<K> Can land on a planet?        ")=640 then call _error "timeout"
+	canLandOnPlanet.i=_waitmux("No|Yes")
+	if canLandOnPlanet.i=640 then call _error "timeout"
+	if _wait("<D> Allow Holographic Scanner?   ")=640 then call _error "timeout"
+	allowHolographicScanner.i=_waitmux("No|Yes")
+	if allowHolographicScanner.i=640 then call _error "timeout"
+	if _wait("<L> Defensive guardian bonus?    ")=640 then call _error "timeout"
+	defensiveGuardianBonus.i=_waitmux("No|Yes")
+	if defensiveGuardianBonus.i=640 then call _error "timeout"
+	if _wait("<M> Fusion drive system?         ")=640 then call _error "timeout"
+	fusionDriveSystem.i=_waitmux("No|Yes")
+	if fusionDriveSystem.i=640 then call _error "timeout"
+	if _wait("<N> Allow players to swap ships? ")=640 then call _error "timeout"
+	allowPlayersToSwap.i=_waitmux("No|Yes|N/A")
+	if allowPlayersToSwap.i=640 then call _error "timeout"
+	if _wait("<H> Allow Interdictor Generator? ")=640 then call _error "timeout"
+	allowInterdictorGenerator.i=_waitmux("No|Yes")
+	if allowInterdictorGenerator.i=640 then call _error "timeout"
+	if _wait("<O> Require Imperial commission? ")=640 then call _error "timeout"
+	requireImperialCommission.i=_waitmux("No|Yes")
+	if requireImperialCommission.i=640 then call _error "timeout"
+	if _wait("<I> Allow Combat Scanner?        ")=640 then call _error "timeout"
+	allowCombatScanner.i=_waitmux("No|Yes")
+	if allowCombatScanner.i=640 then call _error "timeout"
+	if _wait("<P> Require corporate status?    ")=640 then call _error "timeout"
+	requireCorporateStatus.i=_waitmux("No|Yes")
+	if requireCorporateStatus.i=640 then call _error "timeout"
+	if _wait("<J> Used as Escape Pod?          ")=640 then call _error "timeout"
+	usedAsEscapePod.i=_waitmux("No|Yes")
+	if usedAsEscapePod.i=640 then call _error "timeout"
+	if _wait("<R>  Require CEO status?         ")=640 then call _error "timeout"
+	requireCeoStatus.i=_waitmux("No|Yes|N/A")
+	if requireCeoStatus.i=640 then call _error "timeout"
+	if _wait("<S> Carries Escape Pod?          ")=640 then call _error "timeout"
+	carriesEscapePod.i=_waitmux("No|Yes|N/A")
+	if carriesEscapePod.i=640 then call _error "timeout"
+	if _wait("<T>  Escape pod ")=640 then call _error "timeout"
+	escapePod.i=strip(_grabit("^M","s"))
+	pod.i=escapePod.i
+	if carriesEscapePod.i\=1 then pod.i="  none"
+  if usedAsEscapePod.i then pod.i="used as an escape pod"
+
+	outfile=_get_unique_filename(path, "","_s"||_pad(i,2,"R","0"),8,".txt")
+	outfile1=path||outfile||".txt"
+	if _fileopenw(outfile1) then do
+		call lineout outfile1, header
+		call lineout outfile1, ""
+		call lineout outfile1, " commission required:      "||_dword(" no|yes|n/a", requireImperialCommission.i+1, "|")||" pod: "||_pad(pod.i,23,"L")||" photon max:"||_pad(photonMissiles.i,6,"R")
+		call lineout outfile1, " experience required:"||_pad(_format_commas(requiredExperience.i),9,"R")||"  land on planet:    "||_dword(" no|yes|n/a", canLandOnPlanet.i+1, "|")||"       cloak max:"||_pad(cloakingDevices.i,6,"R")
+		call lineout outfile1, "corp status required:      "||_dword(" no|yes|n/a", requireCorporateStatus.i+1, "|")||"    citadel swap:    "||_dword(" no|yes|n/a", allowPlayersToSwap.i+1, "|")||"      eprobe max:"||_pad(subspaceEtherProbes.i,6,"R")
+		call lineout outfile1, " ceo status required:      "||_dword(" no|yes|n/a", requireCeoStatus.i+1, "|")||"  combat scanner:    "||_dword(" no|yes|n/a", allowCombatScanner.i+1, "|")||"   disrupter max:"||_pad(mineDisrupters.i,6,"R")
+		call lineout outfile1, "     guardian system:      "||_dword(" no|yes|n/a", defensiveGuardianBonus.i+1, "|")||" density scanner:    "||_dword(" no|yes|n/a", allowDensityScanner.i+1, "|")||"   detonator max:"||_pad(atomicDetonators.i,6,"R")
+		call charout outfile1, "  interdictor system:      "||_dword(" no|yes|n/a", allowInterdictorGenerator.i+1, "|")||"    holo scanner:    "||_dword(" no|yes|n/a", allowHolographicScanner.i+1, "|")||"   corbomite max:"||_pad(_format_commas(corbomiteDevices.i),6,"R")
+		call _fileclose outfile1
+	end /*if*/
+
+	if _sendwait("5","<C> Deployment method")=640 then call _error "timeout"
+	ans=_waitmux("General|Alien|Manual")
+	select
+		when ans=0 then do
+			if _sendwait("i^H^H^H^H^H^H^H^H^M^M","ANSI files")=640 then call _error "timeout"
+			if _sendwait("j^H^H^H^H^H^H^H^H"||outfile||"^M^M","Text description files")=640 then call _error "timeout"
+			if _sendwait("^^y","Commit these changes to disk (Y/N) [N] :")=640 then call _error "timeout"
+			if _wait("ID : ")=640 then call _error "timeout"
+		end /*when*/
+		when ans=640 then call _error "timeout"
+		otherwise nop
+	end /*select*/
+
+	j=i
+	if _sendwait(">1","ID : ")=640 then call _error "timeout"
+	i=_stripint(_grabit("<A> Class"))
+end /*do*/
+
+/* PLANET EDITS */
+
+if _sendwait("q2","ID : ")=640 then call _error "timeout"
+i=_stripint(_grabit("<A> Title"))
+j=-1
+
+do while i\=j
+
+	ans=_waitmux("<!> Delete class|DELETED")
+	select
+		when ans=0 then nop
+		when ans=1 then signal skip1
+		when ans=640 then call _error "timeout"
+		otherwise nop
+	end /*select*/
+
+	/*
+	---- 21 ----
+
+	<C> Colonists producing fuel ore   100000
+	<D> Colonists producing organics   100000
+	<E> Colonists producing equipment  100000
+	<F> Storage capacity for fuel ore  500000
+	<H> Storage capacity for organics  100000
+	<I> Storage capacity for equipment 100000
+	<J> Storage capacity for fighters  1000000
+	<K> Storage capacity for shields   50000
+	<L> Citadel technology level       Planetary Interdictor
+	*/
+
+	if _wait("<C> Colonists producing fuel ore   ")=640 then call _error "timeout"
+	colonistsProducingFuelOre.i=_grabit(" ","s")
+	if _wait("<D> Colonists producing organics   ")=640 then call _error "timeout"
+	colonistsProducintOrganics.i=_grabit(" ","s")
+	if _wait("<E> Colonists producing equipment  ")=640 then call _error "timeout"
+	colonistsProducingEquipment.i=_grabit(" ","s")
+	if _wait("<F> Storage capacity for fuel ore  ")=640 then call _error "timeout"
+	storageCapacityForFuelOre.i=_grabit(" ","s")
+	if _wait("<H> Storage capacity for organics  ")=640 then call _error "timeout"
+	storageCapacityForOrganics.i=_grabit(" ","s")
+	if _wait("<I> Storage capacity for equipment ")=640 then call _error "timeout"
+	storageCapacityForEquipment.i=_grabit(" ","s")
+	if _wait("<J> Storage capacity for fighters  ")=640 then call _error "timeout"
+	storageCapacityForFighters.i=_grabit(" ","s")
+	if _wait("<K> Storage capacity for shields   ")=640 then call _error "timeout"
+	storageCapacityForShields.i=_grabit(" ","s")
+	if _wait("<L> Citadel technology level       ")=640 then call _error "timeout"
+	citadelTechnologyLevel.i=_waitmux("None|Unarmed Citadel|Combat Computer|Quasar Cannon|Planetary Thrusters|Planetary Shields|Planetary Interdictor")
+
+	/*
+	---- 22 ----
+
+	<C> Colonists to produce one fuel unit      1
+	<D> Colonists to produce one organic unit   3
+	<E> Colonists to produce one equipment unit 3
+	<F> Colonists to produce one fighter unit   10
+	<H> Starting fuel ore                       0
+	<I> Starting organics                       0
+	<J> Starting equipment                      0
+	<K> Hazard level                            1
+	<L> Habitability rating                     100
+	*/
+
+	if _sendwait("2","<C> Colonists to produce one fuel unit      ")=640 then call _error "timeout"
+	colonistsToProduceOneFuelUnit.i=_grabit("  ","s")
+	if colonistsToProduceOneFuelUnit.i = "No Production" then colonistsToProduceOneFuelUnit.i = "n/a"
+	if _wait("<D> Colonists to produce one organic unit   ")=640 then call _error "timeout"
+	colonistsToProduceOneOrganicUnit.i=_grabit("  ","s")
+	if colonistsToProduceOneOrganicUnit.i = "No Production" then colonistsToProduceOneOrganicUnit.i = "n/a"
+	if _wait("<E> Colonists to produce one equipment unit ")=640 then call _error "timeout"
+	colonistsToProduceOneEquipmentUnit.i=_grabit("  ","s")
+	if colonistsToProduceOneEquipmentUnit.i = "No Production" then colonistsToProduceOneEquipmentUnit.i = "n/a"
+	if _wait("<F> Colonists to produce one fighter unit   ")=640 then call _error "timeout"
+	colonistsToProduceOneFighterUnit.i=_grabit("  ","s")
+	if colonistsToProduceOneFighterUnit.i = "No Production" then colonistsToProduceOneFighterUnit.i = "n/a"
+	if _wait("<H> Starting fuel ore                       ")=640 then call _error "timeout"
+	startingFuelOre.i=_grabit("  ","s")
+	if _wait("<I> Starting organics                       ")=640 then call _error "timeout"
+	startingOrganics.i=_grabit("  ","s")
+	if _wait("<J> Starting equipment                      ")=640 then call _error "timeout"
+	startingEquipment.i=_grabit("  ","s")
+	if _wait("<K> Hazard level                            ")=640 then call _error "timeout"
+	hazardLevel.i=_grabit("  ","s")
+	if _wait("<L> Habitability rating                     ")=640 then call _error "timeout"
+	habitabilityRating.i=_grabit("  ","s")
+
+	/*
+	---- 23 ----
+
+	           Unarmed     Armed      Quasar   TransWarp   Shields   Interdict
+
+	Fuel ore  <C> 300    <I> 200    <N> 500    <T> 1000   <Y> 300    <7> 1000
+	Organics  <D> 200    <J> 50     <O> 250    <U> 1200   <Z> 400    <8> 1200
+	Equipment <E> 250    <K> 250    <P> 500    <V> 1000   <0> 1000   <9> 2000
+	Days      <F> 0      <L> 0      <R> 5      <W> 10     <5> 5      <;> 5
+	Colonists <H> 1000   <M> 2000   <S> 4000   <X> 6000   <6> 6000   <[> 6000
+	*/
+
+	if _sendwait("3","<C> ")=640 then call _error "timeout"
+	line1.i=_grabit("<7> ")||_grabit(" ","s")
+	if _wait("<D> ")=640 then call _error "timeout"
+	line2.i=_grabit("<8> ")||_grabit(" ","s")
+	if _wait("<E> ")=640 then call _error "timeout"
+	line3.i=_grabit("<9> ")||_grabit(" ","s")
+	if _wait("<F> ")=640 then call _error "timeout"
+	line4.i=_grabit("<;> ")||_grabit(" ","s")
+	if _wait("<H> ")=640 then call _error "timeout"
+	line5.i=_grabit("<[> ")||_grabit(" ","s")
+
+	parse var line1.i fuelOre.i.0 . fuelOre.i.1 . fuelOre.i.2 . fuelOre.i.3 . fuelOre.i.4 . fuelOre.i.5
+	parse var line2.i organics.i.0 . organics.i.1 . organics.i.2 . organics.i.3 . organics.i.4 . organics.i.5
+	parse var line3.i equipment.i.0 . equipment.i.1 . equipment.i.2 . equipment.i.3 . equipment.i.4 . equipment.i.5
+	parse var line4.i days.i.0 . days.i.1 . days.i.2 . days.i.3 . days.i.4 . days.i.5
+	parse var line5.i colonists.i.0 . colonists.i.1 . colonists.i.2 . colonists.i.3 . colonists.i.4 . colonists.i.5
+
+	if (i>0) then do
+		outfile=_get_unique_filename(path, "","_p"||_pad(i,2,"R","0"),8,".txt")
+		outfile1=path||outfile||".txt"
+		if _fileopenw(outfile1) then do
+			call lineout outfile1, header
+			call lineout outfile1, ""
+			call lineout outfile1, "              fuel ore    organics   equipment    fighters shields"
+			call lineout outfile1, "starting  "||_pad(_format_commas(startingFuelOre.i),12,"R")||_pad(_format_commas(startingOrganics.i),12,"R")||_pad(_format_commas(startingEquipment.i),12,"R")
+			call lineout outfile1, "capacity  "||_pad(_format_commas(storageCapacityForFuelOre.i),12,"R")||_pad(_format_commas(storageCapacityForOrganics.i),12,"R")||_pad(_format_commas(storageCapacityForEquipment.i),12,"R")||_pad(_format_commas(storageCapacityForFighters.i),12,"R")||_pad(_format_commas(storageCapacityForShields.i),8,"R")
+			call lineout outfile1, "colonists "||_pad(_format_commas(colonistsProducingFuelOre.i),12,"R")||_pad(_format_commas(colonistsProducintOrganics.i),12,"R")||_pad(_format_commas(colonistsProducingEquipment.i),12,"R")
+			call lineout outfile1, "production"||_pad(_format_commas(colonistsToProduceOneFuelUnit.i),12,"R")||_pad(_format_commas(colonistsToProduceOneOrganicUnit.i),12,"R")||_pad(_format_commas(colonistsToProduceOneEquipmentUnit.i),12,"R")||_pad(_format_commas(colonistsToProduceOneFighterUnit.i),12,"R")
+			call lineout outfile1, ""
+			if citadelTechnologyLevel.i>0 then do
+				call lineout outfile1, "citadel   colonists fuel ore organics equipment    days    total"
+				                                   call lineout outfile1, "L1 base   "||_pad(_format_commas(colonists.i.0),9,"R")||_pad(_format_commas(fuelOre.i.0),9,"R")||_pad(_format_commas(organics.i.0),9,"R")||_pad(_format_commas(equipment.i.0),9,"R")||_pad(days.i.0,9,"R")||_pad(days.i.0,9,"R")
+				if citadelTechnologyLevel.i>1 then call lineout outfile1, "L2 defense"||_pad(_format_commas(colonists.i.1),9,"R")||_pad(_format_commas(fuelOre.i.1),9,"R")||_pad(_format_commas(organics.i.1),9,"R")||_pad(_format_commas(equipment.i.1),9,"R")||_pad(days.i.1,9,"R")||_pad(days.i.0+days.i.1,9,"R")
+				if citadelTechnologyLevel.i>2 then call lineout outfile1, "L3 quasar "||_pad(_format_commas(colonists.i.2),9,"R")||_pad(_format_commas(fuelOre.i.2),9,"R")||_pad(_format_commas(organics.i.2),9,"R")||_pad(_format_commas(equipment.i.2),9,"R")||_pad(days.i.2,9,"R")||_pad(days.i.0+days.i.1+days.i.2,9,"R")
+				if citadelTechnologyLevel.i>3 then call lineout outfile1, "L4 mobile "||_pad(_format_commas(colonists.i.3),9,"R")||_pad(_format_commas(fuelOre.i.3),9,"R")||_pad(_format_commas(organics.i.3),9,"R")||_pad(_format_commas(equipment.i.3),9,"R")||_pad(days.i.3,9,"R")||_pad(days.i.0+days.i.1+days.i.2+days.i.3,9,"R")
+				if citadelTechnologyLevel.i>4 then call lineout outfile1, "L5 shields"||_pad(_format_commas(colonists.i.4),9,"R")||_pad(_format_commas(fuelOre.i.4),9,"R")||_pad(_format_commas(organics.i.4),9,"R")||_pad(_format_commas(equipment.i.4),9,"R")||_pad(days.i.4,9,"R")||_pad(days.i.0+days.i.1+days.i.2+days.i.3+days.i.4,9,"R")
+				if citadelTechnologyLevel.i>5 then call lineout outfile1, "L6 ig     "||_pad(_format_commas(colonists.i.5),9,"R")||_pad(_format_commas(fuelOre.i.5),9,"R")||_pad(_format_commas(organics.i.5),9,"R")||_pad(_format_commas(equipment.i.5),9,"R")||_pad(days.i.5,9,"R")||_pad(days.i.0+days.i.1+days.i.2+days.i.3+days.i.4+days.i.5,9,"R")
+				call lineout outfile1, ""
+			end /*if*/
+			else call lineout outfile1, "            citadel: none"
+			call lineout outfile1, "       hazard level:  "||_pad(hazardLevel.i,3,"R")
+			call charout outfile1, "habitability rating:  "||_pad(habitabilityRating.i,3,"R")
+			call _fileclose outfile1
+		end /*if*/
+
+		if _sendwait("4d^H^H^H^H^H^H^H^H^M^M","ANSI files")=640 then call _error "timeout"
+		if _sendwait("e^H^H^H^H^H^H^H^H"||outfile||"^M^M","Text description files")=640 then call _error "timeout"
+		if _sendwait("^^y","Commit these changes to disk (Y/N) [N] :")=640 then call _error "timeout"
+		if _wait("ID : ")=640 then call _error "timeout"
+
+	end /*if*/
+
+skip1:
+	j=i
+	if _sendwait(">1","ID : ")=640 then call _error "timeout"
+	if _waitmux("<A> Title|<+> New class")=640 then call _error "timeout"
+	i=_stripint(_lastline())
+end /*do*/
+
+if _sendwait("q","Trade Wars 2002 Editor (?=Help) [?] :")=640 then call _error "timeout"
+if _sendwait("2","ID : ")=640 then call _error "timeout"
+i=_stripint(_grabit("<A> Title"))
+
+outfile=_get_unique_filename(path, "","_p"||_pad(i,2,"R","0"),8,".txt")
+outfile1=path||outfile||".txt"
+if _fileopenw(outfile1) then do
+	call lineout outfile1, header
+	call lineout outfile1, ""
+	call lineout outfile1, " interactive prompts: "||_dword(" no|yes", interactiveSubprompts+1,"|")||"    turn bank: "||_pad(turnBank,3,"R")||"      minimum login time: "||minimumLoginTime
+	call lineout outfile1, "    fedspace photons: "||_dword(" no|yes", FedspacePhotons+1,"|")||"  death delay: "||_dword(" no|yes", deathDelay+1,"|")||"     processing interval: "||processingInterval
+	call lineout outfile1, "max terran colonists: "||_pad(maxTerranColonists,22,"L")||" max commands per cycle: "||maxCommandsPerCycle
+	call lineout outfile1, "   terra planet type: "||terraPlanetType||" ("||_format_commas(storageCapacityForFuelOre.terraPlanetTypeN)||" max colonists)"
+	call lineout outfile1, ""
+	call lineout outfile1, "              fuel ore    organics   equipment    fighters shields"
+	call lineout outfile1, "starting  "||_pad(_format_commas(startingFuelOre.i),12,"R")||_pad(_format_commas(startingOrganics.i),12,"R")||_pad(_format_commas(startingEquipment.i),12,"R")
+	call lineout outfile1, "capacity  "||_pad(_format_commas(storageCapacityForFuelOre.i),12,"R")||_pad(_format_commas(storageCapacityForOrganics.i),12,"R")||_pad(_format_commas(storageCapacityForEquipment.i),12,"R")||_pad(_format_commas(storageCapacityForFighters.i),12,"R")||_pad(_format_commas(storageCapacityForShields.i),8,"R")
+	call lineout outfile1, "colonists "||_pad(_format_commas(colonistsProducingFuelOre.i),12,"R")||_pad(_format_commas(colonistsProducintOrganics.i),12,"R")||_pad(_format_commas(colonistsProducingEquipment.i),12,"R")
+	call lineout outfile1, "production"||_pad(_format_commas(colonistsToProduceOneFuelUnit.i),12,"R")||_pad(_format_commas(colonistsToProduceOneOrganicUnit.i),12,"R")||_pad(_format_commas(colonistsToProduceOneEquipmentUnit.i),12,"R")||_pad(_format_commas(colonistsToProduceOneFighterUnit.i),12,"R")
+	call lineout outfile1, ""
+	if citadelTechnologyLevel.i>0 then do
+		call lineout outfile1, "citadel   colonists fuel ore organics equipment    days    total"
+		                                   call lineout outfile1, "L1 base   "||_pad(_format_commas(colonists.i.0),9,"R")||_pad(_format_commas(fuelOre.i.0),9,"R")||_pad(_format_commas(organics.i.0),9,"R")||_pad(_format_commas(equipment.i.0),9,"R")||_pad(days.i.0,9,"R")||_pad(days.i.0,9,"R")
+		if citadelTechnologyLevel.i>1 then call lineout outfile1, "L2 defense"||_pad(_format_commas(colonists.i.1),9,"R")||_pad(_format_commas(fuelOre.i.1),9,"R")||_pad(_format_commas(organics.i.1),9,"R")||_pad(_format_commas(equipment.i.1),9,"R")||_pad(days.i.1,9,"R")||_pad(days.i.0+days.i.1,9,"R")
+		if citadelTechnologyLevel.i>2 then call lineout outfile1, "L3 quasar "||_pad(_format_commas(colonists.i.2),9,"R")||_pad(_format_commas(fuelOre.i.2),9,"R")||_pad(_format_commas(organics.i.2),9,"R")||_pad(_format_commas(equipment.i.2),9,"R")||_pad(days.i.2,9,"R")||_pad(days.i.0+days.i.1+days.i.2,9,"R")
+		if citadelTechnologyLevel.i>3 then call lineout outfile1, "L4 mobile "||_pad(_format_commas(colonists.i.3),9,"R")||_pad(_format_commas(fuelOre.i.3),9,"R")||_pad(_format_commas(organics.i.3),9,"R")||_pad(_format_commas(equipment.i.3),9,"R")||_pad(days.i.3,9,"R")||_pad(days.i.0+days.i.1+days.i.2+days.i.3,9,"R")
+		if citadelTechnologyLevel.i>4 then call lineout outfile1, "L5 shields"||_pad(_format_commas(colonists.i.4),9,"R")||_pad(_format_commas(fuelOre.i.4),9,"R")||_pad(_format_commas(organics.i.4),9,"R")||_pad(_format_commas(equipment.i.4),9,"R")||_pad(days.i.4,9,"R")||_pad(days.i.0+days.i.1+days.i.2+days.i.3+days.i.4,9,"R")
+		if citadelTechnologyLevel.i>5 then call lineout outfile1, "L6 ig     "||_pad(_format_commas(colonists.i.5),9,"R")||_pad(_format_commas(fuelOre.i.5),9,"R")||_pad(_format_commas(organics.i.5),9,"R")||_pad(_format_commas(equipment.i.5),9,"R")||_pad(days.i.5,9,"R")||_pad(days.i.0+days.i.1+days.i.2+days.i.3+days.i.4+days.i.5,9,"R")
+		call lineout outfile1, ""
+	end /*if*/
+	else call lineout outfile1, "            citadel: none"
+	call lineout outfile1, "       hazard level:  "||_pad(hazardLevel.i,3,"R")
+	call charout outfile1, "habitability rating:  "||_pad(habitabilityRating.i,3,"R")
+	call _fileclose outfile1
+end /*if*/
+
+if _sendwait("4d^H^H^H^H^H^H^H^H^M^M","ANSI files")=640 then call _error "timeout"
+if _sendwait("e^H^H^H^H^H^H^H^H"||outfile||"^M^M","Text description files")=640 then call _error "timeout"
+if _sendwait("^^y","Commit these changes to disk (Y/N) [N] :")=640 then call _error "timeout"
+if _wait("ID : ")=640 then call _error "timeout"
+
+if _sendwait("q","Trade Wars 2002 Editor (?=Help) [?] :")=640 then call _error "timeout"
+call _quit "done"
+exit
+
+/***                 THE REVEREND'S TW LIBRARY FOR ZOC/REXX                 ***/
+
+/** _setglobals v.5 **/
+    _setglobals: procedure expose _verbose _monthdays _monthnames _baseday. _g. _msg. _debug (globals)
+
+     _debug=0
+     _verbose=0
+     _msg.=""; _msg.0=0
+     _monthdays="31;28;31;30;31;30;31;31;30;31;30;31"
+     _monthnames="jan;feb;mar;apr;may;jun;jul;aug;sep;oct;nov;dec"
+     _baseday.2000=730118 + 1 /* +1 added 6/23/2008 */
+     _baseday.2001=_baseday.2000+365+1
+     _baseday.2002=_baseday.2001+365
+     _baseday.2003=_baseday.2002+365
+     _baseday.2004=_baseday.2003+365
+     _baseday.2005=_baseday.2004+365+1
+     _baseday.2006=_baseday.2005+365
+     _baseday.2007=_baseday.2006+365
+     _baseday.2008=_baseday.2007+365
+     _baseday.2009=_baseday.2008+365+1
+     _baseday.2010=_baseday.2009+365
+     _baseday.2011=_baseday.2010+365
+     _baseday.2012=_baseday.2011+365
+     _baseday.2013=_baseday.2012+365+1
+     _baseday.2014=_baseday.2013+365
+     _baseday.2015=_baseday.2014+365
+     _baseday.2016=_baseday.2015+365
+     _baseday.2017=_baseday.2016+365+1
+     _baseday.2018=_baseday.2013+365
+     _baseday.2019=_baseday.2014+365
+     _baseday.2020=_baseday.2015+365
+     _baseday.2021=_baseday.2016+365+1
+     _baseday.2022=_baseday.2013+365
+     _baseday.2023=_baseday.2014+365
+     _baseday.2024=_baseday.2015+365
+     _baseday.2025=_baseday.2016+365+1
+     _baseday.2026=_baseday.2013+365
+     _baseday.2027=_baseday.2014+365
+     _baseday.2028=_baseday.2015+365
+     _baseday.2029=_baseday.2016+365+1
+     _baseday.2030=_baseday.2013+365
+     _baseday.2031=_baseday.2014+365
+     _baseday.2032=_baseday.2015+365
+     _baseday.2033=_baseday.2016+365+1
+
+     i=lastpos(".",_g.!sname)
+     if i=0 then _g.!sname1=_g.!sname
+            else _g.!sname1=left(_g.!sname,i-1)
+
+     rslt="_g. _ini. _s. _p. _d. _v. _f. _m. _l. _q. _sl. _ex. _qs. "
+     rslt=rslt||"_ef. _efc. _es. _et. _ep. _fc. "
+     rslt=rslt||"_path. _dist. _dtomsl. _dfrmsl. "
+     rslt=rslt||"_bg. _bd. _nwi. _nwo. _nw. _nwt. _od. _sv. _pv. _vs. _vn. _vi. _mcic. _fh. _fhp. "
+     rslt=rslt||"_clv. _online. _msg _msg. _debug "
+     rslt=rslt||"_verbose _monthdays _monthnames _baseday. "
+     rslt=rslt||"globals "
+     if arg(1,"E") then rslt=rslt||arg(1)
+
+     rslt=_space(rslt)
+    return rslt
+
+/** _timeout v.1 **/
+    _timeout: procedure expose (globals)
+     if _g.!timeout="_G.!TIMEOUT" then _g.!timeout=60
+     rslt=_g.!timeout
+     nt=_stripint(arg(1))
+     if arg(1,"E") & nt>0 then do
+      call zoctimeout nt
+      _g.!timeout=nt
+     end /*if*/
+    return rslt
+
+/** _halt v.4 **/
+    _halt: procedure expose (globals)
+     call off halt
+     call _cleanup
+     call zocwriteln "^[[1;33m< user abort >^[[0m "
+     exit
+    return
+
+/** _error v.9 **/
+    _error: procedure expose (globals)
+     call off halt
+     call _cleanup
+     call zocwrite _ansi("clearline;bt;frd")||"< script error ("||_g.!sname||" b."||_g.!sbuild||")"
+     if arg(1,"E") then call zocwrite " : "||arg(1)
+     call zocwriteln " >"
+     call zocwriteln _ansi("bt;fye")||"< if this is a serious problem, email me at: revhelper_at_thereverend_dot_org > "
+     call zocwriteln "< SCRIPT "||_g.!sname||", BUILD "||_g.!sbuild||", DATE "||_g.!sdate||" > "
+     call zocwriteln "< ZOC VERSION '"||zocgetinfo("VERSION")||"', OS '"||zocgetinfo("OSYS")||"', LOCATION '"||zocgetinfo("CONNECTEDTO")||"' >"
+     if arg(2,"E") then call zocwriteln _ansi("bt;fgr")||"< "||arg(2)||" >"
+     call _beep "error.wav"
+    exit
+
+/** _fileopenr v.4 **/
+    _fileopenr: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileopenr"
+      when arg(1)="" then rslt=0
+      when _fileexists(arg(1)) then do
+       call stream arg(1), "C", "OPEN READ"
+       rslt=_fileready(arg(1))
+       if \rslt then call _fileclose arg(1)
+      end /*when*/
+      otherwise rslt=_filenew(arg(1))
+     end /*select*/
+    return rslt
+
+/** _fileeof v.4 **/
+    _fileeof: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileeof"
+      when arg(1)="" then rslt=0
+      otherwise rslt=\lines(arg(1))
+     end /*select*/
+    return rslt
+
+/** _fileclose v.3 **/
+    _fileclose: procedure expose (globals)
+     if \arg(1,"E") then call _error "missing argument in _fileclose"
+     select
+      when arg(1)="" then nop
+      otherwise call stream arg(1), "C", "CLOSE"
+     end /*select*/
+    return
+
+/** _fileexists v.4 **/
+    _fileexists: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileexists"
+      when arg(1)="" then rslt=0
+      when stream(arg(1), "C", "QUERY EXISTS")="" then rslt=0
+      otherwise rslt=1
+     end /*select*/
+    return rslt
+
+/** _pad v.3 **/
+    _pad: procedure expose (globals)
+     rslt=arg(1)
+     if arg(2,"E") then w=arg(2); else return rslt
+     if \arg(3,"E") then m="l"; else m=lower(arg(3))
+     if \arg(4,"E") then p=" "; else p=left(arg(4),1)
+     select
+      when m="l" then rslt=left(rslt,w,p)
+      when m="r" then rslt=reverse(left(reverse(rslt),w,p))
+      when m="c" then rslt=center(rslt,w,p)
+      otherwise       rslt=left(rslt,w,p)
+     end /*select*/
+    return rslt
+
+/** _sendwait v.1 **/
+    _sendwait: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _sendwait"
+     call zocsend arg(1)
+     rslt=_wait(arg(2))
+     select
+      when \arg(3,"E") | arg(3)=""             then nop
+      when lower(arg(3))="timeout"  & rslt=640 then call _error "timeout"
+      when lower(arg(3))="lastline" & rslt=640 then call _error "timeout"
+      when lower(arg(3))="lastline"            then rslt=_lastline()
+      otherwise nop
+     end /*select*/
+    return rslt
+
+/** _quit v.7 **/
+    _quit: procedure expose (globals)
+     lcpy=1
+     arg1=""
+     do i=1 to 2 /* manage arguments */
+      select
+       when arg(i,"E") & lower(arg(i))="nocopy" then lcpy=0
+       when arg(i,"E") & arg1="" then arg1=arg(i)
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     line=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     select /* define message */
+      when  lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m^M^J"||line
+      when \lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m "
+      when  lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m^M^J"||line
+      when \lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m "
+      otherwise nop
+     end /*select*/
+     call zocwrite msg
+     select /* choose a beep */
+      when lower(arg1)="script cancelled by user." then call _beep "cancel.wav"
+      otherwise call _beep "quit.wav"
+     end /*select*/
+     exit
+    return 1
+
+/** _grabit v.2 **/
+    _grabit: procedure expose (globals)
+     if _wait(arg(1))=640 then call _error "timeout"
+     rslt=_lastline()
+     if lower(arg(2))="s" then rslt=reverse(substr(reverse(rslt),length(arg(1))+1))
+    return rslt
+
+/** _wait v.1 **/
+    _wait: procedure expose (globals)
+     rslt=zocwait(arg(1))
+    return rslt
+
+/** _waitmux v.1 **/
+    _waitmux: procedure expose (globals)
+     rslt=zocwaitmux(arg(1))
+    return rslt
+
+/** _lastline v.3 **/
+    _lastline: procedure expose (globals)
+     rslt=zoclastline()
+     select
+      when lower(arg(1))="raw" then nop
+      when pos(d2c(7),rslt)>0  then rslt=translate(zocstring("REMOVE", rslt, d2c(7)),"  ",d2c(0)||d2c(10))
+      otherwise                     rslt=translate(rslt,"  ",d2c(0)||d2c(10))
+     end /*select*/
+    return rslt
+
+/** _stripint v.4 **/
+    _stripint: procedure expose (globals)
+     mask=_space(translate(arg(1)," ","-0123456789,"," "),0)
+     rslt=word(_space(translate(_stripcomma(arg(1))," ",mask," ")),1)
+     if rslt="" | rslt="-" then do; call _set_msg "##NAN##", "_stripint"; rslt=0; end
+     else do
+      if left(rslt,1)="-" then neg="-"; else neg=""
+      rslt=_space(translate(rslt," ","-"),0)
+      if length(rslt)>9 then rslt=left(rslt,9)
+      rslt=neg||rslt
+     end /*else*/
+    return rslt
+
+/** _get_unique_filename v.1 **/
+    _get_unique_filename: procedure expose (globals)
+     do i=1 to 6
+      select
+       when i=1 & arg(i,"E") then path=arg(i)
+       when i=1              then path="\"
+       when i=2 & arg(i,"E") then prefix=arg(i)
+       when i=2              then prefix="_"
+       when i=3 & arg(i,"E") then suffix=arg(i)
+       when i=3              then suffix=""
+       when i=4 & arg(i,"E") then maxlength=arg(i)
+       when i=4              then maxlength=8
+       when i=5 & arg(i,"E") then extension=arg(i)
+       when i=5              then extension=".txt"
+       when i=6 & arg(i,"E") then appendExtension=arg(i)
+       when i=6              then appendExtension=0
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     if right(path,1)\="\" then path=path||"\"
+     num=0
+     do until \_fileexists(path||fname)
+      num = num + 1
+      fname=prefix||_pad(num,maxlength-length(prefix)-length(suffix),"R","0")||suffix||extension
+     end /*do*/
+     if appendExtension then return fname
+    return prefix||_pad(num,maxlength-length(prefix)-length(suffix),"R","0")||suffix
+
+/** _fileopenw v.3 **/
+    _fileopenw: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileopenw"
+      when arg(1)="" then rslt=0
+      when _fileexists(arg(1)) then do
+       call stream arg(1), "C", "OPEN WRITE"
+       call stream arg(1), "C", "SEEK <0"
+       rslt=_fileready(arg(1))
+       if \rslt then call _fileclose arg(1)
+      end /*when*/
+      otherwise rslt=_filenew(arg(1))
+     end /*select*/
+    return rslt
+
+/** _dword v.2 **/
+    _dword: procedure expose (globals)
+     rslt=translate(word(translate(arg(1),arg(3)||" "," "||arg(3)),arg(2))," "||arg(3),arg(3)||" ")
+    return rslt
+
+/** _format_commas v.2 **/
+    _format_commas: procedure expose (globals)
+     n=strip(arg(1))
+     if \datatype(n,'N') then return n
+     if n<0 then do; neg=1; n=abs(n); end; else neg=0
+     frac=n-trunc(n)
+     int=trunc(n)
+     rslt=""
+     do while int\=""
+      rslt=strip(right(int,3)) rslt
+      int=strip(reverse(substr(reverse(int),4)))
+     end
+     rslt=translate(strip(rslt),","," ")
+     if frac>0 then rslt=rslt||"."||frac
+    return rslt
+
+/** _debug v.5 **/
+    _debug: procedure expose (globals)
+     if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _debug"
+     mode=strip(left(lower(arg(1)),3))
+     msg=arg(2)
+     if arg(3,"E") then logname=strip(arg(3))
+     else logname="_debug.txt"
+     select
+      when mode="scr" then call zocwriteln "^[[1;34mREV-DEBUG <"||msg||">^[[0m"
+      when mode="fed" then call zocsend "`REV-DEBUG <"||msg||">^M"
+      when mode="sub" then call zocsend "'REV-DEBUG <"||msg||">^M"
+      when mode="log" then do
+       if _fileopenw(logname) then do
+        call lineout logname, msg
+        call _fileclose logname
+       end /*if*/
+       else call _error "unable to open rev-log.txt."
+      end /*when*/
+      otherwise nop
+     end /*select*/
+    return
+
+/** _space v.1 **/
+    _space: procedure expose (globals)
+     str=strip(arg(1))
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then pad=arg(3); else pad=" "
+     rslt=word(str,1)
+     do i=2 to words(str)
+      rslt=rslt||copies(pad,n)||word(str,i)
+     end /*do*/
+    return rslt
+
+/** _cleanup v.1 **/
+    _cleanup: procedure expose (globals)
+     /* put code here to do custom cleanup
+        for specific scripts and override
+        it in your main program */
+    return 1
+
+/** _ansi v.3 **/
+    _ansi: procedure expose (globals)
+     rslt="0"
+     pre=""
+     do i=1 to _dwords(arg(1),";")
+      w=_dword(arg(1),i,";")
+      select
+       when w="clearline" then pre=pre||"^[[100D^[[K"
+       when w="dl"  then rslt=rslt||";"||0  /* dull               */
+       when w="bt"  then rslt=rslt||";"||1  /* bright             */
+       when w="ul"  then rslt=rslt||";"||4  /* underlined         */
+       when w="blk" then rslt=rslt||";"||5  /* blinking           */
+       when w="fbk" then rslt=rslt||";"||30 /* black foreground   */
+       when w="frd" then rslt=rslt||";"||31 /* red foreground     */
+       when w="fgr" then rslt=rslt||";"||32 /* green foreground   */
+       when w="fye" then rslt=rslt||";"||33 /* yellow foreground  */
+       when w="fbl" then rslt=rslt||";"||34 /* blue foreground    */
+       when w="fmg" then rslt=rslt||";"||35 /* magenta foreground */
+       when w="fcy" then rslt=rslt||";"||36 /* cyan foreground    */
+       when w="fwh" then rslt=rslt||";"||37 /* white foreground   */
+       when w="bbk" then rslt=rslt||";"||40 /* black background   */
+       when w="brd" then rslt=rslt||";"||41 /* red background     */
+       when w="bgr" then rslt=rslt||";"||42 /* green background   */
+       when w="bye" then rslt=rslt||";"||43 /* yellow background  */
+       when w="bbl" then rslt=rslt||";"||44 /* blue background    */
+       when w="bmg" then rslt=rslt||";"||45 /* magenta background */
+       when w="bcy" then rslt=rslt||";"||46 /* cyan background    */
+       when w="bwh" then rslt=rslt||";"||47 /* white background   */
+       otherwise nop
+      end /*select*/
+     end /*do*/
+     rslt=pre||"^[["||rslt||"m"
+    return rslt
+
+/** _beep v.2 **/
+    _beep: procedure expose (globals)
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then d=arg(3); else d=0
+     select
+      when arg(1,"O") then call zocwrite copies(d2c(7),n)
+      when _fileexists(arg(1)) then do
+       do i=1 to n
+        call zocplaysound arg(1)
+        if i\=n & d>0 then call zocdelay d
+       end /*do*/
+      end /*when*/
+      otherwise call zocwrite copies(d2c(7),n)
+     end /*select*/
+    return
+
+/** _fileready v.2 **/
+    _fileready: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _fileready"
+      when arg(1)="" then rslt=0
+      when stream(arg(1), "S")\="NOTREADY" then rslt=1
+      otherwise rslt=0
+     end /*select*/
+    return rslt
+
+/** _filenew v.4 **/
+    _filenew: procedure expose (globals)
+     select
+      when \arg(1,"E") then call _error "missing parameter in _filenew"
+      when arg(1)="" then rslt=0
+      otherwise do
+       if arg(2,"E") & lower(arg(2))="delete" then call dosdel arg(1)
+       if _fileexists(arg(1)) then rslt=0
+       else do
+        call stream arg(1), "C", "OPEN WRITE"
+        rslt=_fileready(arg(1))
+        if \rslt then call _fileclose arg(1)
+       end /*else*/
+      end /*otherwise*/
+     end /*select*/
+    return rslt
+
+/** _stripcomma v.1 **/
+    _stripcomma: procedure expose (globals)
+     rslt=translate(_space(translate(arg(1),", "," ,"),0)," ",",")
+    return rslt
+
+    _set_msg: procedure expose (globals)
+     i=_msg.0
+     if i="_MSG.0" then do; _msg.=""; _msg.0=0; i=0; end
+     i=i+1; _msg.0=i; _msg=""
+     if arg(1,"E") then do; _msg.i=arg(1); _msg=arg(1); end;
+     if arg(2,"E") then _msg.i.!source=arg(2)
+     if arg(3,"E") then _msg.i.!comment=arg(3)
+    return i
+
+/** _dwords v.2 **/
+    _dwords: procedure expose (globals)
+     rslt=words(translate(arg(1),arg(2)||" "," "||arg(2)))
+    return rslt

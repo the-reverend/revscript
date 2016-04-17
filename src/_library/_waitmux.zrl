@@ -1,0 +1,4 @@
+/** _waitmux v.1 **/
+_waitmux: procedure expose (globals)
+ rslt=zocwaitmux(arg(1))
+return rslt

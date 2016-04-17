@@ -1,0 +1,17 @@
+/** _initialize v.0 **/
+_initialize: /* procedure expose (globals) */
+   sl=_ini_load_settings()
+   do i=1 to _dwords(sl,";")
+    s=_dword(sl,i,";")
+    globals=globals||" !"||s
+    interpret '!'||s||'="!"||s'
+   end;
+   f=0; l=""
+   do i=1 to words(arg(1))
+    s=word(arg(1),i)
+    x="!"||s
+    interpret s||"=_ini.!settings.x"
+    interpret 'if '||s||'="##UNDEF##" then do; l=l s; f=1; end'
+   end
+   if f then call _error "missing config variable(s):"||l; drop s sl x f l
+return

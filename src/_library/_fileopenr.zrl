@@ -1,0 +1,15 @@
+/** _fileopenr v.4 **/
+/*- _fileopenr fname -*/
+/*- v.4 tested -*/
+_fileopenr: procedure expose (globals)
+ select
+  when \arg(1,"E") then call _error "missing parameter in _fileopenr"
+  when arg(1)="" then rslt=0
+  when _fileexists(arg(1)) then do
+   call stream arg(1), "C", "OPEN READ"
+   rslt=_fileready(arg(1))
+   if \rslt then call _fileclose arg(1)
+  end /*when*/
+  otherwise rslt=_filenew(arg(1))
+ end /*select*/
+return rslt

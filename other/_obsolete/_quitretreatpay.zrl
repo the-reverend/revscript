@@ -1,0 +1,47 @@
+/** _quitretreatpay v.2 **/
+_quitretreatpay:
+ qrppwd=arg(1)
+
+ call zocsend "qynt^M^M^M"
+ if zocwait("Password?")=640 then call _error "timeout"
+ call zocrespond "[Pause]", "^M"
+ call zocsend qrppwd||"^M"
+
+ qrpans=zocwaitmux("clear some avoids?", "Option? (A,D,I,R,P,?):?", "Delete messages? (Y/N) [N]")
+
+ if qrpans=2 then do
+  call zocsend "n"
+  qrpans=zocwaitmux("clear some avoids?", "Option? (A,D,I,R,P,?):?")
+ end /* if */
+
+ select
+  when qrpans=0 then do
+   call zocsend "n"
+   if zocwait("Option? (A,D,I,R,P,?):?")=640 then call _error "timeout"
+   call zocsend "r"
+  end /* when */
+  when qrpans=1 then call zocsend "r"
+  when qrpans=2 then call _error "unexpected response."
+  when qrpans=640 then call _error "timeout"
+  otherwise nop
+ end /* select */
+
+ if zocwait("You have ")=640 then call _error "timeout"
+ if zocwait("fighter(s) left.")=640 then call _error "timeout"
+ qrpfigs=_stripint(zoclastline())
+
+ if zocwait("Option? (A,D,I,R,P,?):?")=640 then call _error "timeout"
+ call zocsend "py"
+ qrpans=zocwaitmux("Option? (A,D,I,R,P,?):?", "Command [")
+ select
+  when qrpans=0 then call _error "you cannot pay the toll."
+  when qrpans=1 then nop
+  when qrpans=640 then call _error "timeout"
+  otherwise nop
+ end /* select */
+
+ call zocrespond "[Pause]"
+
+return qrpfigs
+/** _error **/
+/** _stripint **/

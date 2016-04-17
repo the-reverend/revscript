@@ -1,0 +1,308 @@
+/** _launchprobe v.5 **/
+_launchprobe: procedure expose (globals)
+ dest=arg(1)
+ mask=lower(arg(2))
+ if pos("*",mask)>0 then mask="bptsfnm0"
+ report=lower(arg(3)) /* fed;sub;file */
+ fname=arg(4)
+ if arg(5,"E") then stamp=arg(5)
+               else stamp=_getservertime()
+
+ if _ex.0="_EX.0" then _ex.=0
+ buflen=48*1024
+
+ if _sv.0="_SV.0" then _sv.=0
+ if _p.0="_P.0" then _p.=""
+ if _pv.0="_PV.0" then _pv.=0
+ if _f.0="_F.0" then _f.=0
+ if _vs.0="_VS.0" then _vs.=0
+
+ rfed=0
+ rsub=0
+ rfile=0
+ if pos("fed",report)>0 then rfed=1
+ if pos("sub",report)>0 then rsub=1
+ if pos("file",report)>0 then rfile=1
+ ri=0
+ msg="##SUCCESS##"
+ sector=0
+
+ ans=0
+ call zocsend "e"
+ do while ans<=0
+  ans=_waitmux("SubSpace Ether Probe loaded in launch tube, ",
+            ||"|You do not have any Ether Probes.",
+            ||"|*** Error - No route",
+            ||"|Launch aborted.",
+            ||"|Probe Self Destructs",
+            ||"|Probe Destroyed")
+  lastline=strip(_lastline())
+  select
+   when ans=0 & pos("SubSpace",lastline)=1 then nop
+   when ans=1 & pos("You do not have",lastline)=1 then nop
+   when ans=2 & pos("*** Error",lastline)=1 then nop
+   when ans=3 & pos("Launch aborted",lastline)=1 then nop
+   when ans=4 & pos("Probe Self",lastline)=1 then nop
+   when ans=5 & pos("Probe Destroyed",lastline)=1 then nop
+   otherwise ans=-1
+  end /*select*/
+  if ans=0 then do
+   call zocreceivebuf buflen
+   call zocsend dest||"^M"
+  end /*if*/
+ end /*do*/
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+ select
+  when ans=1 then msg="##NO PROBES##"
+  when ans=2 then do
+   msg="##NO PATH##"
+   call zocsend "n"
+   if _wait("Launch aborted.")=640 then call _error "timeout"
+  end /*when*/
+  when ans=3 then do
+   msg="##SUCCESS##"
+   sector=dest
+  end /*when*/
+  when ans<=5 then do
+   i=max(pos("Probe entering sector",buff),1)
+   j=pos("Probe Self Destructs",buff,i)+20
+   if j=20 then do
+/*
+    165 +++ parse value _launchprobe(target, 
+ rmask, rmode, rname, stamp) with msg ";" sect 
+ Error 40 on line 942 of C:\Program Files\ZOC\script\info\_eprobe.zrx: Incorrect call 
+ to routine
+*/
+    j=pos("Probe Destroyed",buff,i)+15
+    msg="##DESTROYED##"
+   end /*if*/
+   buff=substr(buff,i,j-i)
+   done=0
+   i=1
+   do while \done
+
+    endrec=pos("Probe entering sector",buff,i+1)
+    if endrec=0 then do
+     rec=strip(substr(buff,i))
+     done=1
+    end /*if*/
+    else rec=strip(substr(buff,i,endrec-i-1))
+
+    cr=pos(d2c(13),rec)
+    parse value left(rec,cr-1) with "Probe entering sector : " sector
+    j=pos("Sector  : ",rec)
+    if j>0 then do
+     cr=pos(d2c(13),rec,j)
+     parse value substr(rec,j,cr-1) with "Sector  : " sector .
+     _sl.sector=1
+     _sv.sector=1
+     _vs.sector=stamp
+    end /*if*/
+
+    if pos("b",mask)>0 & (rfed | rsub | rfile) then do
+     j=pos("Beacon  : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value substr(rec,j,cr-j) with "Beacon  : " beacon
+      ri=ri+1
+      line.ri=_pad(sector,5,"L")||": Beacon - "||beacon
+     end /*if*/
+    end /*if*/
+
+    if pos("0",mask)>0 & (rfed | rsub | rfile) then do
+     j=pos("Ports   : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      if substr(rec,j,cr-j)\="Ports   :  <=-DANGER-=>  Scanners indicate massive debris and heavy" then do
+       parse value substr(rec,j,cr-j) with "Ports   : " name ", Class " typenum " (" typestr ")" .
+       if typenum=0 then do
+        ri=ri+1
+        line.ri=_pad(sector,5,"L")||": "||name||", Class "||typenum||" ("||typestr||")"
+        if _p.sector="" then _p.sector=typestr||";1,0;1,0;1,0"
+        if \_pv.sector then _pv.sector=1
+       end /*if*/
+      end /*if*/
+      else do
+        ri=ri+1
+        line.ri=_pad(sector,5,"L")||": PORT DESTROYED"
+      end /*else*/
+     end /*if*/
+    end /*if*/
+
+    if pos("p",mask)>0 & (rfed | rsub | rfile) then do
+     planet.=""
+     j=pos("Planets : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value strip(substr(rec,j,cr-j)) with "Planets : " planet.1
+      j=cr+1
+      cr=pos(d2c(13),rec,j)
+      k=1
+      do while substr(rec,j,10)="          " & j>0 & cr>0
+       k=k+1
+       parse value strip(substr(rec,j,cr-j)) with planet.k
+       j=cr+1
+       cr=pos(d2c(13),rec,j)
+      end /*do*/
+      do j=1 to k
+       ri=ri+1
+       line.ri=_pad(sector,5,"L")||": "||planet.j
+      end /*if*/
+     end /*if*/
+    end /*if*/
+
+    if pos("t",mask)>0 & (rfed | rsub | rfile) then do
+     trader.=""
+     j=pos("Traders : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value strip(substr(rec,j,cr-j)) with "Traders : " trader.1 ", w/ " trfigs " ftrs,"
+      j=cr+1
+      cr=pos(d2c(13),rec,j)
+      parse value substr(rec,j,cr-j) with . "(" ship ")"
+      trader.1=trader.1||" in "||ship||", "||trfigs||" fig(s)"
+      j=cr+1
+      cr=pos(d2c(13),rec,j)
+      k=1
+      do while substr(rec,j,10)="          " & j>0 & cr>0
+       k=k+1
+       parse value strip(substr(rec,j,cr-j)) with trader.k ", w/ " trfigs " ftrs,"
+       j=cr+1
+       cr=pos(d2c(13),rec,j)
+       parse value substr(rec,j,cr-j) with . "(" ship ")"
+       trader.k=trader.k||" in "||ship||", "||trfigs||" fig(s)"
+       j=cr+1
+       cr=pos(d2c(13),rec,j)
+      end /*do*/
+      do j=1 to k
+       ri=ri+1
+       line.ri=_pad(sector,5,"L")||": "||trader.j
+      end /*if*/
+     end /*if*/
+    end /*if*/
+
+    if pos("s",mask)>0 & (rfed | rsub | rfile) then do
+     unmanned.=""
+     j=pos("Ships   : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value strip(substr(rec,j,cr-j)) with "Ships   : " . "[Owned by] " unmanned.1 ", w/ " umfigs " ftrs,"
+      j=cr+1
+      cr=pos(d2c(13),rec,j)
+      parse value substr(rec,j,cr-j) with . "(" ship ")"
+      unmanned.1="("||unmanned.1||") "||ship||", "||umfigs||" fig(s)"
+      j=cr+1
+      cr=pos(d2c(13),rec,j)
+      k=1
+      do while substr(rec,j,10)="          " & j>0 & cr>0
+       k=k+1
+       parse value strip(substr(rec,j,cr-j)) with . "[Owned by] " unmanned.k ", w/ " umfigs " ftrs,"
+       j=cr+1
+       cr=pos(d2c(13),rec,j)
+       parse value substr(rec,j,cr-j) with . "(" ship ")"
+       unmanned.k="("||unmanned.k||") "||ship||", "||umfigs||" fig(s)"
+       j=cr+1
+       cr=pos(d2c(13),rec,j)
+      end /*do*/
+      do j=1 to k
+       ri=ri+1
+       line.ri=_pad(sector,5,"L")||": "||unmanned.j
+      end /*if*/
+     end /*if*/
+    end /*if*/
+
+    if pos("f",mask)>0 & (rfed | rsub | rfile) then do
+     j=pos("Fighters: ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value substr(rec,j,cr-j) with "Fighters: " figs " (" . ") [" . "]" .
+      ri=ri+1
+      line.ri=_pad(sector,5,"L")||": "||figs||" fig(s)"
+      if \_f.sector then _f.sector=1
+     end /*if*/
+    end /*if*/
+
+    if pos("n",mask)>0 & (rfed | rsub | rfile) then do
+     j=pos("NavHaz  : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value substr(rec,j,cr-j) with "NavHaz  : " haz "%" .
+      ri=ri+1
+      line.ri=_pad(sector,5,"L")||": "||haz||"% NavHaz"
+     end /*if*/
+    end /*if*/
+
+    if pos("m",mask)>0 & (rfed | rsub | rfile) then do
+     j=pos("Mines   : ",rec)
+     if j>0 then do
+      cr=pos(d2c(13),rec,j)
+      parse value substr(rec,j,cr-j) with "Mines   : " mamount " (Type" . mtype ") (" mowner ")"
+      j=cr+1
+      cr=pos(d2c(13),rec,j)
+      mines=mamount||" "||mtype||"(s) ("||mowner||")"
+      if substr(rec,j,10)="        : " then do
+       parse value substr(rec,j,cr-j) with "        : " mamount " (Type" . mtype ") (" mowner ")"
+       mines=mines||", "mamount||" "||mtype||"(s) ("||mowner||")"
+      end /*if*/
+      ri=ri+1
+      line.ri=_pad(sector,5,"L")||": "||mines
+     end /*if*/
+    end /*if*/
+
+    i=endrec
+   end /*do*/
+  end /*when*/
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+
+ if msg="##DESTROYED##" & (rfed | rsub | rfile) then do
+  ri=ri+1
+  if sector=dest then line.ri=_pad(sector,5,"L")||": probe destroyed."
+  else line.ri=_pad(sector,5,"L")||": probe destroyed enroute to sector "||dest||"."
+ end /*if*/
+
+ if msg="##NO PATH##" & (rfed | rsub | rfile) then do
+  ri=ri+1
+  line.ri=_pad(dest,5,"L")||": no route."
+ end /*if*/
+
+ if rfile & ri>0 then do
+  if _fileopenw(fname) then do
+   do i=1 to ri
+   x=line.i
+    if \_ex.x then call lineout fname, strip(line.i)
+   end /*do*/
+   call _fileclose fname
+  end /*if*/
+ end /*if*/
+
+ if rfed & ri>0 then do
+  call zocsend "`^M"
+  do i=1 to ri
+   x=line.i
+   if \_ex.x then call zocsend strip(left(line.i,69))||"^M"
+  end /*do*/
+  call zocsend "^M"
+ end /*if*/
+
+ if rsub & ri>0 then do
+  call zocsend "'^M"
+  do i=1 to ri
+   x=line.i
+   if \_ex.x then call zocsend strip(left(line.i,69))||"^M"
+  end /*do*/
+  call zocsend "^M"
+ end /*if*/
+
+ if ri>0 then do
+  do i=1 to ri
+   x=line.i
+   _ex.x=1
+  end /*do*/
+ end /*if*/
+
+ rslt=msg||";"||sector
+
+return rslt

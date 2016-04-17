@@ -1,0 +1,33 @@
+/** _pwarp v.4 **/
+_pwarp: procedure expose (globals)
+ dest=arg(1)
+ if arg(2,"E") then n=arg(2); else n=1
+ if arg(3,"E") then v=arg(3); else v=0
+ do i=1 to n
+  _msg.!pwarp=i
+  engaged=0; hops=0; already=0; invalid=0
+  if v then call zocsend "'pwarp attempt "||i||"^Mp"||dest||"^My"
+       else call zocsend "p"||dest||"^My"
+  if _wait("Citadel command (?=help) P")=640 then call _error "timeout"
+  do forever
+   ans=_waitmux("Citadel command (?=help)|Drive Engaged!| hops away from here.|already in that sector!|Invalid Sector number")
+   select
+    when ans=0 then leave
+    when ans=1 then engaged=1
+    when ans=2 then hops=1
+    when ans=3 then already=1
+    when ans=4 then invalid=1
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*do*/
+  select
+   when engaged | already then _msg="##SUCCESS##"
+   when invalid then do; call zocsend "^Hq^M"; _msg="##INVALID_SECTOR##"; end
+   when hops then _msg="##BLIND_OR_FUEL##"
+   otherwise _msg="##NO_PWARP##"
+  end /*select*/
+  rslt=engaged | already
+  if rslt then leave
+ end /*do*/
+return rslt

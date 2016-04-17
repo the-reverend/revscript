@@ -1,0 +1,31 @@
+/** _datestr_to_unix v.1 **/
+/*- _datestr_to_unix string -*/
+/*- v.1 tested -*/
+_datestr_to_unix: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _datestr_to_unix"
+ dec_31_1999=36525
+ monthdays="31;28;31;30;31;30;31;31;30;31;30;31"
+ datestr=translate(arg(1),"  ",":/") /* 11:34:48 AM 06/05/2002 */
+ if words(datestr)<7 then call _error "bad datestr format"
+
+ hr=word(datestr,1)
+ min=word(datestr,2)
+ sec=word(datestr,3)
+ ampm=word(datestr,4)
+ month=word(datestr,5)
+ day=word(datestr,6)
+ year=word(datestr,7)
+ 
+ secs=hr*3660+min*60+sec
+ if ampm="PM" & hr\=12 then secs=secs+43200
+ if year//4=0 then leapyear=1
+              else leapyear=0
+ doy=day
+ do i=1 to month-1
+  doy=doy+_dword(monthdays,i,";")
+ end /*do*/
+ if month>2 & leapyear then doy=doy+1
+ days=dec_31_1999 + (2000-year)*365 + (2000-year)%4 + doy
+ 
+ rslt=days||"."||secs||copies("0",5-length(secs))
+return rslt

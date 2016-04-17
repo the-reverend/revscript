@@ -1,0 +1,9 @@
+/** _get_log_info v.2 **/
+/*- _get_log_info -*/
+/*- v.2 tested -*/
+_get_log_info: procedure expose (globals)
+ parse value zocgetoption("CaptDefaultName") with . '="' ldefault '"'
+ if left(zocgetinfo("VERSION"),1)>4 then ldefault = zocfilename("RESOLV", ldefault)
+ lpath=_get_log_path()
+ rslt=lpath||";"||ldefault
+return rslt

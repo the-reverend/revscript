@@ -1,0 +1,11 @@
+/** _setansi v.2 **/
+_setansi: procedure expose (globals)
+ call zocsend "cn"
+ if _wait("(1) ANSI graphics            - ")=640 then call _error "timeout"
+ if _wait("^M")=640 then call _error "timeout"
+ tansi=_lastline()
+ if arg(1) & tansi="Off" then call zocsend "1"
+ if \arg(1) & tansi="On" then call zocsend "1"
+ call zocsend "qq"
+ if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+return

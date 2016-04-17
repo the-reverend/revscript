@@ -1,0 +1,4 @@
+_ini_is_comment: procedure expose (globals)
+ s=strip(arg(1))
+ if left(s,1)=";" then return 1
+return 0

@@ -1,0 +1,18 @@
+/** _listin v.4 **/
+/*- _listin find, list [, delim] [, abbrv?] -*/
+_listin: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _listin"
+ find=arg(1)
+ list=arg(2)
+ if arg(3,"E") then delim=left(arg(3),1); else delim=";"
+ if arg(4,"E") then abbrv=arg(4); else abbrv=0;
+ rslt=0
+ do i=1 to _dwords(list,delim)
+  select
+   when \abbrv & find==_dword(list,i,delim) then do; rslt=1; leave; end
+   when \abbrv then nop
+   when pos(_dword(list,i,delim),find)>0 then do; rslt=1; leave; end
+   otherwise nop
+  end /*if*/
+ end /*do*/
+return rslt

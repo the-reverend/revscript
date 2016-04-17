@@ -1,0 +1,6 @@
+/** _stripcomma v.1 **/
+/*- _stripcomma str -*/
+/*- v.1 tested -*/
+_stripcomma: procedure expose (globals)
+ rslt=translate(_space(translate(arg(1),", "," ,"),0)," ",",")
+return rslt

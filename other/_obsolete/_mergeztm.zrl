@@ -1,0 +1,60 @@
+/** _mergeztm v.5 **/
+_mergeztm: procedure expose (globals)
+ fname=arg(1)
+
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"reading "||fname||" "
+ if _fileopenr(fname) then do
+
+  eof=_fileeof(fname)
+
+  mzs.=""
+  mon=0
+  maxrow=1
+  do while \eof
+  
+   line=linein(fname)
+   if left(line,5)=="FM > " then do
+    line=linein(fname)
+    if left(line,7)=="  TO > " then do
+     line=linein(fname)
+     if line\="" then do
+      parse var line sec1 " > " line
+      sec1=_stripint(sec1)
+      do while line\=""
+       parse var line sec2 ">" line
+       sec2=_stripint(sec2)
+       _s.sec1=_listadd(sec2,_s.sec1)
+       if sec1>maxrow then maxrow=sec1
+       sec1=sec2
+       if line="" then line=linein(fname)
+      end /*do*/
+     end /*do*/
+    end /*if*/
+    mon=_spinner(mon,100)
+   end /*if*/
+  
+   eof=_fileeof(fname)
+  
+  end /*do*/
+ 
+  call _fileclose fname
+
+  call zocwriteln
+  call zocwrite "merging "||fname||" "
+ 
+  mon=0
+  do i=1 to maxrow
+   old=_s.i
+   do while mzs.i\=""
+    parse var mzs.i temp ";" mzs.i
+    _s.i=_listadd(temp,_s.i)
+    mon=_spinner(mon,500)
+    if _s.i\=old then _s.i=_listsort(_s.i)
+   end /*do*/
+  end /*do*/
+
+ end /*if*/
+ else call zocwrite "x"
+
+return

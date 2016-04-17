@@ -1,0 +1,126 @@
+/** _mapseek v.4 **/
+/*- _mapseek fname, recordlen, sector -*/
+/*- v.4 tested */
+_mapseek: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") | \arg(3,"E") then call _error "missing parameter in _mapseek"
+ fname=arg(1)
+ recordlen=arg(2)
+ sector=arg(3)
+
+ if _s.sector="_S."||sector then _s.=""
+ if _s.sector="" then do
+
+  call stream fname, "C", "SEEK "||(sector-1)*recordlen+2
+ 
+  vis=0
+  one=0
+  prt=0
+  pvis=0
+  bore=0
+  borg=0
+  bequ=0
+  flags=c2d(charin(fname))
+  if flags%128=1 then do
+   bequ=1
+   flags=flags-128
+  end /*if*/
+  if flags%64=1 then do
+   borg=1
+   flags=flags-64
+  end /*if*/
+  if flags%32=1 then do
+   bore=1
+   flags=flags-32
+  end /*if*/
+  if flags%16=1 then do
+   _pv.sector=1
+   flags=flags-16
+  end /*if*/
+  if flags%8=1 then do
+   prt=1
+   flags=flags-8
+  end /*if*/
+  if flags%4=1 then flags=flags-4
+  if flags%2=1 then do
+   _od.sector=1
+   flags=flags-2
+  end /*if*/
+  if flags%1=1 then do
+   _sv.sector=1
+   flags=flags-1
+  end /*if*/
+
+  if prt & _undef(_iniv(!port_kills,"!"||sector)) then do
+   _p.sector=word("S B",bore+1)||word("S B",borg+1)||word("S B",bequ+1)
+   _p.sector.!type=_p.sector
+   do i=1 to 3
+    ms1=charin(fname)
+    ms2=charin(fname)
+    ms3=charin(fname)
+    quan=c2d(ms1)+c2d(ms2)*256; perc=c2d(ms3)
+    _p.sector=_p.sector||";"||quan||","||perc
+    x1=word("!pore !porg !pequ",i); x2=word("!qore !qorg !qequ",i)
+    _p.sector.x1=perc; _p.sector.x2=quan
+   end /*do*/
+  end /*if*/
+  else do
+   _p.sector=""; _p.sector.!type=""
+   _p.sector.!pore=0; _p.sector.!porg=0; _p.sector.!pequ=0
+   _p.sector.!qore=0; _p.sector.!qorg=0; _p.sector.!qequ=0
+   call stream fname, "C", "SEEK "||1+(sector-1)*recordlen+11
+  end /*else*/
+/*----------------------------------------*/
+/*-             MAP FORMAT               -*/
+/*- F QQ P QQ P QQ P MM BG I W1 W2 .. Wn -*/
+/*-                                      -*/
+/*- one letter=byte                      -*/
+/*- two letters=word                     -*/
+/*-                                      -*/
+/*- F  - 0 - expl?                       -*/
+/*-      1 - one-deep?                   -*/
+/*-      2 - (unused)                    -*/
+/*-      3 - port?                       -*/
+/*-      4 - portvis?                    -*/
+/*-      5\                              -*/
+/*-      6 > ptype                       -*/
+/*-      7/                              -*/
+/*- QQ - product quantity                -*/
+/*- P  - product percent                 -*/
+/*- MM - distances from msl              -*/
+/*- BG - bubble gate                     -*/
+/*- I  - number of oneways in            -*/
+/*- W1 - warps 1..n                      -*/
+/*-   twarptype = (w_out, w_both, w_in); -*/
+/*-                                      -*/
+/*- recordlen=15+2n                      -*/
+/*----------------------------------------*/
+  _dtomsl.sector=c2d(charin(fname))
+  _dfrmsl.sector=c2d(charin(fname))
+  _bg.sector=c2d(charin(fname))+c2d(charin(fname))*256
+  _nwi.sector=c2d(charin(fname))
+
+  ms1=c2d(charin(fname))+c2d(charin(fname))*256
+  if ms1=0 then _s.sector=""
+  else do
+   _s.sector=ms1
+   _nw.sector=1
+   wt=ms1%20000
+   _s.sector.!num=ms1//20000
+   _s.sector.!wt=wt
+   _nwt.sector.wt=_nwt.sector.wt+1
+   do i=1 to ((recordlen-15)%2-1)
+    ms1=c2d(charin(fname))+c2d(charin(fname))*256
+    if ms1>0 then do
+     _s.sector=_s.sector ms1
+     _nw.sector=_nw.sector+1
+     wt=ms1%20000
+     _s.sector.!num=_s.sector.!num ms1//20000
+     _s.sector.!wt=_s.sector.!wt wt
+     _nwt.sector.wt=_nwt.sector.wt+1
+    end /*if*/
+   end /*do*/
+  end /*else*/
+  
+  _nwo.sector=_nwt.sector.1 + _nwt.sector.0
+ end /*if*/
+return

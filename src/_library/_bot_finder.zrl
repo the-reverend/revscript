@@ -1,0 +1,493 @@
+/** _bot_finder v.2 **/
+_bot_finder: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then return "INACTIVITY WARNING|entered sector.|activated|Ether Probe.|I.D. code.|launched a P-Missile in sector|] (?=Help)? :|defending this sector?|Script terminated: scripts\1_Login"
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ line=arg(2)
+ user=arg(3)
+ cmd=arg(4)
+ args=arg(5)
+ name=arg(6)
+ mode=arg(7)
+ prompt=arg(8)
+ sector=arg(9)
+ planet=arg(10)
+ auth=arg(11)
+ abort=arg(12)
+ gname=arg(13)
+ dpath=arg(14)
+ dname=arg(15)
+ fname=arg(16)
+ vname=arg(17)
+ lname=arg(18)
+ spath=arg(19)
+ lpath=arg(20)
+ ldefault=arg(21)
+ mname=arg(22)
+ reclen=arg(23)
+ ns=arg(24)
+ sf=arg(25)
+ rf=arg(26)
+ sd=arg(27)
+ alpha=arg(28)
+ rylos=arg(29)
+ pre=_g.!sname1||" : "||name
+ select
+
+  /* user commands */
+     when ans=0 & auth then do
+      select
+
+       /* status */
+          when cmd="status" then do
+           sector=_getinfo("sect")
+           if sector\=_g.!runaway.!base & _g.!runaway then do
+            call zocsend "'"||pre||" : runaway : mapping...^M"
+            call _mapdist sector, 0, mname, reclen, 1, _g.!runaway.!dist+3
+            _g.!runaway.!base=sector
+           end /*if*/
+          end /*do*/
+
+       /* details */
+          when cmd="details" then do
+           sector=_qs.!sect
+           if sector\=_g.!runaway.!base & _g.!runaway then do
+            call zocsend "'"||pre||" : runaway : mapping...^M"
+            call _mapdist sector, 0, mname, reclen, 1, _g.!runaway.!dist+3
+            _g.!runaway.!base=sector
+           end /*if*/
+           call zocsend "'^M"
+           if words(_g.!warnlist)>0 then do
+            do i=1 to words(_g.!warnlist)
+             s=_dword(word(_g.!warnlist,i),1,",")
+             d=_dword(word(_g.!warnlist,i),2,",")
+             call zocsend "  warning point  : "||_pad(s,length(ns),"R")||", "||_pad(d,2,"R")||" hops^M"
+            end /*do*/
+           end /*if*/
+           if _g.!runaway then call zocsend "  runaway        : ACTIVE in "||_g.!runaway.!base||" for "||_g.!runaway.!dist||" hop(s)^M"
+           call zocsend "^M"
+          end /*when*/
+ 
+       /* runaway */
+          when cmd="runaway" then do
+           prompt=_synchronize()
+           sector=_getinfo("sect")
+           num=max(_stripint(word(args,1)),0)
+           select
+            when prompt="citadel" & num=0 then _g.!runaway=0
+            when prompt="citadel"         then do; _g.!runaway=1; _g.!runaway.!dist=num; _g.!runaway.!base=sector; end
+            otherwise do
+             call zocsend "'"||pre||" : "||cmd||" only works at the citadel prompt^M"
+             _g.!runaway=0
+            end /*otherwise*/
+           end /*select*/
+           if _g.!runaway then do
+            call zocsend "'"||pre||" : "||cmd||" : mapping...^M"
+            call _mapdist sector, 0, mname, reclen, 1, _g.!runaway.!dist+3
+            call zocsend "'"||pre||" : "||cmd||" : ACTIVE in "||sector||" for "||_g.!runaway.!dist||" hop(s)^M"
+           end /*if*/
+           else call zocsend "'"||pre||" : "||cmd||" : inactive^M"
+          end /*when*/
+
+       /* fig */
+          when cmd="fig" & user="##OWNER##" & (args="" | lower(args)="ta") then do
+           sector=_getinfo("sect")
+           _f.sector=1
+          end /*when*/
+          when cmd="fig" & (args="" | lower(args)="ta") then do
+           prompt=_synchronize()
+           if prompt="citadel" | prompt="command" then do
+            call zocsend _list_select(prompt,"citadel;command","x;t")
+            num=_get_corpie_ta(user)
+            call zocsend "q"
+            if num>0 & num<=ns then do
+             _f.num=1
+             call zocsend "'"||pre||" : "||cmd||" : "||num||" recorded^M"
+            end /*if*/
+           end /*when*/
+           else call zocsend "'"||pre||" : "||cmd||" : failed : owner not in citadel or at command^M"
+          end /*when*/
+          when cmd="fig" then do
+           num=_stripint(word(args,1))
+           if num>0 & num<=ns then do
+            _f.num=1
+            call zocsend "'"||pre||" : "||cmd||" : "||num||" recorded^M"
+           end /*if*/
+          end /*when*/
+
+       /* warn */
+          when cmd="warn" then do
+           s=_stripint(word(args,1))
+           d=_stripint(word(args,2))
+           if s\=word(args,1) then s=""
+           if d\=word(args,2) then d=""
+           select
+            when s="" then call zocsend "'"||pre||" : "||cmd||" : invalid command format^M"
+            when d=0 | (d="" & s<0) then do
+             templist=""
+             do i=1 to words(_g.!warnlist)
+              s=abs(s)
+              s2=_dword(word(_g.!warnlist,i),1,",")
+              d2=_dword(word(_g.!warnlist,i),2,",")
+              if s\=s2 then templist=templist||" "||s2||","||d2
+             end
+             _g.!warnlist=strip(templist)
+             call zocsend "'"||pre||" : "||cmd||" : warning removed for sector "||s||"^M"
+             if \_ini_write(dname,"settings","warning",_g.!warnlist) then nop
+            end /*when*/
+            when d="" then call zocsend "'"||pre||" : "||cmd||" : invalid command format^M"
+            otherwise do
+             _g.!warnlist=_g.!warnlist||" "||s||","||d
+             call zocsend "'"||pre||" : "||cmd||" : mapping...^M"
+             call _mapdist s, 0, mname, reclen, 1, d
+             call zocsend "'"||pre||" : "||cmd||" : warning added for sector "||s||" up to "||d||" hops^M"
+             if \_ini_write(dname,"settings","warning",_g.!warnlist) then nop
+            end /*otherwise*/
+           end /*select*/
+          end /* when*/
+       
+       /* finder queries */
+          when cmd="f" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do; strt=_getinfo("sect"); sector=strt; end
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+             end /*if*/
+            end /*when*/
+            otherwise nop
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            otherwise do
+             if word(args,2)="v" then srch="r:1;f:1;uv:1"
+             else srch="r:1;f:1"
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest fig", strt, find, srch
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+ 
+          when cmd="nf" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do; strt=_getinfo("sect"); sector=strt; end
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+             end /*if*/
+            end /*when*/
+            otherwise nop
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            otherwise do
+             _f.1=1; _f.2=1; _f.3=1; _f.4=1; _f.5=1; _f.6=1; _f.7=1; _f.8=1; _f.9=1; _f.10=1; _f.sd=1;
+             srch="f:0"
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest no-fig", strt, find, srch
+             _f.1=0; _f.2=0; _f.3=0; _f.4=0; _f.5=0; _f.6=0; _f.7=0; _f.8=0; _f.9=0; _f.10=0; _f.sd=0;
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+
+          when cmd="de" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do; strt=_getinfo("sect"); sector=strt; end
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+             end /*if*/
+            end /*when*/
+            otherwise nop
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            otherwise do
+             srch="f:0;d:1;e:0"
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest unexp deadend", strt, find, srch
+             _sv.find=1
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+
+          when cmd="p" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do
+             strt=_getinfo("sect"); sector=strt
+             type=lower(word(args,1))
+            end /*when*/
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+              type=lower(word(args,1))
+             end /*if*/
+            end /*when*/
+            otherwise type=lower(word(args,2))
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            when \(verify(type,"xbs")=0 & length(type)=3) then call zocsend "'"||pre||" : invalid port type "||type||"^M"
+            otherwise do
+             srch="pt:"||type
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest port", strt, find, srch
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+ 
+          when cmd="fp" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do
+             strt=_getinfo("sect"); sector=strt
+             type=lower(word(args,1))
+            end /*when*/
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+              type=lower(word(args,1))
+             end /*if*/
+            end /*when*/
+            otherwise type=lower(word(args,2))
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            when \(verify(type,"xbs")=0 & length(type)=3) then call zocsend "'"||pre||" : invalid port type "||type||"^M"
+            otherwise do
+             srch="f:1;pt:"||type
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest port", strt, find, srch
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+ 
+          when cmd="cs" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do
+             strt=_getinfo("sect"); sector=strt
+             srch=word(args,1)
+            end /*when*/
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+              srch=word(args,1)
+             end /*if*/
+            end /*when*/
+            otherwise srch=word(args,2)
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            otherwise do
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest matching", strt, find, srch
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+ 
+       /* path */
+          when cmd="path" then do
+           a=_stripint(word(args,1))
+           b=_stripint(word(args,2))
+           if a<=0 | b<=0 |a>ns | b>ns then call zocsend "'invalid parameters^M"
+           else do
+            call _mapdist a, b, mname, reclen, 0, 255
+            if _dist.a.b=255 then call zocsend "'unable to find the path^M"
+                             else call zocsend "'"||translate(_path.a.b,">",";")||"^M"
+           end /*else*/
+          end /*when*/
+ 
+       /* help */     
+          when cmd="help" then do
+           select
+            when args=""         then call zocsend "'  "||mode||" commands : warn fig f nf p fp de cs runaway^M"
+            when args="warn"     then call zocsend "'"||pre||" : help : warn [sector] [distance] : set a warning point^M"
+            when args="fig"      then call zocsend "'"||pre||" : help : fig [sector|ta] : record a fig^M"
+            when args="f"        then call zocsend "'"||pre||" : help : f [sector] : find nearest fig^M"
+            when args="nf"       then call zocsend "'"||pre||" : help : nf [sector] : find nearest non-fig sector^M"
+            when args="p"        then call zocsend "'"||pre||" : help : p [sector] [xxx]: find nearest port of type xxx^M"
+            when args="fp"       then call zocsend "'"||pre||" : help : fp [sector] [xxx]: find nearest figged port of type xxx^M"
+            when args="de"       then call zocsend "'"||pre||" : help : de [sector] : find nearest deadend^M"
+            when args="cs"       then call zocsend "'"||pre||" : help : cs [sector] [searchstring] : find nearest match^M"
+            when args="runaway"  then call zocsend "'"||pre||" : help : runaway [hops] : runaway defense for enemy within N hops^M"
+            otherwise nop
+           end /*select*/
+          end /*when*/
+ 
+          otherwise nop
+      end /*select*/
+     end /*when*/
+
+  /* inactivity */
+     when ans=1 then call zocsend "^["
+     
+  /* fighter and limpet reports */
+     when ans=2 | ans=3 then do
+      if ans=2 then do
+       parse var line temp "Deployed Fighters Report Sector " target ": " player "entered sector." .
+       if pos("'s",player)>0 then do
+        ship=substr(player,lastpos("'s",player)+3)
+        player=left(player,lastpos("'s",player)-1)
+       end /*if*/
+       else do
+        player="fighter"
+        ship=""
+       end /*else*/
+      end /*if*/
+      else do
+       parse var line temp "Limpet mine in " target " activated"
+       player="limpet"
+       ship=""
+      end /*else*/
+      _f.target=0
+      if strip(temp)="" then do
+       if _g.!runaway then do
+        if _dist.target.sector<255 then call zocsend "'"||pre||" : runaway : "||player||" is "||_dist.target.sector||" hop(s)^M"
+        if _dist.target.sector<=_g.!runaway.!dist then do
+         _ex.sector=1
+         srch="f:1;d:1;tm:>2;pt:sxx"
+         do forever
+          new_loc=_mapfind(sector,srch,mname,reclen,255)
+          select
+           when new_loc=0 & srch="f:1;d:1;tm:>2;pt:sxx" then srch="f:1;d:1;tm:>2"
+           when new_loc=0 & srch="f:1;d:1;tm:>2"        then srch="f:1;pt:sxx"
+           when new_loc=0 & srch="f:1;pt:sxx"           then srch="f:1"
+           when new_loc=0 then do; call zocsend "'"||pre||" : runaway : no new locations available, runaway DISABLED^M"; _g.!runaway=0; leave; end
+           otherwise do
+            if _pwarp(new_loc) then do
+             sector=new_loc
+             call zocsend "'"||pre||" : runaway : new location ("||sector||") : mapping...^M"
+             call _mapdist sector, 0, mname, reclen, 1, _g.!runaway.!dist+3
+             call zocsend "'"||pre||" : runaway : ACTIVE in "||sector||" for "||_g.!runaway.!dist||" hop(s)^M"
+             _g.!runaway.!base=sector
+             leave
+            end /*if*/
+            _ex.new_loc=1
+            call zocsend "'"||pre||" : runaway : move to "||new_loc||" failed, searching for another.^M"
+           end /*else*/
+          end /*select*/
+         end /*do*/
+        end /*if*/
+       end /*if*/
+       if _verbose then do
+        srch="r:1;f:1"
+        find=_mapfind(target,srch,mname,reclen,255)
+        if find>0 & \_listinstr(_g.!ignorelist, player) then call _bot_finder_report "nearest fig", target, find, srch
+       end /*if*/
+       if _g.!warnlist\="" then do
+        do i=1 to words(_g.!warnlist)
+         if _dwords(word(_g.!warnlist,i),",")=2 then do
+          s=_dword(word(_g.!warnlist,i),1,",")
+          d=_dword(word(_g.!warnlist,i),2,",")
+          if _dist.target.s<=d then call zocsend "'warning : "||player||" is "||_dist.target.s||" hops from "||s||"^M"
+         end /*if*/
+        end /*do*/
+       end /*if*/
+      end /*if*/
+     end /*when*/
+
+  /* eprobe reports */
+     when ans=4 then nop
+     when ans=5 then nop
+
+  /* pmissile report - flubber3 launched a P-Missile in sector 2037[ damaging your ship.] */
+     when ans=6 then do
+      call zocsend "'"||pre||" : finder : i just took a photon^M"
+      if _g.!runaway then do
+       _ex.sector=1
+       srch="f:1;d:1;tm:>2;pt:sxx"
+       do forever
+        new_loc=_mapfind(sector,srch,mname,reclen,255)
+        select
+         when new_loc=0 & srch="f:1;d:1;tm:>2;pt:sxx" then srch="f:1;d:1;tm:>2"
+         when new_loc=0 & srch="f:1;d:1;tm:>2"        then srch="f:1;pt:sxx"
+         when new_loc=0 & srch="f:1;pt:sxx"           then srch="f:1"
+         when new_loc=0 then do; call zocsend "'"||pre||" : runaway : no new locations available, runaway DISABLED^M"; _g.!runaway=0; leave; end
+         otherwise do
+          if _pwarp(new_loc) then do
+           sector=new_loc
+           call zocsend "'"||pre||" : runaway : new location ("||sector||") : mapping...^M"
+           call _mapdist sector, 0, mname, reclen, 1, _g.!runaway.!dist+3
+           call zocsend "'"||pre||" : runaway : ACTIVE in "||sector||" for "||_g.!runaway.!base||" hop(s)^M"
+           _g.!runaway.!base=sector
+           leave
+          end /*if*/
+          _ex.new_loc=1
+          call zocsend "'"||pre||" : runaway : move to "||new_loc||" failed, searching for another.^M"
+         end /*else*/
+        end /*select*/
+       end /*do*/
+      end /*if*/
+     end /*when*/
+
+  /* command prompt (with sector number) */
+     when ans=7 then do
+      parse var line . "]:[" sector "] (?=Help)? :"
+      _sv.sector=1
+     end /*when*/
+
+  /* laying figs */
+     when ans=8 then _f.sector=1
+
+  /* twx just logged back in */
+     when ans=9 then do
+      call _getinfo
+      if _qs.!sect=sector & prompt="citadel" & planet>0 then call zocsend "l"||planet||"^Mc"
+      else do; sector=_qs.!sect; prompt=_synchronize(); planet=0; end
+     end /*when*/
+
+     when ans=640 then call zocsend "^["
+
+  otherwise nop
+ end /*select*/
+ rslt=prompt sector planet reclen abort
+return rslt

@@ -1,0 +1,5 @@
+/* REXX */
+call zocsend "^M qco^Mpq25^Ml368^Mcb3368^M"
+if zocwait("locked")=640 then exit
+call zocsend "y x 40^M"
+exit

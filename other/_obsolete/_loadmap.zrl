@@ -1,0 +1,49 @@
+/** _loadmap v.1 **/
+_loadmap:
+ lmname=arg(1)
+ lmns=arg(2)
+
+ lmr=_fileexists(lmname)
+ lmr=_fileopenr(lmname)
+
+ m.=""
+ lmi=0
+ lmj=1
+ lmline=""
+ lmgrab=50
+
+ do while lmr
+  if chars(lmname)<lmgrab then lmgrab=chars(lmname)
+
+  lmline=lmline||charin(lmname,,lmgrab)
+
+  do lmk=1 to words(lmline)-2
+   if lmi<1 then lmi=lmi+1
+   else do
+    m.lmi.lmj=word(lmline,lmk)
+    lmi=lmi+1
+    if lmi>lmns then do
+     lmi=0
+     lmj=lmj+1
+     if lmj//10=0 then call zocwrite "."
+    end /* if */
+   end /* else */
+  end /* do */
+
+  lmline=substr(lmline,wordindex(lmline,lmk))
+
+  lmr=\_fileeof(lmname)
+  if lmj=21 then lmr=0
+  if lmgrab=0 then do
+   m.lmi.lmj=word(lmline,lmk)
+   lmr=0
+  end /* if */
+
+ end /* do */
+ call _fileclose lmname
+
+return lmr
+/** _fileexists **/
+/** _fileopenr **/
+/** _fileeof **/
+/** _fileclose **/

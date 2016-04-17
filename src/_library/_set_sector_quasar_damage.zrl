@@ -1,0 +1,12 @@
+/** _set_sector_quasar_damage v.1 **/
+_set_sector_quasar_damage: procedure expose (globals)
+ damage=arg(1)
+ if arg(2,"E") then keepore=arg(2); else keepore=0
+ if arg(3,"E") then pmt=arg(3); else pmt=_synchronize()
+ if pmt\="citadel" then return 0
+ call zocsend "qd"
+ if _wait("Fuel Ore")=640 then call _error "timeout"
+ ore=_stripint(word(_grabit("^M"),4))
+ setting=min(trunc(100*(damage*3)/ore)+1, 100-_roundup(100*keepore/ore))
+ call zocsend "cls"||setting||"^m"
+return setting

@@ -1,0 +1,16 @@
+/** _fileopenw v.3 **/
+/*- _fileopenw fname -*/
+/*- v.3 tested -*/
+_fileopenw: procedure expose (globals)
+ select
+  when \arg(1,"E") then call _error "missing parameter in _fileopenw"
+  when arg(1)="" then rslt=0
+  when _fileexists(arg(1)) then do
+   call stream arg(1), "C", "OPEN WRITE"
+   call stream arg(1), "C", "SEEK <0"
+   rslt=_fileready(arg(1))
+   if \rslt then call _fileclose arg(1)
+  end /*when*/
+  otherwise rslt=_filenew(arg(1))
+ end /*select*/
+return rslt

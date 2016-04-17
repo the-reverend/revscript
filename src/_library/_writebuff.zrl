@@ -1,0 +1,13 @@
+/** _writebuff v.2 **/
+_writebuff: procedure expose (globals)
+ line=arg(1)
+ if arg(2)="noansi" then line=_stripansi(line)
+ n=pos(d2c(13),line)
+ do while n>0
+  if arg(2)="noansi" then call zocwriteln left(line,n-1)
+  else call zocwriteln _stripcrlf(left(line,n-1))
+  line=substr(line,n+1)
+  n=pos(d2c(13),line)
+ end
+ call zocwriteln line
+return

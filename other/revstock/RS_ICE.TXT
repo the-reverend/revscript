@@ -1,0 +1,23 @@
+
+~bÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´REV-STOCKÃÄÄÄ
+~eÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ~EÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+~G                 ice mine              ~E³~A ú  ú   ú    ú~HÜÜÜÜÜÜÜÜÜ~A ú       ú   ú
+~eÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ~E³~A ú     ú    ~HÜÛ~oß±²°°±²°ß~HÛÜ   ú   ú ú
+~E                Figs  Fuel  Orgs   Equ ~E³~A   ú      ú~HÛ~oßÛ²²°°²²±°±²ßÛ~A     ú   ú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~A ú   ú   ú~HÞ~oß²±Û²°±Û²°²Û²°ß~HÝ~A  ú
+~E   Capacity    ~A³~g  1M ~A³~g100k ~A³~g  1M ~A³~g 50k ~E³~A       ú  ~HÛ~o°²²Û±²Û²°²°±Û°²~HÛ~Aú   ú  ú ú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~Aú   ú    ú~HÞ~oÜ°°±²Û²²±±°°±ÛÜ~HÝ~A   ú
+~E   Max Colos   ~A³~g     ~A³~g200k ~A³~g200k ~A³~g200k ~E³~A   ú       ~HÛ~oÜ°²Û°²°±°²±°Ü~HÛ~A          úú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~A ú      ú ú ~HßÛ~oÜ²²°±°°ÛÜÛ~Hß~A    ú   ú
+~E   Production  ~A³~g  10 ~A³~g  20 ~A³~g   1 ~A³~g 100 ~E³~A   ú  ú  ú    ~Hßßßßßßßßß~Aú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~A ú      ú   ú     ú ú     ú     ú  ~f_~Fp~f_
+~E                                       ~EÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+~bÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+~C              Level         Days  TD  Colos   Fuel   Orgs    Equ
+~c              1 (citadel)      1   1  1,400  1,000    400    800
+~c              2 (computer)     3   4  2,400    400    100    600
+~c              3 (cannon)       5   9  4,400  1,200    800  1,300
+~c              4 (transwarp)    5  14  7,000  1,400  1,800  1,600
+~c
+~c
+~bÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ

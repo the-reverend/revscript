@@ -1,0 +1,48 @@
+/* REXX */
+/* Rescue bot - rescuee */
+
+/* CONFIG */
+
+planet=81
+
+/* END CONFIG */
+
+call zocsend "/"
+call zocwait "Sect "
+call zocwaitmux d2c(179), "^M"
+
+
+stats.sect=zoclastline()
+stats.sect = left(stats.sect, length(stats.sect)-1)
+stats.sect=BADCOMMAS(stats.sect)
+
+
+
+call zocsend "'RESCUEME! "stats.sect"|^M" /* BD bot */
+/*call zocsend "'HelpMe "stats.sect"^M" */ /* Tweety Bot */
+/*call zocsend "'0"stats.sect"=1saveme^M"*/ /* DW bot */
+/*call zocsend "'pickup ::^M" *//* rev bot */ 
+
+/*Now wait for planet */
+
+do i = 1 to 10
+	call zocsend "L"planet"^MNN^M"
+	call zocdelay 0.2
+end
+
+/*
+call zocsend "'STOP!^M" /* make tweetybot stay */
+call zocdelay 2
+call zocsend "'RESET^M"
+*/
+
+exit
+
+BADCOMMAS:
+stin=arg(1)
+rv=""
+DO addchar=1 to length(stin)
+        holdsit=substr(stin,addchar,1)
+        if holdsit<>"," then rv=rv||holdsit
+END
+RETURN rv

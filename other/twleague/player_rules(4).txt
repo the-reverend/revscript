@@ -1,0 +1,37 @@
+PLAYER GUIDELINES
+
+1  Terminology
+
+   GAME   = a sanctioned league game
+   SYSOP  = gameop, sysop, co-sysop, etc. managing the GAME
+   SERVER = TWGS server hosting the GAME
+   PLAYER = a single player account registered in the GAME
+   LEAGUE = the league governing body
+
+2  Accounts
+
+2.1 There shall be no duplicate accounts.  This rule shall be enforced by the SYSOP.  If a PLAYER legitimately shares a location with another PLAYER, both PLAYERS must demonstrate that legitimacy to the satisfaction of the SYSOP prior to the GAME start.
+
+2.2 PLAYERS shall use their registed LEAGUE names within the GAME.  If a PLAYER fails to use their own name, they will be considered a no-show in the rating system.  If a non-LEAGUE PLAYER has taken another PLAYER's name (by accident or intentionally) the SYSOP shall make changes to award that name to the correct PLAYER.
+
+2.3 The LEAGUE board members shall refrain from playing a GAME where another LEAGUE board member is acting as SYSOP.
+
+3  Conduct
+
+3.1 There shall be no bug use.  PLAYERS are prohibited from using flaws in TWGS.
+
+3.2 There shall be no team backstabbing.  PLAYERS shall only join corporations consisting of their own teammates.  PLAYERS shall act in the best interest of their team for the duration of the game.  PLAYERS shall only login to their own account.
+
+3.3 Each PLAYER shall be part of their team corporation after day 7 or otherwise notify the SYSOP of his/her team affiliation prior to day 7.  Once the SYSOP registers each team with the LEAGUE on day 8, team rosters shall be final.
+
+4  Language
+
+4.1 PLAYERS shall respect the requests of other PLAYERS to refrain from offensive language regarding race, sex, or religion.  SYSOPS shall err on the side of the offended PLAYERS if the problem persists.
+
+4.2 There shall be no spamming.  Spamming is any communication designed to overwhelm another PLAYER with irrelevant information.  For example:  attacking figs one at a time is relevant; hailing War and Peace is irrelevant; checking terra more than 20 times per second is irrelevant; attacking sector/planet fighters for 0 repeatedly is irrelevant.  Any irrelevant messaging above 1200 characters per minute shall automatically be deemed spam.  Irrelevant messaging below 1200 characters per minute shall be deemed spam at the discretion of the SYSOP.
+
+5  Conclusion
+
+5.1 Rule violations will be disciplined as outlined in the SYSOP rules.  PLAYERS may report GAME irregularities and or possible PLAYER cheating to the SYSOP or LEAGUE for appropriate action.  If a PLAYER suspects cheating, un-edited GAME logs must be provided as evidence or no action will be taken.
+
+5.2 PLAYERS shall observe the rules of the SERVER and GAME as defined by the SYSOP in addition to the version of the LEAGUE rules which were in effect at the announcement of the GAME.  PLAYERS shall be aware that the SYSOP may add to or strengthen any of these rules as a part of the GAME rules.  For example, the SYSOP may have GAME rules limiting mega-corping and/or information sharing.  The LEAGUE has no jurisdiction over the satisfaction of GAME rules that extend beyond the LEAGUE rules - the decision of the SYSOP shall not be overruled by the LEAGUE in those matters.

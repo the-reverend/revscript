@@ -1,0 +1,63 @@
+/** _getarmids v.2 **/
+_getarmids: procedure expose (globals)
+/*
+Command [TL=03:05:30]:[4695] (?=Help)? : K
+<Mine Scanning>
+
+ Scan which mine type, 1 Armid or 2 Limpet ? :1
+
+
+
+       Deployed  Mine  Scan         
+
+ Sector      Mines     Personal/Corp
+====================================
+    11           1      Corporate 
+    19           1      Corporate 
+    26           1      Corporate 
+    27           1      Corporate 
+    31           1      Corporate 
+    32           1      Corporate 
+    35           1      Corporate 
+    37           1      Corporate 
+    46           1      Corporate 
+...
+  4993           1      Corporate 
+  4995           1      Corporate 
+  4999           1      Corporate 
+             2,184 Total
+
+Command [TL=03:05:19]:[4695] (?=Help)? : 
+*/
+
+ _m.=0
+ line.=""
+
+ call zocsend "k1"
+ if _wait("<Mine Scanning>")=640 then call _error "timeout"
+ if _wait("===^M")=640 then call _error "timeout"
+
+ done=0
+ i=1
+ do while \done 
+  ans=_waitmux("Total|Personal|Corporate")
+  select
+   when ans=0 then done=1
+   when ans=640 then call _error "timeout"
+   otherwise do
+    line.i=strip(_lastline())
+    i=i+1
+   end /*when*/
+  end /*select*/
+ end /*do*/
+
+ if _wait("Command [")=640 then call _error "timeout"
+
+ i=1
+ do while line.i\=""
+  parse var line.i s n .
+  _m.s=n
+  i=i+1
+ end /*do*/
+
+return

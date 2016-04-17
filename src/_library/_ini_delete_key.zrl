@@ -1,0 +1,54 @@
+/** _ini_delete_key v.1 **/
+/*- _ini_delete_key fname, section, key -*/
+/*_ v.1 tested -*/
+_ini_delete_key: procedure expose (globals)
+ /* argument check */
+ do i=1 to 3
+  if \arg(i,"E") then call _error "missing argument in _ini_write."
+ end /*do*/
+
+ /* name arguments */
+ fname=arg(1)
+ s=strip(arg(2))
+ k=strip(arg(3))
+
+ tname=fname||".tmp"
+ written=0
+ 
+ rslt=0
+ if _fileopenr(fname) then do
+  if _filenew(tname,"delete") then do
+   insection=0
+   linenum=0
+   do while \_fileeof(fname)
+    line=strip(linein(fname))
+    linenum=linenum+1
+    select
+     when line="["||s||"]" then do
+      insection=1
+      if linenum>1 then call lineout tname, ""
+      call charout tname, line
+      written=1
+     end /*when*/
+     when insection & left(line,length(k)+1)=k||"=" then nop
+     when insection & left(line,1)="[" then do
+      if linenum>1 then call lineout tname, ""
+      call charout tname, line
+      insection=0
+     end /*when*/
+     when line="" then call lineout tname, ""
+     otherwise do
+      if linenum>1 then call lineout tname, ""
+      call charout tname, line
+     end /*otherwise*/
+    end /*select*/
+   end /*do*/
+   call _fileclose(tname)
+  end /*if*/
+  call _fileclose(fname)
+ end /*if*/
+ if written then do
+  if \dosdel(fname) then call _error "file delete failed."
+  if \dosrename(tname,fname) then call _error "file rename failed."
+ end /*if*/
+return written

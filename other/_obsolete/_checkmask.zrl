@@ -1,0 +1,5 @@
+/** _checkmask v.1 **/
+_checkmask:
+ if verify(arg(2),arg(1))=0 then cmr=1
+ else cmr=0
+return cmr

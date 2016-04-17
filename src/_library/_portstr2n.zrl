@@ -1,0 +1,19 @@
+/** _portstr2n v.2 **/
+/*- _portstr2n str -*/
+/*- v.2 tested -*/
+_portstr2n: procedure expose (globals)
+ if arg(1,"E") then str=arg(1)
+ else call _error "missing parameter in _portstr2n"
+ select
+  when str=0 then num=0
+  when str="BBS" then num=1
+  when str="BSB" then num=2
+  when str="SBB" then num=3
+  when str="SSB" then num=4
+  when str="SBS" then num=5
+  when str="BSS" then num=6
+  when str="SSS" then num=7
+  when str="BBB" then num=8
+  otherwise num="-1"
+ end /*select*/
+return num

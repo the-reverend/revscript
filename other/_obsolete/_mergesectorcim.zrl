@@ -1,0 +1,26 @@
+/** _mergesectorcim v.4 **/
+_mergesectorcim: procedure expose (globals)
+ fname=arg(1)
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"merging "||fname||" "
+ if _fileopenr(fname) then do
+  mon=0
+  do while \_fileeof(fname)
+   line=_space(linein(fname))
+   parse var line row line
+   if line\="" & row\="" then do
+    sec=translate(line,";"," ")
+    new=_s.row
+    do while sec\=""
+     parse var sec temp ";" sec
+     new=_listadd(temp,new)
+    end /*do*/
+/*- if _s.row\=new then call zocwriteln _s.row new -*/
+    if _s.row\=new then _s.row=_listsort(new)
+    mon=_spinner(mon,500)
+   end /*if*/
+  end /*do*/
+  call _fileclose fname
+ end /*if*/
+ else call zocwrite "x"
+return

@@ -1,0 +1,267 @@
+/* REXX _corpswitcher by the reverend (build 4) */
+/*          original by Hekate        */
+/* rev. 0 - initial release           */
+/*          revised by Hekate 7/27/01 */
+/* rev. 1 - improved corp handling    */
+/*          revised by Hekate 8/08/01 */
+/* rev. 2 - multiple corp passwords   */
+
+call zoctimeout 14400
+call zocsynctime 500
+call on halt name _halt
+
+/* defaults */
+playername="hekky"
+corps="2;6;11"
+pwds="9839^^^^;9839^^^^;9839^^^^"
+
+if \_yesno("This script will flip you between corps.  Do you wish to run corpswitcher?") then call _quit "script cancelled by user."
+
+playername=zocask("what is player name? (this is used for the trigger)", playername)
+if playername="##CANCEL##" then call _quit "script cancelled by user."
+
+/* get corp numbers and passwords */
+corps=zocask("corp numbers (separate by semi-colons)?",corps)
+if corps="##CANCEL##" then call _quit "script cancelled by user."
+pwds=zocask("corp passwords (separate by semi-colons)?",pwds)
+if pwds="##CANCEL##" then call _quit "script cancelled by user."
+
+/* start triggers */
+corpmenu="t"
+call zocsend "#"
+call _commsg "r", "_corpswitcher running for corps "||corps||"..."
+done=0
+do while \done
+ ans=zocwaitmux(playername, ,
+                "STATUS", ,
+                "INACTIVITY WARNING", ,
+                "Citadel command (?=help)", ,
+                "Command [", ,
+                "<Quit>", ,
+                "blasts off from the StarDock", ,
+                "appears in a brilliant", ,
+                "warps into the sector", ,
+                "the game")
+ select
+
+  when ans=0 then do
+   parse value strip(zoclastline()) with ch command
+   if ch="R" | ch=d2c(0)||"R" then do
+    command=lower(command)
+    select
+     when pos("on",command)>0 then do
+      parse var command "on" num .
+      tempcorps=corps
+      temppwds=pwds
+      do while tempcorps\=""
+       parse var tempcorps tempc ";" tempcorps
+       parse var temppwds tempp ";" temppwds
+       if tempc=num then do
+        call zocsend corpmenu
+        if _joincorp(num,tempp) then call _commsg "r", "corpswitch successful! on corp "||num||"."
+        else call _commsg "r", "corpswitch failed.  did not join corp "||num||"."
+        call zocsend "q"
+        tempcorps=""
+       end /* if */
+      end /* do */
+     end /* when */
+     when pos("dropit",command)>0 then do
+      call zocsend corpmenu
+      if _joincorp(0) then call _commsg "r", "corpswitch successful!  off corp."
+      else call _commsg "r", "corpswitch failed."
+      call zocsend "q"
+     end /* when */
+     otherwise call _commsg "r", "invalid corpswitch command."
+    end /* select */
+   end /* if */
+  end /* when */
+
+  when ans=1 then call _commsg "r", "_corpswitcher running for corps "||corps||"..."
+
+  when ans=2 then call zocsend "ctq#"
+
+  when ans=3 then do
+   corpmenu="x"
+   call zocwrite "^[[1;32m< _corpswitcher (^[[1;37min citadel^[[0;1;32m) >^[[0;35m "
+  end /* when */
+
+  when ans=4 then do
+   corpmenu="t"
+   call zocwrite "^[[1;32m< _corpswitcher (^[[1;34min space^[[0;1;32m) >^[[0;35m "
+  end /* when */
+
+  when ans=5 then do
+   call zocsend "n"
+   done=1
+  end /* when */
+
+  when ans<=9 & ans>=6 & corpmenu="t" then call zocsend "d"
+
+  when ans=640 then call zocsend "#"
+
+  otherwise nop
+
+ end /* select */
+end /* do */
+
+exit
+
+_halt:
+ call zocwriteln
+ call zocwriteln "^[[1;33m<< script aborted by user. >>^[[0;35m "
+ call zocsend "#"
+ exit
+return
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*    last updated: 21 Aug 2001, 15:57:32     */
+
+/** _beep v.1 **/
+    _beep:
+     bpfile=arg(1)
+     if bpfile\="" then if \_fileexists(bpfile) then bpfile=""
+     if bpfile="" then call zocwrite d2c(7)
+     else do
+      bptemp=zocgetprogramoption("SoundBellWav")
+      parse var bptemp 'SoundBellWav="' bptemp '"'
+      call zocsetglobaloption('SoundBellWav="'||bpfile||'"')
+      call zocwrite d2c(7)
+      call zocsetglobaloption('SoundBellWav="'||bptemp||'"')
+     end /* else */
+    return
+
+/** _commsg v.3 **/
+    _commsg:
+     select
+      when lower(arg(1))="f" then do
+       comch="`"
+       comwaitl="Federation comm-link terminated."
+       comwaits="Message sent on Federation comm-link."
+      end /* when */
+      when lower(arg(1))="r" then do
+       comch="'"
+       comwaitl="Sub-space comm-link terminated"
+       comwaits="Message sent on sub-space channel"
+      end /* when */
+      otherwise call _error "missing message mode flag."
+     end /* select */
+     if arg(2)\="" then do
+      if arg(3)="" then do
+       call zocsend comch||"REV-SCRIPT:  "||arg(2)||"^M"
+       if zocwait(comwaits)=640 then call _error "timeout"
+      end /* do */
+      else do
+       comi=2
+       call zocsend comch||"^MREV-SCRIPT:  "
+       do while arg(comi)\=""
+        call zocsend arg(comi)||"^M"
+        comi=comi+1
+       end /* do */
+       call zocsend "^M"
+       if zocwait(comwaitl)=640 then call _error "timeout"
+      end /* else */
+     end /* if */
+    return
+
+/** _error v.3 **/
+    _error:
+     if arg(1)="" then call zocterminate
+     else errmsg="<< script error:  "||arg(1)||" >>"
+     errmail="<< if this is a serious problem, email me at: tw.the_reverend@excite.com >> "
+
+     eline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(eline)>0 then call zocwriteln
+     call zocwriteln "^[[1;31m"||errmsg||"^[[0;35m"
+     if arg(1)\="timeout" then call zocwriteln "^[[1;33m"||errmail||"^[[0;35m"
+     if length(eline)>0 then call zocwrite eline
+     call _beep "error.wav"
+     exit
+    return
+
+/** _fileexists v.1 **/
+    _fileexists:
+     if stream(arg(1), "C", "QUERY EXISTS")="" then fer=0
+     else fer=1
+    return fer
+
+/** _joincorp v.1 **/
+    _joincorp:
+     jcsuccess=1
+     jcnum=arg(1)
+     jcpwd=arg(2)
+     if jcnum=0 then call zocsend "xy"
+     else do
+      call zocsend "j"
+      jcans=zocwaitmux("Which Corp","You are already on a Corp silly!")
+      select
+       when jcans=0 then nop
+       when jcans=1 then call zocsend "xyj"
+       when jcans=640 then call _error "timeout"
+       otherwise nop
+      end /* select */
+      call zocsend jcnum||"^M"
+      jcans=zocwaitmux("Current Federal Regulations prohibit more than", ,
+                       "Sorry, you can only join a Corporation if your alignment doesn't conflict.", ,
+                       "Enter the Password to join")
+      select
+       when jcans<=1 then jcsuccess=0
+       when jcans=2 then do
+        call zocsend jcpwd||"^M"
+        jcans2=zocwaitmux("Welcome aboard!  You're in!", ,
+                          "Nice try, that has been recorded by Federal Intelligence.")
+        select
+         when jcans2=0 then nop
+         when jcans2=1 then jcsuccess=0
+         when jcans2=640 then call _error "timeout"
+         otherwise nop
+        end /* select */
+       end /* when */
+       when jcans=640 then call _error "timeout"
+       otherwise nop
+      end /* select */
+     end /* else */
+     if zocwait("Corporate command")=640 then call _error "timeout"
+    return jcsuccess
+    /*
+    Which Corp number do you wish to join? 11 
+    Current Federal Regulations prohibit more than 6 Traders per Corp. 
+    Corporate command [TL=00:00:00]:[67] (?=Help)?
+
+    Which Corp number do you wish to join? 5
+    Sorry, you can only join a Corporation if your alignment doesn't conflict.
+    Corporate command [TL=00:00:00]:[521] (?=Help)?
+
+    Which Corp number do you wish to join? 2
+    Enter the Password to join - .
+    Nice try, that has been recorded by Federal Intelligence.
+    For trying to break into this Corp your alignment went down by 1 point(s).
+    Corporate command [TL=00:00:00]:[521] (?=Help)?
+    */
+
+/** _quit v.3 **/
+    _quit:
+     if arg(1)=="" then qmsg="<< script ended. >>"
+     else qmsg="<< script ended:  "||arg(1)||" >>"
+     qline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(qline)>0 then call zocwriteln
+     call zocwriteln "^[[1;32m"||qmsg||"^[[0;35m"
+     if length(qline)>0 then call zocwrite qline
+     if arg(1)="script cancelled by user." then call _beep "cancel.wav"
+     else call _beep "quit.wav"
+     exit
+    return 1
+
+/** _yesno v.2 **/
+    _yesno:
+     select
+      when arg(2)="yn" then yn=zocrequest(arg(1)||" (ESC=no)", "yes", "no")
+      otherwise yn=zocrequest(arg(1), "yes", "no", "cancel")
+     end /* select */
+     select
+      when yn="cancel" then call _quit "script cancelled by user."
+      when yn="##CANCEL##" & arg(2)\="yn" then call _quit "script cancelled by user."
+      when yn="yes" then yn=1
+      otherwise yn=0
+     end /* select */
+    return yn
+

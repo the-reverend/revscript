@@ -1,0 +1,10 @@
+/** _bust_memo v.1 **/
+_bust_memo: procedure expose (globals)
+ cmd=arg(1)
+ sector=arg(2)
+ stamp=arg(3)
+ msg="REV-CMD : "||cmd||" : "||_pad(sector,5,"R")||" : "||stamp||" ::"
+ call zocsend "tt"||msg||"^M^Mq"
+ if zocwait("Corporate M.A.I.L. Server.")=640 then call _error "timeout"
+ if zocwait("(?=Help)? :")=640 then call _error "timeout"
+return

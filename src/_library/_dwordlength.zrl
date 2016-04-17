@@ -1,0 +1,6 @@
+/** _dwordlength v.2 **/
+/*- _dwordlength string, index, delimiter -*/
+/*- v.2 tested -*/
+_dwordlength: procedure expose (globals)
+ rslt=wordlength(translate(arg(1),arg(3)||" "," "||arg(3)),arg(2))
+return rslt

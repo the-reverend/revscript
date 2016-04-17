@@ -1,0 +1,15 @@
+/** _getstardock v.3 **/
+_getstardock: procedure expose (globals)
+ call zocsend "v"
+ ans=_waitmux("The StarDock is located in sector |Command [")
+ select
+  when ans=0 then do
+   if _wait(".")=640 then call _error "timeout"
+   rslt=_stripint(_lastline())
+   if _wait("Command [")=640 then call _error "timeout"
+  end /*when*/
+  when ans=1 then rslt=0
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+return rslt

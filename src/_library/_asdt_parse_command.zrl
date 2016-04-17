@@ -1,0 +1,25 @@
+_asdt_parse_command: procedure expose (globals)
+ ptr=arg(1)
+ line=asdt.!cq.ptr
+ select
+  when left(line,2)="R " then do
+   subname=strip(substr(line,3,7))
+   parse value substr(line,10) with . ":" name cmd args "::"
+  end /*when*/
+  when left(line,1)="'" then do
+   subname="##OWNER##"
+   parse value substr(line,2) with cmd args "::"
+   if cmd=_g.!sname1 then parse value substr(line,2) with . ":" name cmd args "::"
+   else name="##OWNER##"
+  end /*when*/
+  otherwise do
+   subname="##INVALID##"
+   name="##INVALID##"
+   cmd="##NA##"
+   args="##NA##"
+  end /*otherwise*/
+ end /*select*/
+ cmd=lower(strip(cmd))
+ args=strip(args)
+ rslt=subname||";"||name||";"||cmd||";"||args
+return rslt

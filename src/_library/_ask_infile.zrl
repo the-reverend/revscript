@@ -1,0 +1,9 @@
+/** _ask_infile v.1 **/
+/*- _ask_infile msg, default -*/
+_ask_infile: procedure expose (globals)
+ infile=zocgetfilename(arg(1), arg(2))
+ if infile="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+ if \_fileexists(infile) then call _error infile||" does not exist."
+ if _fileopenr(infile) then call _fileclose infile
+                       else call _error "unable to open file "||infile||"."
+return infile

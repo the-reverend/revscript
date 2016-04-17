@@ -1,0 +1,50 @@
+/** _distance v.3 **/
+_distance: procedure expose (globals)
+ start=arg(1)
+ finish=arg(2)
+ mapname=arg(3)
+ recordlen=arg(4)
+ if _dist.1.1="_DIST.1.1" then _dist.=255
+ if _dist.start.finish=255 then do
+  if mapname="" | recordlen="" then do
+   bufflen=5*1024
+   call zocreceivebuf bufflen
+   call zocsend "^^f"||start||"^M"||finish||"^Mq"
+   if _wait("ENDINTERROG")=640 then call _error "timeout"
+   buff=translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10))
+   if length(buff)=bufflen then call _error "buffer overflow"
+   i=pos("FM > "||start,buff)
+   if i>0 then i=pos("TO > "||finish,buff,i)
+   if i>0 then i=pos(d2c(13),buff,i)+1
+   if i>1 then j=pos(d2c(13),buff,i)
+   course=""
+   do while i>1 & j>0
+    line=_space(translate(substr(buff,i,j-i),"  ;","()>"),0)
+    if line="" then leave
+    course=course||line
+    i=j+1
+    j=pos(d2c(13),buff,i)
+   end /*do*/
+   start=_dword(course,1,";")
+
+   _dist.start.finish=_dwords(course,";")-1
+   _path.start.finish=course
+
+   if _dist.start.finish>1 then do
+    nw=_dwords(course,";")
+    do i=1 to (nw-1)
+     do j=(i+1) to nw
+      ts=_dword(course,i,";")
+      tf=_dword(course,j,";")
+      if _dist.ts.tf=255 then _dist.ts.tf=j-i
+     end /*do*/
+    end /*do*/
+   end /*if*/
+
+  end /*if*/
+  else call _mapdist start, finish, mapname, recordlen, arg(5), arg(6)
+ end /*if*/
+
+ rslt=_dist.start.finish
+  
+return rslt

@@ -1,0 +1,78 @@
+CStarScreen
+ // star screen stuff here
+
+CSScreen
+ // s screen stuff here
+
+CHScreen
+ // h screen stuff here?
+
+CShip
+ shipcrc
+ // ship stats here
+
+CShipCatalog
+ ArrayList m_arylst_ships = new ArrayList(); 
+
+CPort
+ int m_int_type;
+ int m_int_construction_days;
+ int[] m_ary_available   = new int[3];
+ int[] m_ary_max         = new int[3];
+ int[] m_ary_mcic        = new int[3];
+ int[] m_ary_overhaggle  = new int[3];
+ stringbuilder m_sb_name        = new stringbuilder();
+ stringbuilder m_sb_last_ported = new stringbuilder();
+
+CWarp
+ int  m_int_number;
+ enum m_enum_type : int {in, both, out};
+
+CSector
+ bool m_bln_has_anomaly;
+ bool m_bln_has_beacon;
+ bool m_bln_has_port;
+ bool m_bln_is_explored;
+ bool m_bln_is_voided;
+ int  m_int_density;
+ int  m_int_hazard;
+ stringbuilder m_sb_region_name         = new stringbuilder();
+ stringbuilder m_sb_beacon_name         = new stringbuilder();
+ stringbuilder m_sb_last_sector_display = new stringbuilder();
+ DateTime  m_dt_last_scan = new DateTime();
+ DateTime  m_dt_last_view = new DateTime();
+ DateTime  m_dt_last_data = new DateTime();
+ CPort     m_obj_port     = new CPort();
+ ArrayList m_arylst_warps = new ArrayList(); 
+ // fig data
+ int           m_int_fighter_count;
+ enum          m_enum_fighter_type : int {toll, defensive, offensive};
+ stringbuilder m_sb_fighter_owner_name = new stringbuilder();
+ int           m_int_fighter_owner_corp;
+ // armid data
+ int           m_int_armid_count;
+ stringbuilder m_sb_armid_owner_name = new stringbuilder();
+ stringbuilder m_sb_armid_owner_corp = new stringbuilder();
+ // limpet data
+ int  m_int_limpet_count;
+ enum m_enum_limpet_type : int {personal, corp, friendly, enemy};
+ bool m_bln_has_active_limpet;
+ // bubble data
+ int m_int_bubble_gate;
+
+CUniverse
+ int  m_int_sector_count;
+ int  m_int_special_alpha;
+ int  m_int_special_rylos;
+ int  m_int_special_stardock;
+ int  m_int_special_terra;
+ Hashtable m_hshtbl_sectors = new Hashtable();
+ Hashtable m_hshtbl_sector_voids = new Hashtable();
+ bool      m_bln_refresh_bubble_calc;
+
+CGame
+ CStarScreen  m_obj_starscreen  = new CStarScreen();
+ CSScreen     m_obj_sscreen     = new CSScreen();
+ CHScreen     m_obj_hscreen     = new CHScreen();
+ CShipCatalog m_obj_shipcatalog = new CShipCatalog();
+ CUniverse    m_obj_universe    = new CUniverse();

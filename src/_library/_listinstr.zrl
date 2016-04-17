@@ -1,0 +1,26 @@
+/** _listinstr v.3 **/
+/*- _listinstr abbrlist, archetype [, "cs"] [, delim] -*/
+/*- v.3 tested -*/
+_listinstr: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _listinstr"
+ abbrlist=arg(1)
+ archetype=arg(2)
+ if arg(3,"E") then mode=arg(3)
+ else mode=""
+ if arg(4,"E") then delim=left(arg(4),1)
+ else delim=";"
+ if mode\="cs" then do
+  abbrlist=lower(abbrlist)
+  archetype=lower(archetype)
+ end /*if*/
+ rslt=0
+ if archetype="" then rslt=1
+ else do
+  do i=1 to _dwords(abbrlist,delim)
+   if pos(_dword(abbrlist,i,delim), archetype)>0 then do
+    rslt=1
+    leave
+   end /*if*/
+  end /*do*/
+ end /*else*/
+return rslt

@@ -1,0 +1,25 @@
+/* REXX _ascii.zrx by the reverend (build 76)                                 */
+/*-       built by rev-builder version 1.3a on 22 Mar 2014 at 00:15:39       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author.                -*/
+/*-                                                                          -*/
+/*- This script is provided to you WITHOUT ANY WARRANTY, even the implied    -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         -*/
+/*-                                                                          -*/
+/*-                       Copyright (C) 2009 Ron Wilson                      -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ----------------------*/ _g.!sname="_ascii.zrx" /*---------------------- -*/
+/*- --------------*/ _g.!sbuild=76; _g.!sdate="2014-03-22" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+/* description:                                                               */
+/* rev. 0 - initial release                                                   */
+
+do i=1 to 255
+ if i//10=0 then call zocwriteln
+ call zocwrite i||" ^("||d2x(i)||") "
+end
+call zocwriteln
+
+exit

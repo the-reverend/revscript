@@ -1,0 +1,24 @@
+/** _bot_parse_command v.2 **/
+_bot_parse_command: procedure expose (globals)
+ line=arg(1)
+ if _wait("^M")=640 then call _error "timeout"
+ suffix=strip(_lastline())
+ name="##INVALID##"; cmd="##NA##"; args=""
+ select
+  when suffix\="" then nop
+  when left(line,2)="R " then do
+   name=strip(substr(line,3,7))
+   parse value substr(line,10) with cmd args "::"
+  end /*when*/
+  when left(line,1)="'" then do
+   name="##OWNER##"
+   parse value substr(line,2) with cmd args "::"
+  end /*when*/
+  when left(line,2)="P " then do
+   name="P"||strip(substr(line,3,7))
+   parse value substr(line,10) with cmd args "::"
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=name||";"||lower(strip(cmd))||";"||strip(args)
+return rslt

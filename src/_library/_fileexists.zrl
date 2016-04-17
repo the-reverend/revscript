@@ -1,0 +1,11 @@
+/** _fileexists v.4 **/
+/*- _fileexists fname -*/
+/*- v.4 tested -*/
+_fileexists: procedure expose (globals)
+ select
+  when \arg(1,"E") then call _error "missing parameter in _fileexists"
+  when arg(1)="" then rslt=0
+  when stream(arg(1), "C", "QUERY EXISTS")="" then rslt=0
+  otherwise rslt=1
+ end /*select*/
+return rslt

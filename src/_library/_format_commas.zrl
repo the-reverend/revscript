@@ -1,0 +1,15 @@
+/** _format_commas v.2 **/
+_format_commas: procedure expose (globals)
+ n=strip(arg(1))
+ if \datatype(n,'N') then return n
+ if n<0 then do; neg=1; n=abs(n); end; else neg=0
+ frac=n-trunc(n)
+ int=trunc(n)
+ rslt=""
+ do while int\=""
+  rslt=strip(right(int,3)) rslt
+  int=strip(reverse(substr(reverse(int),4)))
+ end
+ rslt=translate(strip(rslt),","," ")
+ if frac>0 then rslt=rslt||"."||frac
+return rslt

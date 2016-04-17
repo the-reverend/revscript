@@ -1,0 +1,5 @@
+_is_mbbs: procedure expose (globals)
+ call zocsend "@"
+ ans=_waitmux("Average Interval Lag|MBBS")
+ if ans=640 then call _error "timeout"
+return ans

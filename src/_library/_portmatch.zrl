@@ -1,0 +1,29 @@
+/** _portmatch v.1 **/
+/*- _portmatch str1, str2 -*/
+/*- v.1 tested -*/
+_portmatch: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _portmatch"
+ m1=lower(strip(arg(1)))
+ m2=lower(strip(arg(2)))
+ rslt=0
+ select
+  when length(m1)\=3 then nop
+  when length(m2)\=3 then nop
+  when m1=m2 then rslt=1
+  otherwise do
+   mm1=0
+   if left(m1,1)="x" then mm1=1
+   if left(m2,1)="x" then mm1=1
+   if left(m1,1)=left(m2,1) then mm1=1
+   mm2=0
+   if substr(m1,2,1)="x" then mm2=1
+   if substr(m2,2,1)="x" then mm2=1
+   if substr(m1,2,1)=substr(m2,2,1) then mm2=1
+   mm3=0
+   if substr(m1,3,1)="x" then mm3=1
+   if substr(m2,3,1)="x" then mm3=1
+   if substr(m1,3,1)=substr(m2,3,1) then mm3=1
+   if mm1 & mm2 & mm3 then rslt=1
+  end /*otherwise*/
+ end /*select*/
+return rslt

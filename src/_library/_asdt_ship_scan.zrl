@@ -1,0 +1,28 @@
+_asdt_ship_scan: procedure expose (globals)
+ n=1; ship.="##UNDEF##"
+ if _sendwait("cz","Hops Type")=640 then call _error "timeout"
+ if _wait("----------^M")=640 then call _error "timeout"
+ do forever
+  line.n=strip(_grabit("^M"))
+  if line.n="" then leave
+  n=n+1
+ end /*do*/
+ n=n-1
+ call zocsend "q"
+ list=""
+ do i=1 to n
+  parse var line.i k line.i
+  list=list strip(k)
+  line.i=strip(line.i)
+  plus=pos("+",line.i)
+  spac=pos(" ",line.i)
+  select
+   when spac=0 then sec.k=0
+   when plus=0 then parse var line.i ship.!sloc.k line.i
+   when spac<plus then parse var line.i ship.!sloc.k line.i
+   otherwise parse var line.i ship.!sloc.k "+" line.i
+  end /*select*/
+  parse var line.i ship.!snam.k 16 21 . . . ship.!styp.k
+  ship.!snam.k=strip(ship.!snam.k); ship.!styp.k=translate(strip(ship.!styp.k),"____","|;=.")
+ end /*do*/
+return strip(list)

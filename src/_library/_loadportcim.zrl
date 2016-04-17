@@ -1,0 +1,29 @@
+/** _loadportcim v.6 **/
+_loadportcim: procedure expose (globals)
+ fname=arg(1)
+ _p.=""
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"reading "||fname||" "
+ if _fileopenr(fname) then do
+  mon=0
+  do while \_fileeof(fname)
+   line=strip(linein(fname))
+   parse var line row line
+   if line\="" & row\="" then do
+    line=_space(translate(line," ","%"))
+    line=zocstring("REPLACE",line,"- ","-")
+    line=word(line,1)||","||word(line,2)||";"||word(line,3)||","||word(line,4)||";"||word(line,5)||","||word(line,6)
+    if _dword(_dword(line,1,";"),1,",")<0 then _p.row="B"
+    else _p.row="S"
+    if _dword(_dword(line,2,";"),1,",")<0 then _p.row=_p.row||"B"
+    else _p.row=_p.row||"S"
+    if _dword(_dword(line,3,";"),1,",")<0 then _p.row=_p.row||"B"
+    else _p.row=_p.row||"S"
+    _p.row=_p.row||";"||line
+    mon=_spinner(mon,500)
+   end /*if*/
+  end /*do*/
+  call _fileclose fname
+ end /*if*/
+ else call zocwrite "x"
+return

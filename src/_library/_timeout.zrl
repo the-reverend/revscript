@@ -1,0 +1,10 @@
+/** _timeout v.1 **/
+_timeout: procedure expose (globals)
+ if _g.!timeout="_G.!TIMEOUT" then _g.!timeout=60
+ rslt=_g.!timeout
+ nt=_stripint(arg(1))
+ if arg(1,"E") & nt>0 then do
+  call zoctimeout nt
+  _g.!timeout=nt
+ end /*if*/
+return rslt

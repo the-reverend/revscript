@@ -1,0 +1,60 @@
+/** _chooselist2 v.1 **/
+_chooselist2:
+ cprompt=arg(1)
+ clist=arg(2)
+ if clist="" then call _error "no list"
+ delim=arg(3)
+ if delim=""        then call _error "missing delimiter"
+ if length(delim)>1 then call _error "long delimiter"
+ delim=c2d(delim)
+ ch.=""
+
+ parse var clist ch.1 ";" ch.2
+
+ i=2
+ j=3
+ do while ch.i\=""
+  parse var ch.i ch.i ";" ch.j
+  i=i+1
+  j=j+1
+ end /* while */
+ if i<7 then cmax=1
+ if i<5 then cmax=0
+ if i>=7 then cmax=(i-5)%2+1
+
+ cdone=0
+ cpos=0
+ do while \cdone
+  if cpos<0 then cpos=0
+  if cpos>cmax then cpos=cmax
+
+  select
+   when cpos=0 then do
+    if cmax=0 then cans=zocrequest(cprompt, ch.1, ch.2, ch.3, ch.4)
+    else cans=zocrequest("choose: ", ch.1, ch.2, ch.3, "next")
+   end /* when */
+   when cpos=cmax then do
+    cp1=(cpos-1)*2+4
+    cp2=cp1+1
+    cp3=cp1+2
+    cans=zocrequest(cprompt, "back", ch.cp1, ch.cp2, ch.cp3)
+   end /* when */
+   otherwise do
+    cp1=(cpos-1)*2+4
+    cp2=cp1+1
+    cans=zocrequest(cprompt, "back", ch.cp1, ch.cp2, "next")
+   end /* otherwise */
+  end /* select */
+
+  select
+   when cans="next" then cpos=cpos+1
+   when cans="back" then cpos=cpos-1
+   when cans="##CANCEL##" then cdone=1
+   when cans="" then nop
+   otherwise cdone=1
+  end /* select */
+
+ end /* do */
+
+return cans
+/** _error **/

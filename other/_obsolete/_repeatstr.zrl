@@ -1,0 +1,7 @@
+/** _repeatstr v.2 **/
+_repeatstr:
+ rch=arg(1)
+ rchc=arg(2)
+ rchr=""
+ if rchc>0 then rchr=copies(rch,rchc)
+return rchr

@@ -1,0 +1,382 @@
+/** _login v.5 **/
+/*- _login [hide] -*/
+_login: procedure expose (globals)
+ gamepwd=_iniv(!settings,"!game_pwd")
+ dname=_iniv(!settings,"!dname")
+ gname=_iniv(!settings,"!gname")
+ lname=_iniv(!settings,"!lname")
+ ignorelist=_iniv(!settings,"!ignore")
+ if _undef(ignorelist) then ignorelist=""
+ lg_stamp=_iniv(!settings,"!lastlogstamp")
+ login_count=_iniv(!settings,"!login_count")
+ if _undef(login_count) then login_count=0
+
+ if \arg(1,"E") then hide=1
+ else hide=arg(1)
+
+ call _rseed
+ yr=word(date("N"),3)-2000+12
+
+ call zoclogging 0, 1
+ call zoclogname gname||"_log_^3^2^1_^8.txt"
+ call zocsetoption 'CaptDefaultName="'||gname||'_log_^3^2^1_^8.txt"'
+ call zoclogging 1, 1
+ log_flag=_fileopenw(lname)
+
+ call zocsend "t^M"
+
+ newgame=0
+ if (login_count=0) then newgame=1
+ newname=""
+
+ done=0
+ pause_flag=1
+ do while \done
+
+  ans=_waitmux("[Pause]",
+            ||"|Show today's log?",
+            ||"|time/date stamp?",
+            ||"|       Hello ",
+            ||"|Password?",
+            ||"|messages received since",
+            ||"|new character",
+            ||"|destroyed your ship today...",
+            ||"|No messages received.",
+            ||"|> ",
+            ||"|::",
+            ||"|/"||yr-1||":",
+            ||"|/"||yr||":",
+            ||"|/"||yr+1||":",
+            ||"|entered sector.",
+            ||"|Sub Space Ether Probe.",
+            ||"|I.D. code.",
+            ||"|all of your mines in ",
+            ||"|Delete messages? (Y/N) [N]",
+            ||"|clear some avoids? (Y/N) [N]",
+            ||"|Planet command",
+            ||"|Option? (A,D,I",
+            ||"|Class 9 (Special)",
+            ||"|Sector  : 1 in",
+            ||"|name your ship",
+            ||"|(B)BS Name [B] ?",
+            ||"|cannot use the name",
+            ||"|alias would look",
+            ||"|name your home",
+            ||"|(?=Help)? :",
+            ||"| - Ship ",
+            ||"|sorry, but this is a closed game.")
+
+  select
+
+   /* "[Pause]" */
+      when ans=0 then do
+       call zocdelay .3
+       select
+        when _pcheck("[Pause] - [") & pause_flag then do
+         call zocsend " "
+         pause_flag=0
+        end /*when*/
+        when _pcheck("[Pause] - [") then nop
+        when _pcheck("[Pause] - D") then do
+         call zocsend "y"
+         mode=2
+        end /*when*/
+        otherwise do
+         call zocsend " "
+         pause_flag=0
+        end /*otherwise*/
+       end /*select*/
+      end /*when*/
+
+   /* "Show today's log? (Y/N) [N]" */
+      when ans=1 then call zocsend "n"
+
+   /* "Include time/date stamp? (Y/N) [N]" */
+      when ans=2 then call zocsend "y"
+
+   /* "       Hello " */
+      when ans=3 then do
+       bbsname=_grabit(", welcome")
+       bbsname=left(bbsname,pos(", welcome",bbsname)-1)
+      end /*when*/
+
+   /* "Password?" */
+      when ans=4 then do
+       if _undef(gamepwd) then do
+        gamepwd=_askstr("what password for this game?",_random_pwd(8),"c")
+        if \_ini_write(dname,"settings","game_pwd",gamepwd) then call _error "unable to write to "||dname
+       end /*if*/
+       call zocsend gamepwd||"^M"
+      end /*when*/
+
+   /* "messages received since your last" */
+      when ans=5 then mode=1
+
+   /* "new character" */
+      when ans=6 then do
+       call zocsend "y"
+       mode=3
+      end /*when*/
+
+   /* "destroyed your ship today..." */
+      when ans=7 then done=1
+
+   /* "No messages received." */
+      when ans=8 then mode=2
+
+   /* "> " */
+      when ans=9 & \pause_flag then pause_flag=1
+      when ans=9 then nop
+
+   /* "::" */
+      when ans=10 then do
+       line=_lastline()
+       parse var line brand "-" typ " : " cmd . args "::"
+       typ=lower(typ); cmd=lower(cmd); args=strip(args)
+       select
+        when typ\="cmd" then nop
+        when cmd="bust_clr" then do
+         parse var args sect . stamp .
+         bstamp=_iniv("!bust","!"||sect)
+         select
+          when _undef(bstamp) then nop
+          when bstamp>=stamp then nop
+          otherwise do
+           call _ini_delete_key dname, "bust", sect
+           call _iniv "!bust", "!"||sect, "##UNDEF##"
+          end /*otherwise*/
+         end /*select*/
+        end /*when*/
+        when cmd="set_var" then do
+         parse var args section " : " vr "=" vl
+         call _ini_write dname, section, vr, vl
+         call _iniv "!"||section, "!"||vr, vl
+        end /*when*/
+        otherwise nop
+       end /*select*/
+      end /*when*/
+
+   /* "/"||yr-1||":" */
+   /* "/"||yr||":" */
+   /* "/"||yr+1||":" */
+   /* Received from The Federation at 00:00:03 AM S.D. 08/08/14: */
+   /* Received from Deployed Fighters at 03:49:25 PM S.D. 06/27/14: */
+   /* Received from Fear Me at 11:08:45 PM S.D. 11/25/14: */
+      when ans<=13 then do
+       line=_lastline()
+       parse var line "Received from " lg_name " at " lg_hr ":" lg_mn ":" lg_sc lg_ampm " S.D. " lg_ds ":"
+       if lg_ampm="PM" & lg_hr<12 then lg_hr=lg_hr+12
+       lg_ts=lg_hr||":"||lg_mn||":"||lg_sc
+       lg_stamp=lg_ds||", "||lg_ts
+       call _iniv "!settings", "!lastlogstamp", lg_stamp
+      end /*when*/
+
+   /* "entered sector." */
+   /* > Report Sector 409: Sporty's Imperial StarShip entered sector. */
+      when ans=14 then do
+       line=_lastline()
+       parse var line "Report Sector " lg_sect ": " lg_name " entered sector."
+       poss=lastpos("'s",lg_name)
+       if poss>0 then do
+        lg_player=left(lg_name,poss-1)
+        lg_ship=substr(lg_name,poss+3)
+        lg_sect=_stripint(lg_sect)
+        if lg_sect\="" & log_flag & \_undef(lg_stamp) then do
+         if _listinstr(ignorelist, lg_player) then call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - ENTER IGNORE ("||_abbrv_words(lg_ship,3)||")"
+                                              else call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - ENTER "||lg_player||" ("||_abbrv_words(lg_ship,3)||")"
+        end /*if*/
+       end /*if*/
+      end /*when*/
+
+   /* "Sub Space Ether Probe." */
+   /* > Your fighters in sector 1348 destroyed a Sub Space Ether Probe. */
+      when ans=15 then do
+       line=_lastline()
+       parse var line . "sector " lg_sect .
+       lg_sect=_stripint(lg_sect)
+       pause_flag=1
+      end /*when*/
+
+   /* "I.D. code." */
+   /* They traced it's transmission to Tweety's I.D. code. */
+      when ans=16 then do
+       line=_lastline()
+       parse var line . "to " lg_player "'s I.D. code." .
+       if lg_sect\="" & \_listinstr(ignorelist, lg_player) & log_flag & \_undef(lg_stamp) then ,
+        call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - PROBE "||lg_player
+      end /*when*/
+
+   /* "disrupted all of your mines in " */
+   /* > Fer disrupted all of your mines in 547 */
+      when ans=17 then do
+       line=_lastline()
+       lg_sect=_stripint(_grabit("^M"))
+       parse var line lg_player " disrupted all " .
+       if lg_sect\="" & \_listinstr(ignorelist, lg_player) & log_flag & \_undef(lg_stamp) then ,
+        call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - DISRUPT "||lg_player
+      end /*when*/
+
+   /* "Delete messages? (Y/N) [N]" */
+      when ans=18 then do
+       call zocsend "y"
+       mode=2
+      end /*when*/
+
+   /* "Do you wish to clear some avoids? (Y/N) [N]" */
+      when ans=19 then call zocsend "n"
+
+   /* "Option? (A,D,I" */
+      when ans=21 then done=1
+
+   /* "Class 9 (Special)" */
+      when ans=22 & hide then do
+       if _sendwait("  psg y g ","<Galactic Bank>")=640 then call _error "timeout"
+       done=1
+      end /*when*/
+      when ans=22 then nop
+
+   /* "Sector  : 1 in" */
+      when ans=23 & hide then do
+       if _sendwait("  l1^M","colonists ready")=640 then call _error "timeout"
+       done=1
+      end /*when*/
+      when ans=23 then nop
+
+   /* "What do you want to name your ship? (30 letters)" */
+      when ans=24 then do
+       shipname=_askstr("what name for your ship?","Merchant Marines","c")
+       call zocsend shipname||"^My"
+      end /*when*/
+
+   /* "Use (N)ew Name or (B)BS Name [B] ?" */
+      when ans=25 then do
+       newname=_askstr("what name for this game?",bbsname,"c")
+       if newname=bbsname then call zocsend "b"
+       else call zocsend "n"||newname||"^M"
+       newgame=1
+      end /*when*/
+
+   /* "cannot use the name" */
+      when ans=26 then do
+       newname=_askstr("what name for this game?",newname||random(1,100),"c")
+       call zocsend newname||"^M"
+      end /*when*/
+
+   /* "That alias would look" */
+      when ans=27 then call zocsend "y"
+
+   /* "name your home planet?" */
+      when ans=28 then do
+       planetname=_askstr("what name for this planet?",newname||"'s home planet","c")
+       call zocsend planetname||"^Mq"
+       if _wait("Blasting off")=640 then call _error "timeout"
+      end /*when*/
+
+   /* "Planet command (?=help) [D]" */
+      when ans=20 & \newgame then do
+       call zocsend "c"
+       done=1
+      end /*when*/
+
+   /* "(?=Help)? :" */
+      when ans=29 & \newgame then do
+       call zocsend "zn"
+       done=1
+      end /*when*/
+      when ans=20 | ans=29 then do
+       /* get stardock */
+          if (ans=20) then do
+           pnum=_get_planet_number("planet")
+           call zocsend "ocqqqznznv"
+          end /*if*/
+          else call zocsend "v"
+          ans2=_waitmux("The StarDock is located in sector|Photon Missile Wave duration")
+          select
+           when ans2=0 then sd=_stripint(_grabit("."))
+           when ans2=1 then sd=""
+           when ans2=640 then call _error "timeout"
+           otherwise nop
+          end /*select*/
+          if (ans=20) then call zocsend "l"||pnum||"^Mc"
+       /* turn off animations */
+          call zocsend "cn"
+          ans2=_waitmux("(2) Animation display        - On|(2) Animation display        - Off")
+          select
+           when ans2=0 then call zocsend "2qq"
+           when ans2=1 then call zocsend "qq"
+           when ans2=640 then call _error "timeout"
+           otherwise nop
+          end /*select*/
+       /* get server time */
+          now=_getservertime("stamp")
+       /* get ship catalog */
+          call _ini_write_ship_catalog dname
+       /* write other settings to script.ini */
+          call zocwrite _ansi("bt;fwh")||"writing settings."
+          if \_ini_write(dname,"settings","timediff",_g.!timediff) then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","player_name",newname) then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","sd",sd) then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","rylos","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","alpha","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","log_ignore","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","ignore","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","target","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","red_ships","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","corp_pwd","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","corp","") then call _error "unable to write to "||dname
+          call zocwrite "."
+          if \_ini_write(dname,"settings","login_macro","") then call _error "unable to write to "||dname
+          call zocwrite "."
+
+       /* setshortname */
+       /* set other script.ini stuff */
+       done=1
+      end /*when*/
+
+   /* ck bust message */
+      when ans=30 then do
+/*- Received from The Bounty Hunter at 08:33:38 PM S.D. 08/21/15: -*/ 
+/*- > Busted - Sector 2838 - Ship 60                              -*/
+/*- Received from The Bounty Hunter at 08:37:52 PM S.D. 08/21/15: -*/ 
+/*- > Busted - Sector 2718 - Ship 57                              -*/
+       line=_lastline()
+       parse var line . "Busted - Sector " sect " - Ship"
+       sect=_stripint(sect)
+       bstamp=_iniv("!bust","!"||sect)
+         select
+          when _undef(bstamp) then nop
+          when bstamp>=stamp then nop
+          otherwise do
+           call _ini_delete_key dname, "bust", sect
+           call _iniv "!bust", "!"||sect, "##UNDEF##"
+          end /*otherwise*/
+         end /*select*/
+      end /*when*/
+
+   /* closed game */
+      when ans=31 then do
+       return 0
+      end /*when*/
+
+   /* timeout */
+      when ans=640 then call _error "timeout"
+
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ call _ini_write dname, "settings", "lastlogstamp", lg_stamp
+ call _ini_write dname, "settings", "login_count", login_count + 1
+ if log_flag then call _fileclose lname
+
+return 1

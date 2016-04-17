@@ -1,0 +1,21 @@
+/** _ini_getheadings v.5 **/
+/*- _ini_getheadings fname [, delim] -*/
+/*- v.5 tested -*/
+_ini_getheadings: procedure expose (globals)
+ if arg(1,"E") then fname=arg(1)
+ else call _error "missing parameter in _ini_getheadings"
+ if arg(2,"E") then delim=left(arg(2),1)
+ else delim=";"
+ list=""
+ if _fileopenr(fname) then do
+  do while \_fileeof(fname)
+   line=strip(linein(fname))
+   if left(line,1)="[" then do
+    if list="" then list=strip(translate(line,"  ","[]"))
+    else list=list||delim||strip(translate(line,"  ","[]"))
+   end /*if*/
+  end /*do*/
+  call _fileclose fname
+ end /*do*/
+ if list="" then list="##EOF##"
+return list

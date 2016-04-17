@@ -1,0 +1,6 @@
+/** _onlineinit v.2 **/
+_onlineinit: procedure expose (globals)
+ _olist1.=""
+ _olist1.0=0
+ call _onlineget
+return

@@ -1,0 +1,22 @@
+/** _in v.3 **/
+/*- _in str, fnd -*/
+/*- v.3 tested -*/
+_in: procedure expose (globals)
+ if arg(1,"E") & arg(2,"E") & length(arg(1))>0 & verify(arg(2),arg(1),"N")=0 then rslt=1
+ else rslt=0
+return rslt
+/*- VERIFY(string, search, [option], [start])                                         -*/
+/*- Summary:  indicates whether or not characters from a given set occur in a         -*/
+/*-           specified string.                                                       -*/
+/*- Arguments:                                                                        -*/
+/*-   string: the string to be searched.                                              -*/
+/*-   search: a string composed of the characters to be searched for.                 -*/
+/*-   option: either 'N' (nomatch) to find the location of the first character        -*/
+/*-           of string that is not in the search string, or 'M' (match) to           -*/
+/*-           find the first character of the string that is in the search string.    -*/
+/*-           Default is 'N'.                                                         -*/
+/*-   start:  the starting position in the string for the search. Default is 1.       -*/
+/*- Notes:  VERIFY returns 0 if string is entirely composed of characters in search   -*/
+/*-         (option 'N'), if string is entirely comprised of characters not in search -*/
+/*-         (option 'M'), if the string to be searched is null, or if the start       -*/
+/*-         position is beyond the end of the string.                                 -*/

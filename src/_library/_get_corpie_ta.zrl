@@ -1,0 +1,16 @@
+/** _get_corpie_ta v.1 **/
+_get_corpie_ta: procedure expose (globals)
+ name=arg(1)
+ if _sendwait("a","Corp Member Name")=640 then call _error "timeout"
+ if _wait("-----")=640 then call _error "timeout"
+ ans=_waitmux(name||"|Corporate command")
+ select
+  when ans=0 then do
+   parse value reverse(_grabit("^M")) with . . . . rslt .
+   rslt=_stripint(reverse(rslt))
+  end /*when*/
+  when ans=1 then rslt=0
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+return rslt

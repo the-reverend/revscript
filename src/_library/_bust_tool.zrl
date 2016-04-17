@@ -1,0 +1,15 @@
+/** _bust_tool v.1 **/
+_bust_tool: procedure expose (globals)
+ cmd=arg(1)
+ sector=arg(2)
+ stamp=arg(3)
+ fname=arg(4)
+ note=arg(5)
+ msg=upper(cmd)||" : "||_pad(sector,5,"R")||" : "||stamp
+ if note\="" then msg=msg||" : "||note
+ if _fileopenw(fname) then do
+  call lineout fname, msg
+  call _fileclose fname
+ end /*if*/
+ else call _error "unable to open file "||fname||"."
+return

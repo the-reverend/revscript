@@ -1,0 +1,30 @@
+/** _ftp v.2 **/
+/*- http://support.microsoft.com/default.aspx?scid=kb;en-us;Q96269 -*/
+_ftp: procedure expose (globals)
+ address=arg(1)
+ username=arg(2)
+ password=arg(3)
+ remotewd=arg(4)
+ mode=arg(5)
+ fpath=arg(6)
+ fname=arg(7)
+ wmode=arg(8)
+ if windowmode="" then windowmode=0
+ sname=_space(translate(left(address,min(10,length(address)))||fname,"    ","./\:"),0)||".txt"
+ if _fileexists(fpath||sname) then call dosdel fpath||sname
+ if _fileopenw(fpath||sname) then do
+  call lineout fpath||sname, "open "||address
+  call lineout fpath||sname, username
+  call lineout fpath||sname, password
+  call lineout fpath||sname, 'cd "'||remotewd||'"'
+  call lineout fpath||sname, mode
+  call lineout fpath||sname, 'put "'||fpath||fname||'"'
+  call lineout fpath||sname, "quit"
+  call _fileclose fpath||sname
+  if _fileexists(fpath||sname) then rslt=zocexec('ftp "-s:'||fpath||sname||'"',wmode)
+  else rslt=1
+ end /*if*/
+ else rslt=1
+ if rslt>0 then rslt=0
+ else rslt=1
+return rslt

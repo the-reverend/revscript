@@ -1,0 +1,17 @@
+/** _format_ip v.2 **/
+/*- _format_ip ipstr -*/
+/*- v.2 tested -*/
+_format_ip: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _format_ip"
+ rslt=""
+ ip=strip(translate(arg(1)," ","."))
+ c=words(ip)
+ if c<4 then rslt=""
+ else do
+  do i=1 to c
+   temp=word(ip,i)
+   rslt=rslt||" "||copies("0",3-length(temp))||temp
+  end /*do*/
+  rslt=translate(strip(rslt),"."," ")
+ end /*else*/
+return rslt

@@ -1,0 +1,60 @@
+/** _attackship v.2 **/
+_attackship: procedure expose (globals)
+ owner=arg(1)
+ type=arg(2)
+ figs=arg(3)
+
+ rslt=0
+
+ call zocsend "a"
+ if _wait("<Attack>")=640 then call _error "timeout"
+ done=0
+ do while \done
+  ans=_waitmux("'s unmanned |(Y/N) [N]?|nothing here to attack.|Command [")
+  select
+   when ans=0 then do
+
+    owner2=_lastline()
+    if _wait("(")=640 then call _error "timeout"
+    type2=_lastline()
+    if _wait("-")=640 then call _error "timeout"
+    figs1=_stripint(_lastline())
+    if _wait(")")=640 then call _error "timeout"
+    figs2=_stripint(_lastline())
+    if _wait("(Y/N) [N]?")=640 then call _error "timeout"
+
+    owner2=substr(owner2,8,length(owner2)-19)
+    type2=left(type2,length(type2)-2)
+
+    if _instr(owner,owner2) then do
+     if _instr(type,type2) then do
+      call zocsend "y"||figs||"^M"
+      if _wait("Command [")=640 then call _error "timeout"
+      done=1
+      rslt=1
+     end /*if*/
+    end /*if*/
+
+    if \rslt then call zocsend "n"
+
+   end /*when*/
+   when ans=1 then call zocsend "n"
+   when ans=2 then done=1
+   when ans=3 then done=1
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+return rslt
+/*-                                                                                -*/
+/*- Command [TL=00:00:00]:[xxx] (?=Help)? : A                                      -*/
+/*- <Attack>                                                                       -*/
+/*- Attack the reverend's unmanned Colonial Transport (11,713-178) (Y/N) [N]? Yes  -*/
+/*- Combat scanners show enemy shields at 100%                                     -*/
+/*- How many fighters do you wish to use (0 to 6,000) [0]? 1                       -*/
+/*- Your fighters encounter a powerful force-shield around the enemy ship!         -*/
+/*-                                                                                -*/
+/*- You lost 1 fighter(s), 11,712 remain.                                          -*/
+/*- You destroyed 0 enemy fighters, 178 remain.                                    -*/
+/*-                                                                                -*/
+/*- Command [TL=00:00:00]:[xxx] (?=Help)? :                                        -*/

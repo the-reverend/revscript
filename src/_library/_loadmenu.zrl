@@ -1,0 +1,66 @@
+/** _loadmenu v.3 **/
+_loadmenu: procedure expose (globals)
+ menufile=arg(1)
+ spath=arg(2)
+ lpath=arg(3)
+ dpath=arg(4)
+ gname=arg(5)
+
+ if right(spath,1)="\" then spath=reverse(substr(reverse(spath),2))
+ if right(lpath,1)="\" then lpath=reverse(substr(reverse(lpath),2))
+ if right(dpath,1)="\" then dpath=reverse(substr(reverse(dpath),2))
+
+ if _fileopenr(menufile) then do
+  call zocsetoption("ShowUserbar=no")
+  i=0
+  do while \_fileeof(menufile)
+   parse value linein(menufile) with label ";" macro
+   if label = "" then iterate /* blank line */
+   if left(label,1) = "#" then iterate /* comment */
+   if gname="" & (pos("%GNAME%",label)>0 | pos("%GNAME%",macro)>0) then label=""
+   else do
+    label=zocstring("REPLACE", label, "%SPATH%", spath)
+    label=zocstring("REPLACE", label, "%LPATH%", lpath)
+    label=zocstring("REPLACE", label, "%DPATH%", dpath)
+    label=zocstring("REPLACE", label, "%GNAME%", gname)
+    macro=zocstring("REPLACE", macro, "%SPATH%", spath)
+    macro=zocstring("REPLACE", macro, "%LPATH%", lpath)
+    macro=zocstring("REPLACE", macro, "%DPATH%", dpath)
+    macro=zocstring("REPLACE", macro, "%GNAME%", gname)
+    macro=zocstring("REPLACE", macro, "%LABEL%", label)
+   end /*if*/
+   if i<10 then do
+    vr1='UserDesc#0'||i||'="'||strip(label)||'"'
+    vr2='UserValue#0'||i||'="'||strip(macro)||'"'
+   end /*if*/
+   else do
+    vr1='UserDesc#'||i||'="'||strip(label)||'"'
+    vr2='UserValue#'||i||'="'||strip(macro)||'"'
+   end /*else*/
+   call zocsetoption(vr1)
+   call zocsetoption(vr2)
+   i=i+1
+   if i>31 then leave
+  end /*do*/
+  call _fileclose(menufile)
+  do j=i to 31
+   if j<10 then do
+    vr1='UserDesc#0'||j||'=""'
+    vr2='UserValue#0'||j||'=""'
+    test='UserValue#0'||j
+   end /*if*/
+   else do
+    vr1='UserDesc#'||j||'=""'
+    vr2='UserValue#'||j||'=""'
+    test='UserValue#'||j
+   end /*else*/
+   parse value zocgetoption(test) with . '="' test '"'
+   if test="" then leave
+   else do
+    call zocsetoption(vr1)
+    call zocsetoption(vr2)
+   end /*else*/
+  end /*do*/
+  call zocsetoption("ShowUserbar=yes")
+ end /*if*/
+return

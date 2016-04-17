@@ -1,0 +1,15 @@
+/** _sin v.3 **/
+_sin: procedure expose (globals)
+ n=arg(1)//(2*_pi()) /* -2pi <= arg(1) <= 2pi */
+ r1=1
+ r2=0
+ i=0
+ s=-1
+ do while r1\=r2
+  r1=r2        /* result   */
+  i=i+1        /* counter  */
+  s=-s         /* sign     */
+  x=(i-1)*2+1  /* exponent */
+  r2=r1+s*(n**x)/_factorial(x)
+ end /*do*/
+return r2

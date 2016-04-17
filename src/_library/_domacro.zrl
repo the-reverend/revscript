@@ -1,0 +1,78 @@
+/** _domacro v.4 **/
+/*- _domacro list -*/
+/*- v.4 tested -*/
+/*- w{string} - _wait string                              -*/
+/*- m{str1|str2|str3} _waitmux string list                -*/
+/*- s{string} - zocsend string                              -*/
+/*- s{str1|str2|str3} - zocsend string based on m{} results -*/
+/*-   _c in string to leave the macro but continue script   -*/
+/*-   _x in string to exit the script                       -*/
+/*- c{address} - connect to server address                  -*/
+/*- l{address} - connect to server address                  -*/
+/*- d{} - disconnect from server                            -*/
+/*- b{num} - beep num times                                 -*/
+/*- p{num} - pause num milliseconds                         -*/
+/*- r{script} - run script                                  -*/
+_domacro: procedure expose (globals)
+ list=arg(1)
+ n=_dwords(list,"}")
+ a=""
+ mux=0
+ rslt=0
+ leav=0
+ do i=1 to n
+  parse value _dword(list,i,"}") with c "{" s
+  if c="s" then do
+   s=_dword(s,mux+1,"|")
+   if pos("_x",s)>0 then do
+    s=zocstring("REMOVE",s,"_x")
+    rslt=1
+   end /*if*/
+   if pos("_c",s)>0 then do
+    s=zocstring("REMOVE",s,"_c")
+    leav=1
+   end /*if*/
+  end /*if*/
+  c=strip(lower(c))
+  select
+   when c="s" & a\="" then do
+    call zocconnect a
+    do while \_isonline(15)
+     call zocdisconnect
+     call zocconnect a
+    end /*do*/
+    call zocsend s
+    mux=0
+    a=""
+   end /*when*/
+   when c="s" then do
+    call zocsend s
+    mux=0
+   end /*when*/
+   when c="w" & a\="" then do
+    call zocconnect a
+    do while _wait(s)=640
+     call zocdisconnect
+     call zocconnect a
+    end /*do*/
+    a=""
+   end /*when*/
+   when c="w" then if _wait(s)=640 then call _error "timeout"
+   when c="m" then do
+    mux=_waitmux(s)
+    if mux=640 then call _error "timeout"
+   end /*when*/
+   when c="b" then call zocbeep s
+   when c="p" then call zocdelay abs(_stripint(s)/1000)
+   when c="d" then call zocdisconnect
+   when c="l" | c="c" then a=s
+   when c="r" & s="" then nop
+   when c="r" then do
+    if _fileexists(s) then do; call zocdostring "^RUN="||s; exit; end
+   end /*when*/
+   otherwise nop
+  end /*select*/
+  if rslt then leave
+  if leav then leave
+ end /*do*/
+return rslt

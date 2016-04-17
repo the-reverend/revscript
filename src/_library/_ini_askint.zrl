@@ -1,0 +1,18 @@
+/** _ini_askint v.6 **/
+/*- _ini_askint [msg], default, section, key -*/
+_ini_askint: procedure expose (globals)
+ if \arg(1,"E") then msg="enter an integer"; else msg=arg(1)
+ do i=2 to 4; if \arg(i,"E") then call _error "missing parameter in _ini_askint"; end
+ default=arg(2)
+ section=arg(3); if left(section,1)\="!" then section="!"||section
+ key=arg(4); if left(key,1)\="!" then key="!"||key
+ if _stripint(default)\=default then call _error "invalid parameter in _ini_askint"
+ if section="##EOF##" then rslt="##EOF##"
+ else rslt=_ini.section.key
+ select
+  when (rslt="##EOF##" | rslt="##UNDEF##") & msg="##DEFAULT##" then rslt=_stripint(default)
+  when  rslt="##EOF##" | rslt="##UNDEF##"                      then rslt=_askint(msg||" ("||key||"=)",default,"c")
+  otherwise                                                         rslt=_stripint(rslt)
+ end /*select*/
+ _ini.!section.!key=rslt
+return rslt

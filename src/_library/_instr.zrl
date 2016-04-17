@@ -1,0 +1,13 @@
+/** _instr v.3 **/
+/*- _instr fnd, str [, "cs"] -*/
+/*- v.3 tested -*/
+_instr: procedure expose (globals)
+ fnd=arg(1)
+ str=arg(2)
+ if lower(arg(3))\="cs" then do
+  fnd=lower(fnd)
+  str=lower(str)
+ end /*if*/
+ if arg(1,"E") & arg(2,"E") & pos(fnd,str)>0 then rslt=1
+ else rslt=0
+return rslt

@@ -1,0 +1,27 @@
+/** _ports_load v.1 **/
+_ports_load: procedure expose (globals)
+ infile=arg(1)
+ _p.=""; c=0
+ if _fileopenr(infile) then do
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||"loading ports from" infile "... "
+  do while \_fileeof(infile)
+   line=strip(linein(infile))
+   parse var line row line
+   if line\="" & row\="" then do
+    c=c+1
+    line=_space(translate(line," ","%"))
+    line=zocstring("REPLACE",line,"- ","-")
+    line=word(line,1)||","||word(line,2)||";"||word(line,3)||","||word(line,4)||";"||word(line,5)||","||word(line,6)
+    if _dword(_dword(line,1,";"),1,",")<0 then _p.row="B"
+    else _p.row="S"
+    if _dword(_dword(line,2,";"),1,",")<0 then _p.row=_p.row||"B"
+    else _p.row=_p.row||"S"
+    if _dword(_dword(line,3,";"),1,",")<0 then _p.row=_p.row||"B"
+    else _p.row=_p.row||"S"
+    _p.row=_p.row||";"||line
+   end /*if*/
+  end /*do*/
+  call _fileclose infile
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||c||" ports loaded. "
+ end /*if*/
+return c

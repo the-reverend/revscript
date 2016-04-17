@@ -1,0 +1,12 @@
+_attack_strip_manufacturer: procedure expose (globals)
+ line=arg(1)
+ shiplist=arg(2)
+ rslt=line
+ do i=1 to _dwords(shiplist,";")
+  n=reverse(_dword(shiplist,i,";"))
+  if pos(n||" ",reverse(line))=1 then do
+   rslt=reverse(n)
+   leave
+  end /*if*/
+ end /*do*/
+return rslt

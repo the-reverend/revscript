@@ -1,0 +1,6 @@
+/** _clvinit v.1 **/
+_clvinit: procedure expose (globals)
+ _clvlist1.=""
+ _clvlist1.0=0
+ call _clvget
+return

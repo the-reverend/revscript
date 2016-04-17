@@ -1,0 +1,5 @@
+_asdt_add_command: procedure expose (globals)
+ n=asdt.!cmax+1
+ asdt.!cmax=n
+ asdt.!cq.n=arg(1)
+return 1

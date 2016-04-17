@@ -1,0 +1,13 @@
+/** _waitcommand v.5 **/
+_waitcommand: procedure expose (globals)
+ if arg(1)="" then line="Command ["
+ else line=arg(1)
+ done=0
+ do while \done
+  if zocwait(line)=640 then do
+   call zocnotify "<< Script will resume at the '"||line||"' prompt. >>"
+   call _beep "alert.wav"
+  end /*if*/
+  else done=1
+ end /*do*/
+return

@@ -1,0 +1,12 @@
+/** _chooselisti v.3 **/
+_chooselisti: procedure expose (globals)
+ prompt=arg(1)
+ list=arg(2)
+ if list="" then call _error "no list"
+ delim=arg(3)
+ if delim="" then delim=" "
+ if length(delim)>1 then call _error "long delimiter"
+
+ rslt=_list_index(_chooselist(prompt,list,delim,arg(4)),list)
+
+return rslt

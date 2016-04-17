@@ -1,0 +1,45 @@
++------------------------------ 2 0 0 2 --------------------------------+
+¦                           Global Commands                             ¦
+¦                           =-=-=-=-=-=-=-=                             ¦
+¦ <`> Fed. Comm-Link    <'> Sub-Space Radio  <=> Hailing Frequencies    ¦
+¦ <#> Who's Playing     <*> List All Globals </> Quick-stats            ¦
+¦ --------------------------------------------------------------------- ¦
+¦        Navigation            Computer              Tactical           ¦
+¦        =-=-==-=-=            =-=--=-=              =-=--=-=           ¦
+¦ <D> Re-Display Sector <C> Onboard Computer <A> Attack Enemy Ship      ¦
+¦ <P> Port and Trade    <X> Transporter Pad  <E> Sub-space EtherProbe   ¦
+¦ <M> Move to a Sector  <I> Ship Information <F> Take or Leave Fighters ¦
+¦ <L> Land on a Planet  <T> Corporate Menu   <G> Show Deployed Fighters ¦
+¦ <S> Long Range Scan   <U> Use Genesis Torp <H> Handle Space Mines     ¦
+¦ <R> Release Beacon    <J> Jettison Cargo   <K> Show Deployed Mines    ¦
+¦ <W> Tow SpaceCraft    <B> Interdict Ctrl   <O> Starport Construction  ¦
+¦ <N> Move to NavPoint  <!> Main Menu Help   <Y> Set NavPoints          ¦
+¦ <Q> Quit and Exit     <Z> TradeWars Docs   <V> View Game Status       ¦
++-------------------------------- v3 -----------------------------------+
+
++------------------------------- 2 0 0 2 --------------------------------+
+¦ -=-   Navigation   -=-  -=-      Misc      -=-   -=-   Displays   -=-  ¦
+¦ <F> Course Plotter      <A> Make Announcement    <C> View Ship Catalog ¦
+¦ <I> Inter Sector Warps  <B> Begin Self Destruct  <D> Scan Daily Log    ¦
+¦ <K> Your Known Universe <N> Personal Settings    <E> Evil Trader Class ¦
+¦ <R> Port Report         <O> Change Ship Settings <G> Good Trader Class ¦
+¦ <U> T-warp preference   <P> Fire Photon Missile  <H> Alien Trader Rank ¦
+¦ <V> Avoid Sectors       <M> Read Your Mail       <J> Planetary Specs   ¦
+¦ <X> List Current Avoids <S> Send Mail            <L> List Trader Rank  ¦
+¦ -=-      Other     -=-  <T> Current Ship Time    <Y> Personal Planets  ¦
+¦ <!> Computer Help       <W> Use Mine Disruptor   <Z> Active Ship Scan  ¦
+¦ <Q> Exit Computer                                <;> Scan Current Ship ¦
++--------------------------------- v3 -----------------------------------+
+
++---------------------- 2 0 0 2 -------------------------+
+¦ <D> Display Corporations    <X> Leave Your Corporation ¦
+¦ <J> Join a Corporation      <L> List Corporate Planets ¦
+¦ <M> Make a New Corporation  <!> Corporation Help       ¦
+¦ <Q> QUIT Corp Menu          <A> Show Corporate Assets  ¦
+¦ -- (Corporations Only) --       & Member Locations     ¦
+¦ <C> Credit Transfer         <T> Send Corporate Memo    ¦
+¦ <F> Fighter Transfer          - C.E.O.s  Only -        ¦
+¦ <H> Mine Transfer           <P> Corporate Security     ¦
+¦ <S> Shields Transfer        <R> Drop Corporate Member  ¦
++------------------------ v3 ----------------------------+
+

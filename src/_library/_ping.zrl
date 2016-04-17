@@ -1,0 +1,40 @@
+/** _ping v.3 **/
+_ping: procedure expose (globals)
+ if arg(1,"E") then n=arg(1); else n=5
+ if arg(2,"E") then summary=arg(2); else summary=1
+ if arg(3,"E") then mode=arg(3); else mode=1
+ mn=999999999
+ mx=0
+ t=0
+ select
+  when mode=2 then do
+   do n
+    call time "R"
+/*    if _sendwait(d2c(145),d2c(145))=640 then call _error "timeout" */
+    if _sendwait("/",d2c(179)||"Turns")=640 then call _error "timeout"
+    e=time("E")
+    if zocwait("Ship ")=640 then call _error "timeout"
+    mn=min(mn,e)
+    mx=max(mx,e)
+    t=t+e
+   end /*do*/
+   avg=t/n*1000%1
+   if summary then call zocsend "'ping : count="||n||" : min="||mn*1000%1||" : avg="||avg||" : max="||mx*1000%1||"^M"
+  end /*when*/
+  otherwise do
+   if _sendwait("'^m","S:")=640 then call _error "timeout"
+   do n
+    call time "R"
+    if _sendwait("ping","ping")=640 then call _error "timeout"
+    e=time("E")
+    mn=min(mn,e)
+    mx=max(mx,e)
+    t=t+e
+    if _sendwait(" : "||trunc(e*1000)||" ms^m","S:")=640 then call _error "timeout"
+   end /*do*/
+   avg=t/n*1000%1
+   if summary then call zocsend "ping : count="||n||" : min="||mn*1000%1||" : avg="||avg||" : max="||mx*1000%1||"^m^m"
+              else call zocsend "^M"
+  end /*otherwise*/
+ end /*select*/
+return avg

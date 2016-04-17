@@ -1,0 +1,20 @@
+/** _voids_save v.1 **/
+/*- _voids_save outfile, max -*/
+_voids_save: procedure expose (globals)
+ outfile=arg(1)
+ m=arg(2)
+ c=0
+ if outfile\="" then do
+  if _filenew(outfile, "delete") then do
+   if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||"saving voids to" outfile "... "
+   do i=1 to m
+    if _v.i then do
+     c=c+1
+     call lineout outfile, i
+    end /*if*/
+   end /*do*/
+   call _fileclose(outfile)
+   if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||c||" voids saved. "
+  end /*if*/
+ end /*if*/
+return c

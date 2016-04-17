@@ -1,0 +1,134 @@
+/** _portsteal_fast v.3 **/
+/*- _portsteal [amount] [, prod] -*/
+/*- v.3 tested -*/
+_portsteal_fast: procedure expose (globals)
+ if arg(1,"E") then amount=_stripint(arg(1))
+ else amount=0
+ if amount="" then amount=0
+ if amount<0 then amount=0
+ if arg(2,"E") then prod=_stripint(arg(2))
+ else prod=3
+ if prod\=1 | prod\=2 | prod\=3 then prod=3
+
+ prodn=_dword("Fuel Ore;Organics;Equipment",prod,";")
+
+ buflen=8*1024
+ call zocreceivebuf buflen
+ call zocsend "pr^Msz"||prod||amount||"^M"
+
+ done=0
+ do while \done
+  ans=_waitmux(" Success!| Busted!| at this port!|You leave the port.")
+  line=strip(_lastline())
+  select
+   when ans=0 & line="You start your droids loading the cargo and Success!" then do
+    msg="##SUCCESS##"
+    done=1
+   end /*when*/
+   when ans=1 & line="You start your droids loading the cargo and Suddenly you're Busted!" then do
+    msg="##BUST##"
+    done=1
+   end /*when*/
+   when ans=1 & line="Suddenly you're Busted!" then do
+    if _wait("Do you want instructions (Y/N) [N]?")=640 then call _error "timeout"
+    msg="##FAKE##"
+    done=1
+   end /*when*/
+   when ans=2 & line="There aren't that many holds of "||prodn||" at this port!" then do
+    msg="##HOLDS##"
+    done=1
+   end /*when*/
+   when ans=3 & line="You leave the port." then do
+    msg="##ZERO##"
+    done=1
+   end /*when*/
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ if _wait("Command [")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0), "  ", d2c(0)||d2c(10))
+ if length(buff)=buflen then call _error "buffer overflow"
+
+ exp=0
+ amount=0
+ avail=0
+ holds=0
+ fine=0
+ turns=9999
+
+ /* GET TURNS */
+ k=max(pos("<Thievery>",buff),1)
+ i=pos("One turn deducted, ",buff,k)+19
+ if i>19 then do
+  j=pos(" turns left.",buff,i)
+  if j>0 then turns=substr(buff,i,j-i)
+ end /*if*/
+ else j=k
+
+ select
+  when msg="##SUCCESS##" then do
+   i=pos(prodn,buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with . . avail .
+   i=pos("to swipe? [",buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with holds "] " amount .
+   i=pos("and you receive ",buff,j)+16
+   if i>16 then j=pos(" experience",buff,i)
+   else j=0
+   if j>0 then exp=substr(buff,i,j-i)
+  end /*when*/
+ 
+  when msg="##BUST##" then do
+   i=pos(prodn,buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with . . avail .
+   i=pos("to swipe? [",buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with holds "] " amount .
+   i=pos("fines you ",buff,j)+10
+   j=pos(" Cargo Holds",buff,i)
+   fine=substr(buff,i,j-i)
+   i=pos("and you LOSE ",buff,j)+13
+   j=pos(" experience",buff,i)
+   exp=substr(buff,i,j-i)
+  end /*when*/
+
+  when msg="##FAKE##" then do
+   i=pos("fines you ",buff,j)+10
+   j=pos(" Cargo Holds",buff,i)
+   fine=substr(buff,i,j-i)
+   i=pos("and you LOSE ",buff,j)+13
+   j=pos(" experience",buff,i)
+   exp=substr(buff,i,j-i)
+  end /*when*/
+
+  when msg="##HOLDS##" then do
+   i=pos(prodn,buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with . . avail .
+   i=pos("to swipe? [",buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with holds "] " amount .
+   amount=0
+  end /*when*/
+
+  when msg="##ZERO##" then do
+   i=pos(prodn,buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with . . avail .
+   i=pos("to swipe? [",buff,j)+11
+   j=pos(d2c(13),buff,i)
+   parse value substr(buff,i,j-i) with holds "] " amount .
+   amount=0
+  end /*when*/
+
+  otherwise nop
+
+ end /*select*/
+
+ rslt=msg||";"||exp||";"||amount||";"||avail||";"||holds||";"||turns||";"||fine
+
+return rslt

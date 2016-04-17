@@ -1,0 +1,62 @@
+/** _setglobals v.5 **/
+/*- _setglobals [list] -*/
+_setglobals: procedure expose _verbose _monthdays _monthnames _baseday. _g. _msg. _debug (globals)
+
+ _debug=0
+ _verbose=0
+ _msg.=""; _msg.0=0
+ _monthdays="31;28;31;30;31;30;31;31;30;31;30;31"
+ _monthnames="jan;feb;mar;apr;may;jun;jul;aug;sep;oct;nov;dec"
+ _baseday.2000=730118 + 1 /* +1 added 6/23/2008 */
+ _baseday.2001=_baseday.2000+365+1
+ _baseday.2002=_baseday.2001+365
+ _baseday.2003=_baseday.2002+365
+ _baseday.2004=_baseday.2003+365
+ _baseday.2005=_baseday.2004+365+1
+ _baseday.2006=_baseday.2005+365
+ _baseday.2007=_baseday.2006+365
+ _baseday.2008=_baseday.2007+365
+ _baseday.2009=_baseday.2008+365+1
+ _baseday.2010=_baseday.2009+365
+ _baseday.2011=_baseday.2010+365
+ _baseday.2012=_baseday.2011+365
+ _baseday.2013=_baseday.2012+365+1
+ _baseday.2014=_baseday.2013+365
+ _baseday.2015=_baseday.2014+365
+ _baseday.2016=_baseday.2015+365
+ _baseday.2017=_baseday.2016+365+1
+ _baseday.2018=_baseday.2013+365
+ _baseday.2019=_baseday.2014+365
+ _baseday.2020=_baseday.2015+365
+ _baseday.2021=_baseday.2016+365+1
+ _baseday.2022=_baseday.2013+365
+ _baseday.2023=_baseday.2014+365
+ _baseday.2024=_baseday.2015+365
+ _baseday.2025=_baseday.2016+365+1
+ _baseday.2026=_baseday.2013+365
+ _baseday.2027=_baseday.2014+365
+ _baseday.2028=_baseday.2015+365
+ _baseday.2029=_baseday.2016+365+1
+ _baseday.2030=_baseday.2013+365
+ _baseday.2031=_baseday.2014+365
+ _baseday.2032=_baseday.2015+365
+ _baseday.2033=_baseday.2016+365+1
+
+ i=lastpos(".",_g.!sname)
+ if i=0 then _g.!sname1=_g.!sname
+        else _g.!sname1=left(_g.!sname,i-1)
+
+ rslt="_g. _ini. _s. _p. _d. _v. _f. _m. _l. _q. _sl. _ex. _qs. "
+/*- globals ini sectorwarps portstring deadend void fig mine limpet query sectorlist exclude quickstats -*/
+ rslt=rslt||"_ef. _efc. _es. _et. _ep. _fc. "
+/*- enemyfigs enemyship enemytrader enemyport -*/
+ rslt=rslt||"_path. _dist. _dtomsl. _dfrmsl. "
+ rslt=rslt||"_bg. _bd. _nwi. _nwo. _nw. _nwt. _od. _sv. _pv. _vs. _vn. _vi. _mcic. _fh. _fhp. "
+/*- bubblegate numwarpstype numonewayin numonewaysout numwarps numwarpstype onedeep sectorvisited portvisible viewstamp viewnote viewinfo mcicdata fighits fighitplayer -*/
+ rslt=rslt||"_clv. _online. _msg _msg. _debug "
+ rslt=rslt||"_verbose _monthdays _monthnames _baseday. "
+ rslt=rslt||"globals "
+ if arg(1,"E") then rslt=rslt||arg(1)
+
+ rslt=_space(rslt)
+return rslt

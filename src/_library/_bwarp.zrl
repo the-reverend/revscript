@@ -1,0 +1,17 @@
+/** _bwarp v.1 **/
+_bwarp: procedure expose (globals)
+ if arg(1,"E") then target=arg(1); else return 0
+ if _sendwait("b"||target||"^m","Beam to what sector?")=640 then call _error "timeout"
+ ans=_waitmux("order for one? (Y/N)|not have the range.|Fuel|blind?|to be avoided!|engage?")
+ success=1
+ select
+  when ans=0 then success=0
+  when ans=1 then success=0
+  when ans=2 then success=0
+  when ans=3 then do; call zocsend "n"; success=0; end;
+  when ans=4 then do; call zocsend "n"; success=0; end;
+  when ans=5 then call zocsend "y ^M za999^M ^M ^M "
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+return success

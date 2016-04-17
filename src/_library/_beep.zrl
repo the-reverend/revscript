@@ -1,0 +1,17 @@
+/** _beep v.2 **/
+/*- _beep fname [,count]-*/
+/*- v.3 tested -*/
+_beep: procedure expose (globals)
+ if arg(2,"E") then n=arg(2); else n=1
+ if arg(3,"E") then d=arg(3); else d=0
+ select
+  when arg(1,"O") then call zocwrite copies(d2c(7),n)
+  when _fileexists(arg(1)) then do
+   do i=1 to n
+    call zocplaysound arg(1)
+    if i\=n & d>0 then call zocdelay d
+   end /*do*/
+  end /*when*/
+  otherwise call zocwrite copies(d2c(7),n)
+ end /*select*/
+return

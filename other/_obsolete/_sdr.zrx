@@ -1,0 +1,883 @@
+/* REXX _sdr by the reverend (build 21) */
+
+call zoctimeout 120
+call zocsynctime 500
+call on halt name _halt
+
+call _newline _ansi("b", "green")
+parse value _getgameinfo() with spath ";" iname ";" game
+gamepwd=_ini_askstr("game password?", "", iname, game, "gamepwd")
+sf=_ini_askint("steal factor?", 21, iname, game, "sf")
+corp=_ini_askint("corp number?", "0", iname, game, "corp")
+corppwd=_ini_askstr("corp password?", "", iname, game, "corppwd")
+
+parse value _getinfo("hlds;ore;org;equ;col;exp") with holds ";" ore ";" org ";" equ ";" colos ";" exp
+if zocwait("Command [")=640 then call _error "timeout"
+
+if exp%sf<30 then call zocmsgbox "warning:  stealing less than 30 holds"
+
+planet.=0
+
+planet.1=_asknum("planet #1?", planet.1)
+if planet.1=0            then call _quit "script canceled by user"
+if planet.1="##CANCEL##" then call _quit "script canceled by user"
+
+planet.2=_asknum("planet #2?", planet.2)
+if planet.2=0            then call _quit "script canceled by user"
+if planet.2="##CANCEL##" then call _quit "script canceled by user"
+
+negotiate.=0
+neg=_yesno("start with planetary negotiation?")
+if neg then negotiate.=1
+
+watch=_yesno("would you like to watch who is online?")
+
+call zocsend "tx"
+ans=zocwaitmux("quit the Corp?", "not currently in a Corporation!")
+select
+ when ans=0 then call zocsend "yq"
+ when ans=1 then call zocsend "q"
+ when ans=640 then call _error "timeout"
+end /* select */
+if zocwait("Command [")=640 then call _error "timeout"
+
+if holds>empty then do
+ call zocsend "l"||planet.1||"^M"
+ if ore>0 then call zocsend "tnl1^M"
+ if org>0 then call zocsend "tnl2^M"
+ if equ>0 then call zocsend "tnl3^M"
+ if colos>0 then call zocsend "snl3^M"
+ call zocsend "q"
+ if zocwait("Command [")=640 then call _error "timeout"
+end /* if */
+
+if watch then do
+ call _onlineinit
+ if zocwait("Command [")=640 then call _error "timeout"
+end /* if */
+
+i=1
+done=0
+do while \done
+
+ /* planet negotiate */
+ if negotiate.i then do
+
+  call zocrespond "Organics do you want to sell [", "0^M"
+  call zocrespond "Fuel Ore do you want to sell [", "0^M"
+  ndone=0
+  do while \ndone
+
+   call zocsend "pn"||planet.i||"^M"
+
+   if zocwait("Equipment do you want to sell [")=640 then call _error "timeout"
+   if zocwait("]?")=640 then call _error "timeout"
+   quantity=_stripint(zoclastline())
+   call zocsend quantity||"^M"
+
+   if zocwait("Your offer [")=640 then call _error "timeout"
+   if zocwait("]")=640 then call _error "timeout"
+   offer=_stripint(zoclastline())
+
+   ndone=_sellhaggle2(offer)
+
+  end /* do */
+
+  call zocrespond "Organics do you want to sell ["
+  call zocrespond "Fuel Ore do you want to sell ["
+  negotiate.i=0
+
+ end /* if */
+
+ /* port steal */
+ call zocsend "pr^Ms"
+ if zocwait("Equipment")=640 then call _error "timeout"
+ if zocwait("^M")=640 then call _error "timeout"
+ avail=_stripint(substr(zoclastline(),17,8))
+
+ call zocsend "3"
+ if zocwait("Equipment to swipe? [")=640 then call _error "timeout"
+ if zocwait("]")=640 then call _error "timeout"
+ holds=_stripint(zoclastline())
+ maxsteal=exp%sf
+
+ amount=min(holds, maxsteal, avail)
+
+ if avail<=min(holds,maxsteal)*2 then negotiate.i=1
+ call zocsend amount||"^M"
+
+ ans=zocwaitmux("Success!", "Busted!", "There aren't that many holds")
+ select
+  when ans=0 then do
+   if zocwait("and you receive ")=540 then call _error "timeout"
+   if zocwait("experience point(s).")=640 then call _error "timeout"
+   exp=exp+_stripint(zoclastline())
+  end /* when */
+  when ans=1 then do
+   if zocwait("Command [")=640 then call _error "timeout"
+   if corp>0 then do
+    call zocsend "tj"||corp||"^M"||corppwd||"^Mq"
+    if zocwait("Command [")=640 then call _error "timeout"
+   end /* if */
+   call _quit "busted"
+  end /* when */
+  when ans=2 then call _quit "nothing to rob"
+  when ans=640 then call _error "timeout"
+ end /* select */
+
+ /* planet dump */
+ call zocsend "l"
+ ans=zocwaitmux("Planet command", "Land on which planet")
+ select
+  when ans=0   then call zocsend "tnl3^Mq"
+  when ans=1   then call zocsend planet.i||"^Mtnl3^Mq"
+  when ans=640 then call _error "timeout"
+ end /* select */
+ if zocwait("Command [")=640 then call _error "timeout"
+
+ /* retreat */
+ call _quitretreatpay gamepwd
+
+ if watch then do
+  call _onlineget
+  if zocwait("Command [")=640 then call _error "timeout"
+  if _onlinereport() then call _beep "alert.wav"
+ end /* if */
+
+ if zocwait("Command [")=640 then call _error "timeout"
+ if i=1 then i=2
+        else i=1
+
+end /* do */
+
+exit
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*    last updated: 21 Aug 2001, 15:57:37     */
+
+/** _ansi v.1 **/
+    _ansi:
+     b=0
+     if arg(1)="b" then do
+      b=1
+      c=arg(2)
+     end /* if */
+     else c=arg(1)
+     select
+      when c="gray" then ansi=30
+      when c="red" then ansi=31
+      when c="green" then ansi=32
+      when c="yellow" then ansi=33
+      when c="blue" then ansi=34
+      when c="magenta" then ansi=35
+      when c="cyan" then ansi=36
+      when c="white" then ansi=37
+      otherwise ansi=37
+     end /* select */
+     ansi="^[["||b||";"||ansi||"m"
+    return ansi
+
+/** _ini_askint v.2 **/
+    _ini_askint:
+     aipmt=arg(1)
+     aidef=arg(2)
+     aifname=arg(3)
+     aisect=arg(4)
+     aivar=arg(5)
+     aimode=arg(6)
+     aiflag=0
+
+     if aisect="##EOF##" then aiflag=1
+     if \aiflag then aiint=_getinivar(aifname, aisect, aivar)
+     if aiint="##EOF##" then aiflag=1
+     aiint=_stripint(aiint)
+     if aiint="" then aiflag=1
+     if aiflag then do
+      if aipmt="##DEFAULT##" then aiint=aidef
+      else aiint=_asknum(aipmt||" ("||aivar||"=)",aidef)
+     end /* if */
+     else if aimode="" then call zocwriteln "<< using "||aifname||" - "||aivar||"="||aiint||" >>"
+     if aiint="##CANCEL##" then call _quit "script cancelled by user."
+    return aiint
+
+/** _ini_askstr v.3 **/
+    _ini_askstr:
+     aipmt=arg(1)
+     aidef=arg(2)
+     aifname=arg(3)
+     aisect=arg(4)
+     aivar=arg(5)
+     aimode=arg(6)
+     aiflag=0
+
+     if aigame="##EOF##" then aiflag=1
+     if \aiflag then aistr=_getinivar(aifname, aisect, aivar)
+     if aistr="##EOF##" then aiflag=1
+     if aiflag then do
+      if aipmt="##DEFAULT##" then aistr=aidef
+      else aistr=zocask(aipmt||" ("||aivar||"=)",aidef)
+     end /* if */
+     else do
+      parse var aistr aitemp "^" .
+      if length(aitemp)>17 then aitemp=left(aitemp,20)
+      if aitemp\=aistr then aitemp=aitemp||"..."
+      if aimode="" then call zocwriteln "<< using "||aifname||" - "||aivar||"="||aitemp||" >>"
+     end /* else */
+     if aistr="##CANCEL##" then call _quit "script cancelled by user."
+    return aistr
+
+/** _asknum v.3 **/
+    _asknum:
+     aninit=arg(2)
+     andone=0
+     do while \andone
+      anans=zocask(arg(1), aninit)
+      if anans="##CANCEL##" then andone=1
+      else do
+       anans=_stripint(anans)
+       if anans\="" then andone=1
+      end /* else */
+      if \andone then aninit="please enter a number or ESC to cancel."
+     end /* do */
+     if lower(arg(3))="c" & anans="##CANCEL##" then call _quit "script cancelled by user."
+    return anans
+
+/** _beep v.1 **/
+    _beep:
+     bpfile=arg(1)
+     if bpfile\="" then if \_fileexists(bpfile) then bpfile=""
+     if bpfile="" then call zocwrite d2c(7)
+     else do
+      bptemp=zocgetprogramoption("SoundBellWav")
+      parse var bptemp 'SoundBellWav="' bptemp '"'
+      call zocsetglobaloption('SoundBellWav="'||bpfile||'"')
+      call zocwrite d2c(7)
+      call zocsetglobaloption('SoundBellWav="'||bptemp||'"')
+     end /* else */
+    return
+
+/** _chooselist v.4 **/
+    _chooselist:
+     clprompt=arg(1)
+     cllist=arg(2)
+     if cllist="" then call _error "no list"
+     cldelim=arg(3)
+     if cldelim=""        then call _error "missing delimiter"
+     if length(cldelim)>1 then call _error "long delimiter"
+     clch.=""
+
+     cldone=0
+     cli=0
+     cld=pos(cldelim, cllist)
+     if cld=0 then do
+      clch.1=cllist
+      cldone=1
+     end /* if */
+
+     do while \cldone
+      cli=cli+1
+      clch.cli=left(cllist, cld-1)
+      cllist=substr(cllist, cld+1)
+      cld=pos(cldelim, cllist)
+      if cld=0 then cldone=1
+     end /* while */
+     if length(cllist)>0 then do
+      cli=cli+1
+      clch.cli=cllist
+     end /* if */
+     if cli<7 then clmax=1
+     if cli<5 then clmax=0
+     if cli>=7 then clmax=(cli-5)%2+1
+
+     cldone=0
+     clpos=0
+     do while \cldone
+      if clpos<0 then clpos=0
+      if clpos>clmax then clpos=clmax
+
+      select
+       when clpos=0 then do
+        if clmax=0 then clans=zocrequest(clprompt, clch.1, clch.2, clch.3, clch.4)
+        else clans=zocrequest(clprompt, clch.1, clch.2, clch.3, "next")
+       end /* when */
+       when clpos=clmax then do
+        clp1=(clpos-1)*2+4
+        clp2=clp1+1
+        clp3=clp1+2
+        clans=zocrequest(clprompt, "back", clch.clp1, clch.clp2, clch.clp3)
+       end /* when */
+       otherwise do
+        clp1=(clpos-1)*2+4
+        clp2=clp1+1
+        clans=zocrequest(clprompt, "back", clch.clp1, clch.clp2, "next")
+       end /* otherwise */
+      end /* select */
+
+      select
+       when clans="next" then clpos=clpos+1
+       when clans="back" then clpos=clpos-1
+       when clans="##CANCEL##" then cldone=1
+       when clans="" then nop
+       otherwise cldone=1
+      end /* select */
+
+     end /* do */
+
+     if lower(arg(4))="c" & clans="##CANCEL##" then call _quit "script cancelled by user."
+
+    return clans
+
+/** _commsg v.3 **/
+    _commsg:
+     select
+      when lower(arg(1))="f" then do
+       comch="`"
+       comwaitl="Federation comm-link terminated."
+       comwaits="Message sent on Federation comm-link."
+      end /* when */
+      when lower(arg(1))="r" then do
+       comch="'"
+       comwaitl="Sub-space comm-link terminated"
+       comwaits="Message sent on sub-space channel"
+      end /* when */
+      otherwise call _error "missing message mode flag."
+     end /* select */
+     if arg(2)\="" then do
+      if arg(3)="" then do
+       call zocsend comch||"REV-SCRIPT:  "||arg(2)||"^M"
+       if zocwait(comwaits)=640 then call _error "timeout"
+      end /* do */
+      else do
+       comi=2
+       call zocsend comch||"^MREV-SCRIPT:  "
+       do while arg(comi)\=""
+        call zocsend arg(comi)||"^M"
+        comi=comi+1
+       end /* do */
+       call zocsend "^M"
+       if zocwait(comwaitl)=640 then call _error "timeout"
+      end /* else */
+     end /* if */
+    return
+
+/** _error v.3 **/
+    _error:
+     if arg(1)="" then call zocterminate
+     else errmsg="<< script error:  "||arg(1)||" >>"
+     errmail="<< if this is a serious problem, email me at: tw.the_reverend@excite.com >> "
+
+     eline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(eline)>0 then call zocwriteln
+     call zocwriteln "^[[1;31m"||errmsg||"^[[0;35m"
+     if arg(1)\="timeout" then call zocwriteln "^[[1;33m"||errmail||"^[[0;35m"
+     if length(eline)>0 then call zocwrite eline
+     call _beep "error.wav"
+     exit
+    return
+
+/** _fileexists v.1 **/
+    _fileexists:
+     if stream(arg(1), "C", "QUERY EXISTS")="" then fer=0
+     else fer=1
+    return fer
+
+/** _getgameinfo v.2 **/
+    _getgameinfo:
+     parse value zocgetglobaloption("ScriptPath") with . '="' ggpath '"'
+     ggpath=ggpath||"\"
+     ggini=ggpath||"script.ini"
+ 
+     parse value zocgetglobaloption("WindowTitle") with . '="' gggame '"'
+     if gggame="" | gggame="%ZOCORHOST% %OPTIONS%" then do
+      gglist=_getiniheadings(ggini)
+      if gglist="##EOF##" then gggame="##EOF##"
+      else gggame=_chooselist("select a game:", gglist, ";", "c")
+     end /* do */
+
+     call zocwriteln "<< using "||ggini||" - ["||gggame||"] >>"
+
+     ggr=ggpath||";"||ggini||";"||gggame
+    return ggr
+
+/** _getinfo v.1 **/
+    /*
+     Sect 263|Turns 820|Creds 799,881|Figs 5,000|Shlds 400|Hlds 12|Ore 0|Org 0     
+     Equ 0|Col 0|Phot 7|Armd 0|Lmpt 0|GTorp 0|TWarp No|Clks 0|Beacns 0|AtmDt 0     
+     Crbo 0|EPrb 0|MDis 0|PsPrb No|PlScn No|LRS None|Aln -4,496,437|Exp 0|Corp 5   
+     Ship 102 MisFri                                                               
+
+     Sect 4695|Turns 72|Creds 629,278|Figs 999|Shlds 1,250|Hlds 125|Ore 116|Org 0
+     Equ 0|Col 0|Phot 0|Armd 91|Lmpt 95|GTorp 10|TWarp 2|Clks 5|Beacns 20|AtmDt 5
+     Crbo 0|EPrb 25|MDis 8|PsPrb No|PlScn Yes|LRS Holo|Aln -4,500,000|Exp 39,211
+     Corp 5|Ship 63 CorFla
+    */
+    _getinfo:
+     giargs=lower(arg(1))
+
+     gii=1
+     giline.=""
+     gidone=0
+     call zocsend "/"
+     if zocwait("Sect ")=640 then call _error "timeout"
+     do while \gidone
+      if zocwait("^M")=640 then call _error "timeout"
+      giline.gii=strip(zoclastline())||d2c(179)
+      if giline.gii=d2c(179) then gidone=1
+      gii=gii+1
+     end /* do */
+     giline.1="Sect "||giline.1
+
+     givar.=""
+     gival.=""
+     gii=1
+     gij=1
+     do while giline.gii\=""
+      gipos=pos(d2c(179),giline.gii)
+      givar.gij=left(giline.gii,gipos-1)
+      parse var givar.gij givar.gij gival.gij
+      givar.gij=lower(givar.gij)
+      select
+       when givar.gij="sect" then gival.gij=_stripint(gival.gij)
+       when givar.gij="turns" then gival.gij=_stripint(gival.gij)
+       when givar.gij="creds" then gival.gij=_stripint(gival.gij)
+       when givar.gij="figs" then gival.gij=_stripint(gival.gij)
+       when givar.gij="shlds" then gival.gij=_stripint(gival.gij)
+       when givar.gij="crbo" then gival.gij=_stripint(gival.gij)
+       when givar.gij="aln" then gival.gij=_stripint(gival.gij)
+       when givar.gij="exp" then gival.gij=_stripint(gival.gij)
+       otherwise nop
+      end /* select */
+      giline.gii=substr(giline.gii,gipos+1)
+      gij=gij+1
+      if giline.gii="" then gii=gii+1
+     end /* do */
+
+     gir=""
+     do while giargs\=""
+      parse var giargs giarg ";" giargs
+      gii=1
+      gif=""
+      gidone=0
+      do while givar.gii\="" & \gidone
+       if giarg=givar.gii then do
+        gif=gival.gii
+        gidone=1
+       end /* if */
+       else gii=gii+1
+      end /* do */
+      if gir="" then gir=gif
+      else gir=gir||";"||gif
+     end /* do */
+
+    return gir
+
+/** _getiniheadings v.2 **/
+    _getiniheadings:
+     ininame=arg(1)
+     if ininame="" then call _error "no filename"
+     if stream(ininame, "C", "QUERY EXISTS")="" then inilist="##EOF##"
+     else do
+      call stream ininame, "C", "OPEN READ"
+ 
+      inilist=""
+      inieof=0
+      if stream(ininame, "S")\="READY" then inieof=1
+ 
+      do while \inieof
+       iniline=linein(ininame)
+       if left(iniline,1)=="[" then do
+        if inilist="" then inilist=substr(iniline,2,length(iniline)-2)
+        else inilist=inilist||";"||substr(iniline,2,length(iniline)-2)
+       end /* if */
+       if stream(ininame, "S")\="READY" then inieof=1
+      end /* do */
+ 
+      if length(inilist)=0 then inilist="##EOF##"
+      call stream ininame, "C", "CLOSE"
+     end /* else */
+    return inilist
+
+/** _getinivar v.1 **/
+    _getinivar:
+     ininame=arg(1)
+     inihead=arg(2)
+     inivar=arg(3)
+
+     if ininame="" then call _error "no filename"
+     if inihead="" then call _error "no heading"
+     if inivar="" then call _error "no variable"
+
+     if stream(ininame, "C", "QUERY EXISTS")="" then inival="##EOF##"
+     else do
+      call stream ininame, "C", "OPEN READ"
+ 
+      inidone=0
+      inieof=0
+      if stream(ininame, "S")\="READY" then inieof=1
+ 
+      do while \(inidone | inieof)
+       iniline=linein(ininame)
+       if left(iniline,1)=="[" then do
+        if substr(iniline,2,length(iniline)-2)==inihead then inidone=1
+       end /* if */
+       if stream(ininame, "S")\="READY" then inieof=1
+      end /* do */
+ 
+      inidone=0
+ 
+      do while \(inidone | inieof)
+       iniline=linein(ininame)
+       if left(iniline,1)="[" then inieof=1
+       inieq=pos("=",iniline)
+       if inieq>0 then do
+        if left(iniline,inieq-1)==inivar then inidone=1
+       end /* if */
+       if stream(ininame, "S")\="READY" then inieof=1
+      end /* do */
+ 
+      call stream ininame, "C", "CLOSE"
+ 
+      if inieof then inival="##EOF##"
+      else inival=substr(iniline,inieq+1)
+     end /* else */
+
+    return inival
+
+/** _halt v.1 **/
+    _halt:
+     call zocwriteln
+     call zocwriteln "^[[1;33m<< script aborted by user. >>^[[0;35m "
+     exit
+    return
+
+/** _in v.1 **/
+    _in:
+     if length(arg(1))=0 then ir=0
+     else do
+      if verify(arg(1),arg(2))=0 then ir=1
+      else ir=0
+     end /* else */
+    return ir
+
+/** _newline v.1 **/
+    _newline:
+     if zocgetinfo("CURSOR-X")>0 then call zocwriteln arg(1)
+     else call zocwrite arg(1)
+    return
+
+/** _olname v.2 **/
+    _olname:
+     olnm=arg(1)
+     if right(olnm,1)="]" then do
+      parse value reverse(olnm) with "]" olcnum "["
+      olcnum=_stripint(reverse(olcnum))
+      if olcnum\="" then olr=left(olnm,pos("["||olcnum||"]",olnm)-2)
+      else olr=olnm
+     end /* if */
+     else olr=olnm
+    return olr
+
+/** _onlineget v.5 **/
+    _onlineget:
+     call zocreceivebuf 5*1024
+     if arg(1)\="manual" then do
+      call zocsend "#"
+      if zocwait("  Who's Playing  ")=640 then call _error "timeout"
+     end /* if */
+     olflag=0
+     olbuff=""
+     do while olbuff=""
+      if zocwait("^M")=640 then call _error "timeout"
+      if strip(zoclastline())="" then do
+       if olflag then olbuff=_striplf(zocreceivebuf(0))
+      end /* if */
+      else olflag=1
+     end /* do */
+
+     olist2.=""
+     olc=1
+     do while olist1.olc\=""
+      olist2.olc=olist1.olc
+      olc=olc+1
+     end /* do */
+     olist1.=""
+
+     olj=max(pos("Who's Playing",olbuff),1)
+     oli1=pos("32m",olbuff,olj)
+     oli2=pos("31m",olbuff,olj)
+     select
+      when oli1=0 & oli2=0 then oli=3
+      when oli1=0 then oli=oli2+3
+      when oli2=0 then oli=oli1+3
+      when oli1<oli2 then oli=oli1+3
+      otherwise oli=oli2+3
+     end /* select */
+     if oli>3 then olj=pos(d2c(13),olbuff,oli)
+     olc=0
+     do while oli>3 & olj>0
+      olline=substr(olbuff,oli,olj-oli)
+      olk=pos("36m",olline)+3
+      if olk>3 then do
+       olc=olc+1
+       olist1.olc=_stripansi(substr(olline,olk))
+      end /* if */
+      oli1=pos("32m",olbuff,olj)
+      oli2=pos("31m",olbuff,olj)
+      select
+       when oli1=0 & oli2=0 then oli=3
+       when oli1=0 then oli=oli2+3
+       when oli2=0 then oli=oli1+3
+       when oli1<oli2 then oli=oli1+3
+       otherwise oli=oli2+3
+      end /* select */
+      if oli>3 then olj=pos(d2c(13),olbuff,oli)
+     end /* do */
+    return
+
+/** _onlineinit v.1 **/
+    _onlineinit:
+     olist1.=""
+     call _onlineget
+    return
+
+/** _onlinereport v.1 **/
+    _onlinereport:
+     olmsg.=""
+     olmsg.1="who's playing update"
+     olmsg.2=" new player(s)"
+     olmsg.4=" departed player(s)"
+
+     oli=1
+     do while olist1.oli\=""
+      olj=1
+      olfound=0
+      do while olist2.olj\="" & \olfound
+       if _olname(olist1.oli)=_olname(olist2.olj) then olfound=1
+       olj=olj+1
+      end /* do */
+      if \olfound then do
+       if olmsg.3="" then olmsg.3="  "||olist1.oli
+       else olmsg.3=olmsg.3||"^M  "||olist1.oli
+      end /* if */
+      oli=oli+1
+     end /* do */
+
+     oli=1
+     do while olist2.oli\=""
+      olj=1
+      olfound=0
+      do while olist1.olj\="" & \olfound
+       if _olname(olist2.oli)=_olname(olist1.olj) then olfound=1
+       olj=olj+1
+      end /* do */
+      if \olfound then do
+       if olmsg.5="" then olmsg.5="  "||olist2.oli
+       else olmsg.5=olmsg.5||"^M  "||olist2.oli
+      end /* if */
+      oli=oli+1
+     end /* do */
+
+     onlinechange=1
+     select
+      when olmsg.3\="" & olmsg.5=""  then call _commsg "r", olmsg.1, olmsg.2, olmsg.3
+      when olmsg.3=""  & olmsg.5\="" then call _commsg "r", olmsg.1, olmsg.4, olmsg.5
+      when olmsg.3\="" & olmsg.5\="" then call _commsg "r", olmsg.1, olmsg.2, olmsg.3, olmsg.4, olmsg.5
+      otherwise onlinechange=0
+     end /* select */
+
+    return onlinechange
+
+/** _quit v.3 **/
+    _quit:
+     if arg(1)=="" then qmsg="<< script ended. >>"
+     else qmsg="<< script ended:  "||arg(1)||" >>"
+     qline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(qline)>0 then call zocwriteln
+     call zocwriteln "^[[1;32m"||qmsg||"^[[0;35m"
+     if length(qline)>0 then call zocwrite qline
+     if arg(1)="script cancelled by user." then call _beep "cancel.wav"
+     else call _beep "quit.wav"
+     exit
+    return 1
+
+/** _quitretreatpay v.2 **/
+    _quitretreatpay:
+     qrppwd=arg(1)
+
+     call zocsend "qynt^M^M^M"
+     if zocwait("Password?")=640 then call _error "timeout"
+     call zocrespond "[Pause]", "^M"
+     call zocsend qrppwd||"^M"
+
+     qrpans=zocwaitmux("clear some avoids?", "Option? (A,D,I,R,P,?):?", "Delete messages? (Y/N) [N]")
+
+     if qrpans=2 then do
+      call zocsend "n"
+      qrpans=zocwaitmux("clear some avoids?", "Option? (A,D,I,R,P,?):?")
+     end /* if */
+
+     select
+      when qrpans=0 then do
+       call zocsend "n"
+       if zocwait("Option? (A,D,I,R,P,?):?")=640 then call _error "timeout"
+       call zocsend "r"
+      end /* when */
+      when qrpans=1 then call zocsend "r"
+      when qrpans=2 then call _error "unexpected response."
+      when qrpans=640 then call _error "timeout"
+      otherwise nop
+     end /* select */
+
+     if zocwait("You have ")=640 then call _error "timeout"
+     if zocwait("fighter(s) left.")=640 then call _error "timeout"
+     qrpfigs=_stripint(zoclastline())
+
+     if zocwait("Option? (A,D,I,R,P,?):?")=640 then call _error "timeout"
+     call zocsend "py"
+     qrpans=zocwaitmux("Option? (A,D,I,R,P,?):?", "Command [")
+     select
+      when qrpans=0 then call _error "you cannot pay the toll."
+      when qrpans=1 then nop
+      when qrpans=640 then call _error "timeout"
+      otherwise nop
+     end /* select */
+
+     call zocrespond "[Pause]"
+
+    return qrpfigs
+
+/** _sellhaggle2 v.1 **/
+    _sellhaggle2:
+     shportoffer=arg(1)
+     shoffer=trunc(shportoffer*1.06)
+
+     shsuccess=1
+     shiter=1
+
+     call zocsend shoffer||"^M"
+
+     shdone=0
+     do while \shdone
+
+      shans=zocwaitmux("We'll buy them for", ,
+                       "Our final offer", ,
+                       "We're not interested.", ,
+                       "You have")
+      select
+
+       when shans=0 then do
+        if zocwait("Your offer [")=640 then call _error "timeout"
+        if zocwait("]")=640 then call _error "timeout"
+        shnewportoffer=_stripint(zoclastline())
+        shiter=shiter+1
+        shnewoffer=trunc(shoffer/max(1.003,(shnewportoffer/shportoffer)))
+        if shnewoffer>=shoffer then shnewoffer=shoffer-1
+        shoffer=shnewoffer
+        shportoffer=shnewportoffer
+        call zocsend shoffer||"^M"
+       end /* when */
+
+       when shans=1 then do
+        if zocwait("Your offer [")=640 then call _error "timeout"
+        if zocwait("]")=640 then call _error "timeout"
+        shfinalportoffer=_stripint(zoclastline())
+        shiter=shiter+1
+        shfactor=0.5
+        if shiter<3 then shfactor=0.6
+        shoffer=trunc(shoffer*(1-shfactor) + shfinalportoffer*shfactor)
+        call zocsend shoffer||"^M"
+       end /* when */
+
+       when shans=2 then do
+        shdone=1
+        shsuccess=0
+       end /* when */
+
+       when shans=3 then do
+        shdone=1
+       end /* when */
+
+       when shans=640 then call _error "timeout"
+
+       otherwise nop
+
+      end /* select */
+
+     end /* while */
+
+    return shsuccess
+
+/** _stripansi v.2 **/
+    _stripansi:
+     saline=arg(1)
+     sar=""
+     salf=pos(d2c(10),saline)
+     do while salf>0
+      saline=delstr(saline,salf,1)
+      salf=pos(d2c(10),saline)
+     end /* do */
+     sanull=pos(d2c(0),saline)
+     do while sanull>0
+      saline=delstr(saline,sanull,1)
+      sanull=pos(d2c(0),saline)
+     end /* do */
+     saesc=pos(d2c(27),saline)
+     do while saesc>0
+      sam=pos("m",saline,saesc+1)
+      if sam=0 then saline=delstr(saline,saesc,1)
+      else saline=delstr(saline,saesc,sam-saesc+1)
+      saesc=pos(d2c(27),saline)
+     end /* do */
+     saesc=pos("^[",saline)
+     do while saesc>0
+      sam=pos("m",saline,saesc+1)
+      if sam=0 then saline=delstr(saline,saesc,2)
+      else saline=delstr(saline,saesc,sam-saesc+1)
+      saesc=pos("^[",saline)
+     end /* do */
+    return saline
+
+/** _stripint v.2 **/
+    _stripint:
+     stint=""
+     sttemp=strip(arg(1))
+     if bdflag=1 then call _error
+     do sti=1 to length(sttemp)
+      stchar=substr(sttemp,sti,1)
+      if length(stint)=0 then do
+       if verify(stchar,"1234567890-")=0 then stint=stint||stchar
+      end /* if */
+      else if verify(stchar,"1234567890")=0 then stint=stint||stchar
+     end /* do */
+     if \datatype(stint,"W") then stint=""
+    return stint
+
+/** _striplf v.2 **/
+    _striplf:
+     slline=arg(1)
+     slnul=pos(d2c(0),slline)
+     do while slnul>0
+      slline=delstr(slline,slnul,1)
+      slnul=pos(d2c(0),slline)
+     end /* do */
+     sllf=pos(d2c(10),slline)
+     do while sllf>0
+      slline=delstr(slline,sllf,1)
+      sllf=pos(d2c(10),slline)
+     end /* do */
+    return slline
+
+/** _yesno v.2 **/
+    _yesno:
+     select
+      when arg(2)="yn" then yn=zocrequest(arg(1)||" (ESC=no)", "yes", "no")
+      otherwise yn=zocrequest(arg(1), "yes", "no", "cancel")
+     end /* select */
+     select
+      when yn="cancel" then call _quit "script cancelled by user."
+      when yn="##CANCEL##" & arg(2)\="yn" then call _quit "script cancelled by user."
+      when yn="yes" then yn=1
+      otherwise yn=0
+     end /* select */
+    return yn
+

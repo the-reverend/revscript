@@ -1,0 +1,83 @@
+need to add:
+
+  1) reporting game irregularities
+  2) disputing team rosters
+
+PLAYER GUIDELINES
+
+1  Terminology
+
+   GAME   = a sanctioned league game
+   SYSOP  = gameop, sysop, co-sysop, etc. managing the GAME
+   SERVER = TWGS server hosting the GAME
+   PLAYER = a single player account registered in the GAME
+   LEAGUE = the league governing body
+
+2  Introduction
+
+   The following are rules that all league players are expected to adhere to. Punishment for violation of these rules will be determined by the league board and become effective. You have the right to dispute the board's decision and present any evidence that you have concerning the matter. A final decision will follow from the board.
+
+NEED TO REWORD THIS LATER
+
+1. No dupes of any kind. Players IP's will be recorded by league sysops, and if you have a dynamic IP your IP address won't range that far off. Any evidence of duping will be punished after an investigation. 
+
+CHANGE TO:
+   There shall be no duplicate accounts.  This rule shall be enforced by the SYSOP.  If a PLAYER legitimately shares a location with another PLAYER, both PLAYERS must demonstrate that legitimacy to the satisfaction of the SYSOP prior to the GAME start.
+
+2. No Corp breaking into or Corp backstabbing. You are expected to play as part of a team and that doesn't mean giving away your sector or taking your Corp planets and making them personal. If you are found guilty of this you will be removed from the game immediately and your name will be posted as a backstabber at a minimum. Therefore you can feel free to play with anyone you don't know because this won't be tolerated. 
+
+CHANGE TO:
+   There shall be no team backstabbing.  PLAYERS shall only join corporations consisting of their own teammates.  PLAYERS shall act in the best interest of their team for the duration of the game.  PLAYERS shall only login to their own account.
+
+3. Bug use of any kind is strictly prohibited in the game. The league servers will have the latest version of trade wars running on it, but there may still be some bugs in the software. If you are found using a bug you will be eliminated immediately from the game. 
+
+CHANGE TO:
+   There shall be no bug use.  PLAYERS are prohibited from using TWGS flaws in the GAME.
+
+4. Spamming players on Fed Comm is not allowed. You can talk on Fed Comm but you can't send messages irrelevant in order to slow a server down. You will be removed from the game. 
+
+CHANGE TO:
+   There shall be no spamming.  Spamming is any communication designed to overwhelm another PLAYER with irrelevant information.  For example:  attacking figs one at a time is relevant; hailing War and Peace is irrelevant; checking terra more than 20 times per second is irrelevant; attacking sector/planet fighters for 0 repeatedly is irrelevant.  Any irrelevant messaging above 1200 characters per minute shall automatically be deemed spam.  Irrelevant messaging below 1200 characters per minute shall be deemed spam at the discretion of the SYSOP.
+
+5. You must remain on your Corp at all times. You may quit your Corp to join your other Corp if you are running a blue/red team corp. However, if extern runs and you are not on a Corp or if a league sysop sees that you are not on a Corp proper action whatever it may be will follow. 
+
+CHANGE TO:
+   Each PLAYER shall be part of their team corporation after day 7 or otherwise notify the SYSOP of his/her team affiliation prior to day 7.  Once the SYSOP registers each team with the LEAGUE on day 8, team rosters shall be final.
+
+6.You are to log on only to the account that you have created. You may not log on as anyone else other than your character. Violation of this will result in deletion of both accounts in question. 
+
+DELETE (see rule #2 above)
+
+7. Harassment of any kind regarding race, sex, or religion will not be tolerated. Cussing is permitted in league games, but a formal complaint by anyone in the game will result in cussing around that player or in the whole game to cease depending on the level of slang that is going on. 
+
+   PLAYERS shall respect the requests of other PLAYERS to refrain from offensive language regarding race, sex, or religion.  SYSOPS shall err on the side of the offended PLAYERS if the problem persists.
+
+8. Naming ships or planets anything derogatory along the lines in step 7 will result in a warning and the league sysop will change the name the first time. A second offense will result in banishment from a game and loss of ranking points. 
+
+DELETE (let the sysops be the language police if they want to.)
+
+9. This is a professional league and we expect you to act like players wanting to make a name for themselves. This is a way to show the skill that you have in the game, so lets keep it that way. By no means is this something where we are out to ban you or remove your ranking from the league. Almost all violations, except 1, 2 and 3, will result in a formal warning initially before any action is taken. 
+
+DELETE (we need a table of offenses and punishments)
+
+10. Players may choose to not play on a given server for any reason. 
+
+DELETE
+
+11. There shall be no mega corping, truces, treaties, partners, etc.. along these guidelines. This includes sharing information, resources, ZTM's, CIM's etc... Information and resources can only be shared between members playing on the same corporation registered for that same game. This applys at all times, regardless of how short the co-op work takes place. 
+
+DELETE (un-enforceable - leave it up to sysops)
+
+12. TW League board members shall not play on any server run by another board member or co-SysOped by another board member. 
+
+CHANGE TO:
+    The LEAGUE board members shall refrain from playing a GAME where another LEAGUE board member is acting as SYSOP.
+
+13.All players will follow the rules of the server they are on along with these listed league rules.
+
+CHANGE TO:
+   PLAYERS shall observe the rules of the SERVER and GAME as defined by the SYSOP in addition to the version of the LEAGUE rules which were in effect at the announcement of the GAME.  PLAYERS shall be aware that the SYSOP may add to or strengthen any of these rules as a part of the GAME rules.  For example, the SYSOP may have GAME rules limiting mega-corping and/or information sharing.  The LEAGUE has no jurisdiction over the satisfaction of GAME rules that extend beyond the LEAGUE rules - the decision of the SYSOP shall not be overruled by the LEAGUE in those matters.
+
+14. "Grandfather Clause" - This is not a complete list of rules rather than a working list. This list will remain open until we see something in a league game that we feel needs to be addressed. The violation will be added to this list, but you will suffer no punishment other than a warning for the first offense. Second offense once it has been added will be punished accordingly. 
+
+DELETE (see rule 13)

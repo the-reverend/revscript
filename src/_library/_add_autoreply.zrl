@@ -1,0 +1,22 @@
+/** _add_autoreply v.2 **/
+/*- _add_autoreply trigger, reply -*/
+/*- v.1 tested -*/
+_add_autoreply: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _add_autoreply"
+ trigger=arg(1)
+ reply=arg(2)
+ found=0
+ do i=0 to 31
+  ar_in="AutoReplyIn#"||copies("0",2-length(i))||i
+  ar_out="AutoReplyOut#"||copies("0",2-length(i))||i
+  parse value zocgetoption(ar_in) with . '="' ar_in_ '"'
+  parse value zocgetoption(ar_out) with . '="' ar_out_ '"'
+  if ar_in="" | abbrev(trigger,ar_in_) then do; found=1; leave; end
+ end /*do*/
+ if found then do
+  call zocsetoption(ar_in'="'||trigger||'"')
+  call zocsetoption(ar_out'="'||reply||'"')
+  rslt=1
+ end /*if*/
+ else rslt=0
+return rslt

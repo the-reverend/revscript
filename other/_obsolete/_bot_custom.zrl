@@ -1,0 +1,21 @@
+/** _bot_custom v.1 **/
+_bot_custom: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then return "INACTIVITY WARNING|activated"
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ line=arg(2)
+ select
+  when ans=1 then call zocsend "^["
+  when ans=2 then do
+   parse var line ch "Limpet mine in " target " activated"
+   if strip(ch)="" & target=2465 then do
+    call zocsend "q4^Mzncpy2465^Mq2465^Mza999^Mznl<l'photon!^M"
+    call _beep "photon.wav"
+   end /*if*/
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=ans
+return rslt

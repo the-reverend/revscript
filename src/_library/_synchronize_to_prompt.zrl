@@ -1,0 +1,19 @@
+_synchronize_to_prompt: procedure expose (globals)
+ macrolist=_synchronize_vars(arg(1))
+ if arg(2,"E") then pmt=arg(2)
+               else pmt=_synchronize()
+ if pmt="unknown_text_entry" then do
+  call zocsend "^H^H^H^M^M"
+  pmt=_synchronize()
+ end /*if*/
+ if pmt="timeout" | pmt="unknown" then do
+  call zocsend "^H^H^H^Mqqqq^M^M^M^Mq^M"
+  pmt=_synchronize()
+  if pmt="timeout" then call _error "timeout"
+ end /*if*/
+ if pmt\="unknown" & pmt\=arg(1) then do
+  call zocsend _list_select(pmt,_synchronize_vars("r"),macrolist,";")
+  pmt=_synchronize()
+ end /*if*/
+ if pmt=arg(1) | pmt=arg(1)||"_cit" then return 1
+return 0

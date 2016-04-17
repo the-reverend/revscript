@@ -1,0 +1,11 @@
+/** _secs_to_hhmmss v.1 **/
+/*- _secs_to_hhmmss secs -*/
+/*- v.1 tested -*/
+_secs_to_hhmmss: procedure expose (globals)
+ if arg(1,"E") then secs=arg(1)
+ else call _error "missing parameter in _secs_to_hhmmss"
+ hrs=secs%3600
+ mins=(secs-hrs*3600)%60
+ secs=secs-hrs*3600-mins*60
+ rslt=copies("0",2-length(hrs))||hrs||":"||copies("0",2-length(mins))||mins||":"||copies("0",2-length(secs))||secs
+return rslt

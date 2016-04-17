@@ -1,0 +1,14 @@
+/** _stripint v.4 **/
+/*- _stripint number -*/
+/*- v.4 tested -*/
+_stripint: procedure expose (globals)
+ mask=_space(translate(arg(1)," ","-0123456789,"," "),0)
+ rslt=word(_space(translate(_stripcomma(arg(1))," ",mask," ")),1)
+ if rslt="" | rslt="-" then do; call _set_msg "##NAN##", "_stripint"; rslt=0; end
+ else do
+  if left(rslt,1)="-" then neg="-"; else neg=""
+  rslt=_space(translate(rslt," ","-"),0)
+  if length(rslt)>9 then rslt=left(rslt,9)
+  rslt=neg||rslt
+ end /*else*/
+return rslt

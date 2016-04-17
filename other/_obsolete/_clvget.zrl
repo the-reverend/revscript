@@ -1,0 +1,55 @@
+/** _clvget v.2 **/
+/*- _clvget -*/
+/*- v.2 tested -*/
+_clvget: procedure expose (globals)
+
+ buflen=10*1024
+ call zocreceivebuf buflen
+
+ if _sendwait("clv","(T,V or Q to quit)")=640 then call _error "timeout"
+ if zocwait("Trader Rankings :")=640 then call _error "timeout"
+ if zocwait("Computer command")=640 then call _error "timeout"
+ call zocsend "q"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+
+ _clvlist2.=""
+ do i=1 to _clvlist1.0
+  _clvlist2.i=_clvlist1.i
+ end /*do*/
+ _clvlist2.0=_clvlist1.0
+ _clvlist1.=""
+ _clvlist1.0=0
+
+ i=pos("-- -- --",buff)
+ if i>0 then i=pos(d2c(13),buff,i)+1
+ j=pos(d2c(13),buff,i)
+ c=0
+ do while i>1 & j>0
+  if strip(substr(buff,i,j-i))="" then leave
+  parse value substr(buff,i,j-i) with num exp aln corp line
+  num=_stripint(num)
+  exp=_stripint(exp)
+  aln=_stripint(aln)
+  if num="" | exp="" | aln="" then i=0
+  else do
+   if corp="**" then corp=0
+   name=strip(left(line,30))
+   ship=strip(substr(line,32))
+   c=c+1
+   _clvlist1.c=name||";"||exp||";"||aln||";"||corp||";"||ship
+   i=j+1
+   j=pos(d2c(13),buff,i)
+  end /*else*/
+ end /*do*/
+ _clvlist1.0=c
+
+return
+/*- NOTE: long player names wrap *inside* the clv table                           -*/
+/*- 21         0          0  ** pat ward                       PleasureCruiser    -*/
+/*- 22         0          0  ** The Little Canadian Corn Huski ** Broken Heart ** -*/
+/*-                             e                                                 -*/
+/*- 23         0          0  ** 4c3                            PleasureCruiser    -*/
+/*- 25         0          0  ** talos                          # Ship Destroyed # -*/
+/*- 46         0          6  ** The Chump(opps spelled that wr Rock Collector     -*/
+/*-                             ong)                                              -*/

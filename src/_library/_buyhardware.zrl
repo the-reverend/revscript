@@ -1,0 +1,163 @@
+/** _buyhardware v.6 **/
+_buyhardware: procedure expose (globals)
+/*- +-------------------------------+       -*/
+/*- | The Emporium Daily Specials:  ¦       -*/
+/*- ¦                               ¦       -*/
+/*- ¦ <A> Atomic Detonators         ¦ done  -*/
+/*- ¦ <B> Marker Beacons            ¦       -*/
+/*- ¦ <C> Corbomite Devices         ¦       -*/
+/*- ¦ <D> Cloaking Devices          ¦       -*/
+/*- ¦ <E> SubSpace Ether Probes     ¦ done  -*/
+/*- ¦ <F> Planet Scanners           ¦       -*/
+/*- ¦ <L> Limpet Tracking Mines     ¦ done  -*/
+/*- ¦ <M> Space Mines               ¦ done  -*/
+/*- ¦ <P> Photon Missiles           ¦ done  -*/
+/*- ¦ <R> Long Range Scanners       ¦       -*/
+/*- ¦ <S> Mine Disruptors           ¦       -*/
+/*- ¦ <T> Genesis Torpedoes         ¦ done  -*/
+/*- ¦ <W> TransWarp Drives          ¦       -*/
+/*- ¦ <Y> Psychic Probes            ¦       -*/
+/*- ¦                               ¦       -*/
+/*- ¦ <!> Hardware Emporium Help    ¦       -*/
+/*- ¦ <Q> Leave the Emporium        ¦       -*/
+/*- +-------------------------------+       -*/
+ sdfound=1
+ list=arg(1)
+ listq=""
+
+ call zocsend "p"
+ ans=_waitmux("There is no port in this sector!|<Q> Quit, nevermind|<S> Land on the StarDock")
+ select
+  when ans=0 then do
+   if _wait("Command [")=640 then call _error "timeout"
+   call zocwrite _ansi("bt;fgr")||"<< stardock not available >> "||_ansi("fmg")
+   sdfound=0
+  end /*when*/
+  when ans=1 then do
+   call zocsend "q"
+   if _wait("Command [")=640 then call _error "timeout"
+   call zocwrite _ansi("bt;fgr")||"<< stardock not available >> "||_ansi("fmg")
+   sdfound=0
+  end /*when*/
+  when ans=2 then do
+   call zocsend "s"
+   ans2=_waitmux("and removal? : (Y/N)|<StarDock>|You don't have any turns left.")
+   select
+    when ans2=0 then call zocsend "y"
+    when ans2=1 then nop
+    when ans2=3 then sdfound=0
+    when ans2=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+
+ if sdfound then do
+  if _sendwait("h","<Hardware Emporium>")=640 then call _error "timeout"
+
+  do i=1 to _dwords(list,";")
+
+   parse value _dword(list,i,";") with 1 item 2 quant
+   quant=_stripint(quant)
+   item=upper(item)
+   select
+
+    when item="A" then do
+     call zocsend "a"
+     if _wait("(Max ")=640 then call _error "timeout"
+     if _wait("[")=640 then call _error "timeout"
+     avail=_stripint(_lastline())
+     if quant=0 | quant>avail then quant=avail
+     if avail=0 then quant=0
+     call zocsend quant||"^M"
+     if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /*when*/
+
+    when item="E" then do
+     call zocsend "e"
+     if _wait("(Max ")=640 then call _error "timeout"
+     if _wait("[")=640 then call _error "timeout"
+     avail=_stripint(_lastline())
+     if quant=0 | quant>avail then quant=avail
+     if avail=0 then quant=0
+     call zocsend quant||"^M"
+     if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /*when*/
+
+    when item="L" then do
+     call zocsend "l"
+     if _wait("(Max ")=640 then call _error "timeout"
+     if _wait("[")=640 then call _error "timeout"
+     avail=_stripint(_lastline())
+     if quant=0 | quant>avail then quant=avail
+     if avail=0 then quant=0
+     call zocsend quant||"^M"
+     if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /*when*/
+
+    when item="M" then do
+     call zocsend "m"
+     if _wait("(Max ")=640 then call _error "timeout"
+     if _wait("[")=640 then call _error "timeout"
+     avail=_stripint(_lastline())
+     if quant=0 | quant>avail then quant=avail
+     if avail=0 then quant=0
+     call zocsend quant||"^M"
+     if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /*when*/
+
+    when item="P" then do
+     call zocsend "P"
+     ans=_waitmux("not equipped to handle Photon Missiles!|(Max |Photon Missiles are disabled")
+     select
+      when ans=0 then do
+       if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+       quant=0
+       call zocwrite "<< ship not capable >>"
+      end /*when*/
+      when ans=1 then do
+       if _wait("[")=640 then call _error "timeout"
+       avail=_stripint(_lastline())
+       if quant=0 | quant>avail then quant=avail
+       if avail=0 then quant=0
+       call zocsend quant||"^M"
+      if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+      end /*when*/
+      when ans=2 then do
+       if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+       quant=0
+       call zocwrite "<< photons are disabled >>"
+      end /*when*/
+      when ans=640 then call _error "timeout"
+      otherwise nop
+     end /*select*/
+    end /*when*/
+
+    when item="T" then do
+     call zocsend "t"
+     if _wait("(Max ")=640 then call _error "timeout"
+     if _wait("[")=640 then call _error "timeout"
+     avail=_stripint(_lastline())
+     if quant=0 | quant>avail then quant=avail
+     if avail=0 then quant=0
+     call zocsend quant||"^M"
+     if _wait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /*when*/
+
+    otherwise quant=0
+
+   end /*select*/
+
+   if listq="" then listq=quant
+   else listq=listq||";"||quant
+
+  end /*do*/
+
+  if _sendwait("qq","Command [")=640 then call _error "timeout"
+
+ end /*if*/
+ else listq=translate(strip(copies("0 ",_dwords(list,";")))";"," ")
+
+return listq

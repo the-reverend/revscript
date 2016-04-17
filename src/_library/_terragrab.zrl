@@ -1,0 +1,37 @@
+/** _terragrab v.3 **/
+_terragrab: procedure expose (globals)
+ min=arg(1)
+ if min="" then min=1
+ max=arg(2)
+ if max="" then max=255
+ buflen=3*1024
+ call zocreceivebuf buflen
+ call zocsend "l1^Mt"
+ if zocwait("empty holds) ?")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(buflen),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+ i=pos("There are currently ",buff)+20
+ if i>20 then j=pos(" colonists",buff,i)
+ else j=0
+ if i>20 & j>0 then avail=substr(buff,i,j-i)
+ else avail=0
+ if j>0 then i=pos("want to take ([",buff,j)+15
+ if i>15 then j=pos("] empty holds)",buff,i)
+ else j=0
+ if i>15 & j>0 then free=substr(buff,i,j-i)
+ else free=0
+ select
+  when free<avail & free>=max  then grab=max
+  when free<avail              then grab=free
+  when avail>=min & avail<=max then grab=avail
+  when avail>=min              then grab=max
+  otherwise                         grab=0
+ end /*select*/
+ if grab=free then call zocsend "^M"
+ else call zocsend grab||"^M"
+ if zocwait("Command [")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+ if pos("There aren't that many on Terra!",buff)>0 then rslt="0;"||_terracheck()
+ else rslt=grab||";"||avail-grab
+return rslt

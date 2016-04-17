@@ -1,0 +1,98 @@
+/* REXX _waitfor.zrx by the reverend (build 15)                               */
+/*-       built by rev-builder version 1.3a on 17 Oct 2003 at 13:10:25       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*-                       Copyright (C) 2003 Ron Wilson                      -*/
+/*-                                                                          -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author. Your use of    -*/
+/*- this script is governed by the terms of the REV-LICENSE.                 -*/
+/*-                                                                          -*/
+/*- This program is provided to you WITHOUT ANY WARRANTY, even the implied   -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the -*/
+/*- REV-LICENSE for more details.                                            -*/
+/*-                                                                          -*/
+/*-                A copy of the REV-LICENSE is available at:                -*/
+/*-       http://thereverend.coastgames.com/tradewars/rev-license.html       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ---------------------*/ _g.!sname="_waitfor.zrx" /*--------------------- -*/
+/*- --------------*/ _g.!sbuild=15; _g.!sdate="2003-10-17" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+
+globals="_g."
+call _timeout 60
+call zocsynctime 500
+call on halt name _halt
+
+wait=arg(1)
+count=_dwords(wait,"|")
+if count=0 then exit
+           else wait="S.D.|"||wait
+
+do forever
+ if zocwaitmux(wait)>0 then leave
+end
+exit
+
+/***                 THE REVEREND'S TW LIBRARY FOR ZOC/REXX                 ***/
+
+/** _timeout v.1 **/
+    _timeout: procedure expose (globals)
+     if _g.!timeout="_G.!TIMEOUT" then _g.!timeout=60
+     rslt=_g.!timeout
+     nt=_stripint(arg(1))
+     if arg(1,"E") & nt>0 then do
+      call zoctimeout nt
+      _g.!timeout=nt
+     end /*if*/
+    return rslt
+
+/** _halt v.3 **/
+    _halt: procedure expose (globals)
+     call off halt
+     call zocwriteln "^[[1;33m< user abort >^[[0m "
+     exit
+    return
+
+/** _dwords v.2 **/
+    _dwords: procedure expose (globals)
+     rslt=words(translate(arg(1),arg(2)||" "," "||arg(2)))
+    return rslt
+
+/** _stripint v.4 **/
+    _stripint: procedure expose (globals)
+     mask=_space(translate(arg(1)," ","-0123456789,"," "),0)
+     rslt=word(_space(translate(_stripcomma(arg(1))," ",mask," ")),1)
+     if rslt="" | rslt="-" then do; call _set_msg "##NAN##", "_stripint"; rslt=0; end
+     else do
+      if left(rslt,1)="-" then neg="-"; else neg=""
+      rslt=_space(translate(rslt," ","-"),0)
+      if length(rslt)>9 then rslt=left(rslt,9)
+      rslt=neg||rslt
+     end /*else*/
+    return rslt
+
+/** _space v.1 **/
+    _space: procedure expose (globals)
+     str=strip(arg(1))
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then pad=arg(3); else pad=" "
+     rslt=word(str,1)
+     do i=2 to words(str)
+      rslt=rslt||copies(pad,n)||word(str,i)
+     end /*do*/
+    return rslt
+
+/** _stripcomma v.1 **/
+    _stripcomma: procedure expose (globals)
+     rslt=translate(_space(translate(arg(1),", "," ,"),0)," ",",")
+    return rslt
+
+    _set_msg: procedure expose (globals)
+     i=_msg.0
+     if i="_MSG.0" then do; _msg.=""; _msg.0=0; i=0; end
+     i=i+1; _msg.0=i; _msg=""
+     if arg(1,"E") then do; _msg.i=arg(1); _msg=arg(1); end;
+     if arg(2,"E") then _msg.i.!source=arg(2)
+     if arg(3,"E") then _msg.i.!comment=arg(3)
+    return i

@@ -1,0 +1,10 @@
+/** _get_script_path v.1 **/
+/*- _get_script_path -*/
+/*- v.1 tested -*/
+_get_script_path: procedure expose (globals)
+ parse value zocgetglobaloption("ScriptPath") with . '="' spath '"'
+ if left(zocgetinfo("VERSION"),1)>4 then spath = zocfilename("RESOLV", spath)
+ spath=dosfname(spath)
+ if right(spath,1)\="\" then spath=spath||"\"
+ if \dosisdir(spath) then call _error "invalid path in _get_script_path"
+return spath

@@ -1,0 +1,97 @@
+/** _portrob v.2 **/
+_portrob: procedure expose (globals)
+ min=arg(1)
+ max=arg(2)
+ divisor=arg(3)
+
+ msg="##OK##"
+ exp=0
+ amount=0
+ avail=0
+ turns=0
+
+ if min="" | min<0 then min=0
+ if max="" | max<=min then max=999999999
+ if divisor="" then divisor=0.9
+
+ call zocreceivebuf 3*1024
+ call zocsend "pr^Mr"
+ done=0
+ fake=0
+ do while \done
+  ans=_waitmux("(0 to quit)|experience point(s).")
+  line=strip(_lastline())
+  select
+   when ans=0 & line="How many credits do you want to try to embezzle ? (0 to quit)" then do
+    done=1
+    buff=translate(zocreceivebuf(1024),"  ",d2c(10)||d2c(0))
+   end /*when*/
+   when ans=1 & left(line,12)="and you LOSE" then do
+    done=1
+    fake=1
+    buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+   end /*when*/
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ /* check exp */
+ i=pos("One turn deducted,",buff)+18
+ if i>18 then j=pos("turns left",buff,i)
+ else j=0
+ if j>0 then turns=_stripint(substr(buff,i,j-i))
+ else turns=99999
+
+ if fake then do
+  i=pos("and you LOSE ",buff)+13
+  if i>13 then j=pos("experience point(s).",buff,i)
+  else j=0
+  if j>0 then exp=_stripint(substr(buff,i,j-i))
+  else exp=0
+  msg="##FAKE##"
+ end /*if*/
+ else do
+  i=pos("excess of",buff)+9
+  if i>9 then j=pos("creds onhand.",buff,i)
+  else j=0
+  if j>0 then avail=trunc(_stripint(substr(buff,i,j-i))/divisor)
+  else avail=0
+
+  amount=avail
+  if avail<min then do
+   amount=0
+   call zocwrite "< "||min-avail||" short > "
+  end /*if*/
+  if avail>max then amount=max
+  call zocsend amount||"^M"
+
+  ans=_waitmux("Success!|Busted!|There aren't that many credits|Maybe some other day, eh?")
+  if _wait("Command [")=640 then call _error "timeout"
+  buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+  select
+   when ans=0 then do
+    i=pos("and you receive ",buff)+16
+    if i>16 then j=pos("experience point(s).",buff,i)
+    else j=0
+    if j>0 then exp=_stripint(substr(buff,i,j-i))
+    else exp=0
+   end /*when*/
+   when ans=1 then do
+    i=pos("and you LOSE ",buff)+13
+    if i>13 then j=pos("experience point(s).",buff,i)
+    else j=0
+    if j>0 then exp=_stripint(substr(buff,i,j-i))
+    else exp=0
+    amount=0
+    msg="##BUST##"
+   end /*when*/
+   when ans=2 then msg="##CREDS##"
+   when ans=3 then msg="##QUIT##"
+   when ans=640 then call _error "timeout"
+  end /*select*/
+ end /*else*/
+
+ rslt=msg||";"||exp||";"||amount||";"||avail||";"||turns
+
+return rslt

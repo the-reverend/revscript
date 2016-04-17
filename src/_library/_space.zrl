@@ -1,0 +1,22 @@
+/** _space v.1 **/
+/*- v.1 tested -*/
+_space: procedure expose (globals)
+/*- SPACE(string, [n], [pad])                                                           -*/
+/*- returns the blank-delimited words in string with n pad characters between each      -*/
+/*- word. If you specify n, it must be a positive whole number or zero. If it is ğ, all -*/
+/*- blanks are removed. Leading and trailing blanks are always removed. The default     -*/
+/*- for n is 1, and the default pad character is a blank.                               -*/
+/*- Here are some examples:                                                             -*/
+/*- SPACE('abc def ') -> 'abc def'                                                      -*/
+/*- SPACE(' abc def',3) -> 'abc def'                                                    -*/
+/*- SPACE('abc def ',1) -> 'abc def'                                                    -*/
+/*- SPACE('abc def ',0) -> 'abcdef'                                                     -*/
+/*- SPACE('abc def ',2,'+') -> 'abc++def'                                               -*/
+ str=strip(arg(1))
+ if arg(2,"E") then n=arg(2); else n=1
+ if arg(3,"E") then pad=arg(3); else pad=" "
+ rslt=word(str,1)
+ do i=2 to words(str)
+  rslt=rslt||copies(pad,n)||word(str,i)
+ end /*do*/
+return rslt

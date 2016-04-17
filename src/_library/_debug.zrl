@@ -1,0 +1,23 @@
+/** _debug v.5 **/
+/*- _debug mode, msg [, fname] -*/
+/*- v.5 tested -*/
+_debug: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _debug"
+ mode=strip(left(lower(arg(1)),3))
+ msg=arg(2)
+ if arg(3,"E") then logname=strip(arg(3))
+ else logname="_debug.txt"
+ select
+  when mode="scr" then call zocwriteln "^[[1;34mREV-DEBUG <"||msg||">^[[0m"
+  when mode="fed" then call zocsend "`REV-DEBUG <"||msg||">^M"
+  when mode="sub" then call zocsend "'REV-DEBUG <"||msg||">^M"
+  when mode="log" then do
+   if _fileopenw(logname) then do
+    call lineout logname, msg
+    call _fileclose logname
+   end /*if*/
+   else call _error "unable to open rev-log.txt."
+  end /*when*/
+  otherwise nop
+ end /*select*/
+return

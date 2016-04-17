@@ -1,0 +1,167 @@
+/** _read_mail v.3 **/
+/*- _read_mail lname, dname -*/
+/*- v.2 tested -*/
+_read_mail: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _read_mail"
+ lname=arg(1)
+ dname=arg(2)
+ if arg(3,"E") then ignorelist=arg(3)
+               else ignorelist=""
+ lg_stamp=_iniv(!settings,"!lastlogstamp")
+ if _sendwait("cm","<Read messages>")=640 then call _error "timeout"
+ yr=word(date("N"),3)-2000+12
+ done=0
+ pflag=1
+ lg_i=0
+ do while \done
+  ans=zocwaitmux("[Pause]",
+            ||"|No messages received.",
+            ||"|> ",
+            ||"|::",
+            ||"|/"||yr-1||":",
+            ||"|/"||yr||":",
+            ||"|/"||yr+1||":",
+            ||"|entered sector.",
+            ||"|Sub Space Ether Probe.",
+            ||"|I.D. code.",
+            ||"|disrupted all of your mines in ",
+            ||"|Delete messages? (Y/N) [N]",
+            ||"| - Ship ")
+  select
+   when ans=0 then do
+    call zocdelay .3
+    select
+     when _pcheck("[Pause] - [") & pflag then do
+      call zocsend " "
+      pflag=0
+     end /*when*/
+     when _pcheck("[Pause] - [") then nop
+     when _pcheck("[Pause] - D") then do
+      call zocsend "y"
+      done=1
+     end /*when*/
+     otherwise do
+      call zocsend " "
+      pflag=0
+     end /*otherwise*/
+    end /*select*/
+   end /*when*/
+   when ans=1 then do
+    call zocsend " "
+    done=1
+   end /*when */
+   when ans=2 & \pflag then pflag=1
+   when ans=2 then nop
+   when ans=3 then do
+    line=_lastline()
+    parse var line brand "-" typ " : " cmd . args "::"
+    typ=lower(typ); cmd=lower(cmd); args=strip(args)
+    select
+     when typ\="cmd" then nop
+     when cmd="bust_clr" then do
+      parse var args sect . stamp .
+      bstamp=_iniv("!bust","!"||sect)
+      select
+       when _undef(bstamp) then nop
+       when bstamp>=stamp then nop
+       otherwise do
+        call _ini_delete_key dname, "bust", sect
+        call _iniv "!bust", "!"||sect, "##UNDEF##"
+       end /*otherwise*/
+      end /*select*/
+     end /*when*/
+     when cmd="set_var" then do
+      parse var args section " : " vr "=" vl
+      call _ini_write dname, section, vr, vl
+      call _iniv "!"||section, "!"||vr, vl
+     end /*when*/
+     otherwise nop
+    end /*select*/
+   end /*when*/
+   when ans<=6 then do
+    line=_lastline()
+/*- Received from The Federation at 00:00:03 AM S.D. 08/08/14: -*/
+/*- Received from Deployed Fighters at 03:49:25 PM S.D. 06/27/14: -*/
+/*- Received from Fear Me at 11:08:45 PM S.D. 11/25/14: -*/
+    parse var line "Received from " lg_name " at " lg_hr ":" lg_mn ":" lg_sc lg_ampm " S.D. " lg_ds ":"
+    if lg_ampm="PM" then lg_hr=lg_hr+12
+    lg_ts=lg_hr||":"||lg_mn||":"||lg_sc
+    lg_stamp=lg_ds||", "||lg_ts
+   end /*when*/
+   when ans=7 then do /* entered sector. */
+    line=_lastline()
+/*- > Report Sector 409: Sporty's Imperial StarShip entered sector. -*/
+    parse var line . "Sector " lg_sect ": " lg_name " entered sector."
+    poss=lastpos("'s",lg_name)
+    if poss>0 then do
+     lg_player=left(lg_name,poss-1)
+     lg_ship=substr(lg_name,poss+3)
+     lg_sect=_stripint(lg_sect)
+     if lg_sect\="" & \_undef(lg_stamp) then do
+      if _listinstr(ignorelist, lg_player) then call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - ENTER IGNORE ("||_abbrv_words(lg_ship,3)||")"
+                                           else call lineout lname, _pad(lg_sect,5,"L")||": "||lg_stamp||" - ENTER "||lg_player||" ("||_abbrv_words(lg_ship,3)||")"
+     end /*if*/
+    end /*if*/
+   end /*when*/
+   when ans=8 then do /* probe */
+    line=_lastline()
+/*- > Your fighters in sector 1348 destroyed a Sub Space Ether Probe. -*/
+    parse var line . "sector " lg_sect .
+    pflag=1
+   end /*when*/
+   when ans=9 then do /* probe traced */
+    line=_lastline()
+/*- They traced it's transmission to Tweety's I.D. code. -*/
+    parse var line . "to " lg_player "'s I.D. code." .
+    if lg_sect\="" & \_listinstr(ignorelist, lg_player) & \_undef(lg_stamp) then do
+     lg_i=lg_i+1
+     lg_list.lg_i=_pad(lg_sect,5,"L")||": "||lg_stamp||" - PROBE "||lg_player
+    end /*if*/
+   end /*when*/
+   when ans=10 then do
+    line=_lastline()
+/*- > Fer disrupted all of your mines in 547 -*/
+    lg_sect=_stripint(_grabit("^M"))
+    parse var line lg_player " disrupted all " .
+    if lg_sect\="" & \_listinstr(ignorelist, lg_player) & \_undef(lg_stamp) then do
+     lg_i=lg_i+1
+     lg_list.lg_i=_pad(lg_sect,5,"L")||": "||lg_stamp||" - DISRUPT "||lg_player
+    end /*if*/
+   end /*when*/
+   when ans=11 then do
+    call zocsend "y"
+    done=1
+   end /*when*/
+   /* ck bust message */
+   when ans=12 then do
+/*- Received from The Bounty Hunter at 08:33:38 PM S.D. 08/21/15: -*/ 
+/*- > Busted - Sector 2838 - Ship 60                              -*/
+/*- Received from The Bounty Hunter at 08:37:52 PM S.D. 08/21/15: -*/ 
+/*- > Busted - Sector 2718 - Ship 57                              -*/
+    line=_lastline()
+    parse var line . "Busted - Sector " sect " - Ship"
+    sect=_stripint(sect)
+    bstamp=_iniv("!bust","!"||sect)
+    select
+     when _undef(bstamp) then nop
+     when bstamp>=stamp then nop
+     otherwise do
+      call _ini_delete_key dname, "bust", sect
+      call _iniv "!bust", "!"||sect, "##UNDEF##"
+     end /*otherwise*/
+    end /*select*/
+   end /*when*/
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ call zocsend "q"
+ if _waitmux("Citadel command|Command [")=640 then call _error "timeout"
+ if _fileopenw(lname) then do
+  do i=1 to lg_i
+   call lineout lname, lg_list.i
+  end /*do*/
+  call _fileclose lname
+ end /*if*/
+ call _ini_write dname, "settings", "lastlogstamp", lg_stamp
+return

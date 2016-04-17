@@ -1,0 +1,14 @@
+bot;      ^RUN=_bit.zrx
+[CONFIG]; ^RUN=_menu.zrx rh_config.txt
+[INFO];   ^RUN=_menu.zrx rh_info.txt
+[REPORTS];^RUN=_menu.zrx rh_reports.txt
+[BLUE];   ^RUN=_menu.zrx rh_blue.txt
+[RED];    ^RUN=_menu.zrx rh_red.txt
+>WAR<;    ^RUN=_menu.zrx rh_war.txt
+charge;           ^RUN=_charge.zrx
+cim_hunter;       ^RUN=_cim_hunter.zrx
+deployfromplanet; ^RUN=_deploy_figs_from_planet.zrx
+disrupt;          ^RUN=_disrupt.zrx
+photonandmove;    ^RUN=_photonandmove.zrx
+quick_exit;       ^RUN=_quick_exit.zrx
+zonedeploy;       ^RUN=_zonedeploy.zrx

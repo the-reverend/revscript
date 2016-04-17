@@ -1,0 +1,153 @@
+Session Start (83250263:Cherokee): Fri Sep 26 14:19:44 2003
+[14:19] Cherokee: hey rev
+[14:19] the reverend: just the man i wanted to chat with.
+[14:20] Cherokee: heh
+[14:20] the reverend: ddy emailed me a little of your discussion on ship trading.
+[14:20] Cherokee: ?
+[14:20] Cherokee: i don't remember, anything more than 1-2 days is lost forever heh
+[14:20] Cherokee: so busy
+[14:20] the reverend: as opposed to planet trading
+[14:20] Cherokee: np
+[14:20] Cherokee: woops
+[14:20] the reverend: im intrigued
+[14:20] Cherokee: i did a little more research
+[14:21] Cherokee: lemme send you a spreadsheet
+[14:22] the reverend: so what are you doing?  setting the mcic and trading a few times to see what the offer range is?
+[14:22] Cherokee: trading thousands of times, but yeah
+[14:22] the reverend: ok send me the spreadsheet and ill take a look.
+[14:23] the reverend: heh - btw - check this out:
+[14:23] the reverend: .
+ [15:39] didaskalos: so i'm using your deal
+ [15:39] didaskalos: to sell off equip
+ [15:39] didaskalos: and it's keeping track of mcic values
+ [15:39] didaskalos: so
+ [15:39] didaskalos: i go to a port that is reported by your script to be 65
+ [15:39] didaskalos: and i just want to make sure it's working
+ [15:39] didaskalos: so i sell off using ck's planet neg script
+ [15:39] didaskalos: and his says
+ [15:39] didaskalos: '2200 equ for 335232 cr - 0 fails - 152/unit - MCIC -58/-65
+[14:25] Cherokee: heh, something isn't adding up
+[14:25] the reverend: nod
+[14:25] the reverend: it shouldnt be THAT far off
+[14:25] Cherokee: nope
+[14:26] the reverend: hey are you invisible?
+[14:26] Cherokee: ICQ lite
+[14:26] the reverend: im not seeing you on trillian ... hold.
+[14:27] *** "Cherokee" signed on at Fri Sep 26 14:27:18 2003.
+[14:27] the reverend: there you are.
+[14:27] the reverend: trillian is fubar
+[14:29] Cherokee: sec
+[14:34] Cherokee: check your email... i'll try to explain whatever you can't make out
+[14:34] Cherokee: i gotta go away for the weekend in about an hour, so time is real tight
+[14:35] the reverend: ok i got it open.
+[14:36] Cherokee: first two tabs are just data
+[14:36] Cherokee: third tab is the good part
+[14:36] the reverend: ok wow you do it at a range of exp too
+[14:36] Cherokee: top half is a -65 port
+[14:37] the reverend: nod ok im with ya
+[14:37] Cherokee: i didn't do 500 and 750 exp for the -20 port because I already had enough to figure it out
+[14:37] the reverend: nod
+[14:37] Cherokee: second section of each half on that summary page has the forumlas
+[14:37] the reverend: so your graph shows nice straight lines... hehe.
+[14:37] Cherokee: first section of each half is just data
+[14:37] Cherokee: nod
+[14:38] Cherokee: but, the lines indicate a range of possible offers
+[14:38] Cherokee: blue is the minimum offer you'd receive
+[14:38] Cherokee: pink is max
+[14:38] Cherokee: and yellow is the planet trade
+[14:38] the reverend: so what did you back-interpolate the pneg?
+[14:39] Cherokee: well, in the first section of the -65 part, that is just the actual data from a 100 hold pneg
+[14:39] Cherokee: second section is using the exact formula that the 0, 250, ...   use
+[14:39] Cherokee: notice how very close it works out
+[14:39] the reverend: nod
+[14:40] the reverend: very nice.
+[14:40] the reverend: the graph is for the 65 port
+[14:40] Cherokee: so it's a baseline value of 13887 plus experience times 0.932 for the minimum
+[14:40] Cherokee: yeah
+[14:40] Cherokee: and 14445 plus exp times 0.938 for maximum
+[14:41] Cherokee: the -20 port is 0.977 and 0.983
+[14:41] Cherokee: i just haven't gotten around to working out the complete formula for min and max yet
+[14:42] Cherokee: but notice how the averages in cells b11 and b24 match b5 and b18 exactly
+[14:42] Cherokee: so those formulas are dead on
+[14:42] the reverend: so... you can *identify* the mcic value using this kind of research... or at least get close to the mcic depending on how these ranges overlap from mcic to mcic
+[14:42] Cherokee: well
+[14:42] Cherokee: a -65 mcic port might look like a -63
+[14:42] Cherokee: so I can always tell you the min/max MCIC I think the port could be
+[14:42] the reverend: ya
+[14:42] Cherokee: I'm accurate to within +/- 2 most of the time
+[14:43] Cherokee: sometimes +/- 3, but that is very rare
+[14:43] the reverend: subsequent haggles might narrow it some too.
+[14:43] Cherokee: nod
+[14:43] Cherokee: i have a twx script that is 100% background
+[14:43] Cherokee: it just keeps track of where you are, what exp you are at, and what offers you are getting
+[14:43] Cherokee: and logs MCIC to a file
+[14:43] the reverend: nod nice.
+[14:44] the reverend: this spreadsheet if jsut for 65/20 - did you do the whole mcic range?
+[14:44] Cherokee: no heh
+[14:44] Cherokee: i didn't have much time
+[14:44] Cherokee: should do a -50 port and see if the differences are linear
+[14:44] the reverend: so what do you just interplolate from 65 to 20
+[14:44] Cherokee: but i am swamped lately
+[14:44] Cherokee: I did all this a little while back
+[14:44] Cherokee: yeah
+[14:44] the reverend: ok
+[14:45] Cherokee: the differences are so small
+[14:45] the reverend: now... once you know the mcic, how does this change your haggle?
+[14:45] Cherokee: HOLY COW
+[14:45] Cherokee: I just figured something else out heh
+[14:45] Cherokee: look at those numbers
+[14:46] Cherokee: for the -65 MCIC port
+[14:46] Cherokee: 0.932 and 0.938
+[14:46] Cherokee: thats 1 - (MCIC + 0.003)   and 1 - (MCIC = 0.003)
+[14:46] Cherokee: now look at the -20
+[14:47] Cherokee: 0.977 and 0.983   - same as above
+[14:47] Cherokee: of course, when you are trading, you don't know the MCIC
+[14:47] the reverend: 1-.065
+[14:47] the reverend: 1-.020
+[14:47] Cherokee: yeah
+[14:47] the reverend: with a +/- range of .003
+[14:48] Cherokee: nod
+[14:48] the reverend: now we are getting down to business.
+[14:48] the reverend: mcic has a MEANING
+[14:48] Cherokee: but still, you won't know those until you find the MCIC
+[14:48] Cherokee: so still the best you can do is guess
+[14:49] the reverend: u can know the offer tho... and guess what the worst case mcic is...
+[14:49] Cherokee: if I have over 1k exp, and I port and sell 100 units, the port could offer me 14900, and I have no idea if it is a -65 or a -62
+[14:49] the reverend: then subsequent offers might /increase/ your guess but not /decrease/ it.
+[14:49] Cherokee: exactly
+[14:49] the reverend: ok... now this is all nice for a 100% port...
+[14:49] Cherokee: interesting stuff, but I think i've reached the practical limit of how I can apply it to the game
+[14:50] Cherokee: haha
+[14:50] Cherokee: i knew you were gonna say that
+[14:50] the reverend: <G>
+[14:50] Cherokee: you still use my previous method of calculating what the 100% offer would be
+[14:50] Cherokee: and it works fine
+[14:50] the reverend: hehe - the method i ditched?
+[14:50] Cherokee: did you?
+[14:50] Cherokee: hehe
+[14:50] Cherokee: why?
+[14:50] Cherokee: it works
+[14:51] the reverend: nod.  i ditched it in favor of more data - to get the low %
+[14:51] Cherokee: i can't see myself doing much/any more coding on haggling now - it's as close as I can reasonably expect to get it
+[14:51] the reverend: ya
+[14:52] Cherokee: if you want the twx code for tracking equ MCIC, just lemme know.  i sent it to tweety already
+[14:53] the reverend: ok thx.  ya go ahead and send it to me since you are going afk for a while.  when will you be back?
+[14:54] Cherokee: monday
+[14:54] the reverend: okay
+[14:54] the reverend: ladder tourney starts next week... i think i can have 5 teams at this point... sucks tho i dont think we will get 8
+[14:55] Cherokee: with only 5, is it still gonna happen?
+[14:55] the reverend: well 4 teams is a 2-tier ladder...
+[14:55] Cherokee: if only 4 or 5, i wouldn't do a ladder
+[14:56] Cherokee: i'd do a round robin
+[14:56] Cherokee: each team plays each team
+[14:56] the reverend: hmm sounds interesting.
+[14:56] Cherokee: just a thought
+[14:56] Cherokee: i gotta get back to work....    cya
+[14:56] the reverend: hmm
+[14:56] the reverend: ok
+[14:57] the reverend: thats 4 games... 20 days a piece, 80 days 2.5 months.
+[14:58] the reverend: a couple of the teams will probably lose a lot too... what if they drop out?  hehe.
+[14:58] Cherokee: yah, prob works better if they are all simultaneous (grin) or shorter duration
+[14:59] *** "Cherokee" signed off at Fri Sep 26 14:59:59 2003.
+[15:01] the reverend: with 5 teams, 4 teams play the first round, and one team gets a bye... leaving 3 teams at the 2nd round... take one of the losing teams as a wildcard and you have 4 teams at the 2nd round...
+Session Close (Cherokee): Fri Sep 26 15:09:16 2003

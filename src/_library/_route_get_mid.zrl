@@ -1,0 +1,59 @@
+/** _route_get_mid v.1 **/
+_route_get_mid: procedure expose (globals)
+ home=arg(1)
+ target=arg(2)
+ ns=arg(3)
+ ratio=arg(4)
+ if arg(5,"E") then holds=arg(5); else holds=250
+ if arg(6,"E") then cutoffp=max(arg(6),99); else cutoffp=0
+
+ path=translate(_path.home.target," ",";")
+ c=words(path)-1
+ do i=2 to c
+
+  /* check sectors in direct path of target */
+     n=word(path,i)
+     turncost.home.n=0
+     redeem.home.n=0
+     do p=1 to 3
+      if _sl.!quant.n.p>0 & _sl.!perct.n.p>cutoffp & _sl.!prod.p>0 & \_ex.n then do
+       sell=min(_sl.!prod.p, _sl.!quant.n.p)
+       sellf=sell*_sl.!mfudge.n.p
+       turncost.home.n=turncost.home.n + 1 + _sl.!pfudge.n.p*sellf/holds
+                                          /* ^ turn replacement cost for low % sales */
+       redeem.home.n=redeem.home.n+sellf/holds
+      end /*if*/
+     end /*if*/
+     if turncost.home.n>0 then do
+      midratio=turncost.home.n/redeem.home.n
+/*- call zocwriteln ratio n midratio -*/
+      if midratio<ratio then return n midratio
+     end /*if*/
+
+  /* check sectors 1 hop off of direct path */
+    do j=1 to words(_s.n)
+     code=word(_s.n,j)
+     m=code//20000
+     wt=code%20000
+     if m\=word(path,i-1) & m\=word(path,i+1) & wt=1 then do
+      turncost.home.m=0
+      redeem.home.m=0
+      do p=1 to 3
+       if _sl.!quant.m.p>0 & _sl.!perct.m.p>cutoffp & _sl.!prod.p>0 & \_ex.m then do
+        sell=min(_sl.!prod.p, _sl.!quant.m.p)
+        sellf=sell*_sl.!mfudge.m.p
+        turncost.home.m=turncost.home.m + 2*(400/holds) + 1 + _sl.!pfudge.m.p*sellf/holds
+                                                           /* ^ turn replacement cost for low % sales */
+        redeem.home.m=redeem.home.m+sellf/holds
+       end /*if*/
+      end /*if*/
+      if turncost.home.m>0 then do
+       midratio=turncost.home.m/redeem.home.m
+/*- call zocwriteln ratio m midratio -*/
+       if midratio<ratio then return m midratio
+      end /*if*/
+     end /*if*/
+    end /*do*/
+  
+ end /*do*/
+return 0 0

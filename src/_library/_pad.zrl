@@ -1,0 +1,14 @@
+/** _pad v.3 **/
+/*- _pad string, width [, mode] [, padchar]-*/
+_pad: procedure expose (globals)
+ rslt=arg(1)
+ if arg(2,"E") then w=arg(2); else return rslt
+ if \arg(3,"E") then m="l"; else m=lower(arg(3))
+ if \arg(4,"E") then p=" "; else p=left(arg(4),1)
+ select
+  when m="l" then rslt=left(rslt,w,p)
+  when m="r" then rslt=reverse(left(reverse(rslt),w,p))
+  when m="c" then rslt=center(rslt,w,p)
+  otherwise       rslt=left(rslt,w,p)
+ end /*select*/
+return rslt

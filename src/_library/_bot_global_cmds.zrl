@@ -1,0 +1,652 @@
+/** _bot_global_cmds v.1 **/
+_bot_global_cmds:
+
+ parse value _bot_parse_command(line) with bot_user ";" bot_cmd ";" bot_args
+
+ select
+  when bot_user="##OWNER##" then bot_auth=1
+  when bot_lock             then bot_auth=0
+  when bot_auth_stamp.bot_user+bot_auth_timeout<t & bot_cmd="use" then do
+   bot_auth=_bot_validate_user(bot_user,bot_auth_list)
+  end /*when*/
+  when bot_auth_stamp.bot_user+bot_auth_timeout<t then bot_auth=0
+  otherwise bot_auth=1
+ end /*select*/
+ if bot_auth then bot_auth_stamp.bot_user=t
+
+ /* owner commands */
+ if bot_user="##OWNER##" then do
+  select
+   when bot_cmd="auth" & bot_args="" & bot_auth_list="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : authorized : nobody^M"
+   when bot_cmd="auth" & bot_args="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : authorized : "||bot_auth_list||"^M"
+   when bot_cmd="auth" & lower(word(bot_args,1))="timeout" then do
+    n=word(bot_args,2)
+    if _stripint(n)=n then do
+     bot_auth_timeout=max(300,n)
+     if \_ini_write(dname,"settings","bot_auth_timeout",bot_auth_timeout) then nop
+    end /*if*/
+    call zocsend "'"||_g.!sname1||" : "||bot_name||" : authorization timeout : "||bot_auth_timeout||" seconds^M"
+   end /*when*/
+   when bot_cmd="auth" & lower(word(bot_args,1))="clr" then do
+    bot_auth_list=""
+    if \_ini_write(dname,"settings","bot_auth_list",bot_auth_list) then nop
+    call zocsend "'"||_g.!sname1||" : "||bot_name||" : authorization list cleared^M"
+   end /*when*/
+   when bot_cmd="auth" & lower(word(bot_args,1))="add" then do
+    list=substr(bot_args,wordindex(bot_args,2))
+    bot_auth_list=_listadd(list,bot_auth_list,1)
+    if \_ini_write(dname,"settings","bot_auth_list",bot_auth_list) then nop
+    call zocsend "'"||_g.!sname1||" : "||bot_name||" : authorization added^M"
+   end /*when*/
+   when bot_cmd="auth" & lower(word(bot_args,1))="rem" then do
+    list=substr(bot_args,wordindex(bot_args,2))
+    bot_auth_list=_listrem(list,bot_auth_list)
+    do i=1 to _dwords(list,";")
+     n=_dword(list,i,";")
+     bot_auth_stamp.n=-bot_auth_timeout
+    end /*do*/
+    if \_ini_write(dname,"settings","bot_auth_list",bot_auth_list) then nop
+    call zocsend "'"||_g.!sname1||" : "||bot_name||" : authorization removed^M"
+   end /*when*/
+   when bot_cmd="auth" then call zocsend "'help auth ::^M"
+
+   when bot_cmd="lock" then do
+    bot_lock=abs(bot_lock-1)
+    call zocsend "'status ::^M"
+   end /*when*/
+   when bot_cmd="name" then do
+    call _rem_autoreply bot_name||" bot ::"
+    bot_name=bot_args
+    if \_ini_write(dname,"settings","bot_name",bot_name) then nop
+    call _add_autoreply bot_name||" bot ::", "^RUN="||_g.!sname
+    call zocsend "'status ::^M"
+   end /*when*/
+   when bot_cmd="q" then do
+    call _cleanup
+    call zocsend "'"||_g.!sname1||" : "||bot_name||" : goodbye^M"
+    exit
+   end /*when*/
+   otherwise nop
+  end /*select*/
+ end /*if*/
+
+ select
+
+  when bot_cmd="validate" then do
+   pwd=left(translate(bot_args," ","^"),3)
+   if pwd=bot_args then call zocsend "'"||pwd||"^M"
+  end /*when*/
+
+  when \bot_auth then nop
+
+  when bot_cmd="use" & bot_args=bot_name then do
+   bot_users.bot_user=abs(bot_users.bot_user-1)
+   bot_users.!list=_listadd(bot_user,bot_users.!list,1)
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : user "||word("removed added",bot_users.bot_user+1)||" : "||bot_user||"^M"
+  end /*when*/
+  when bot_cmd="use" & bot_users.bot_user then do
+   bot_users.bot_user=0
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : user removed : "||bot_user||"^M"
+  end /*when*/
+
+  when bot_cmd="users" then do
+   k=""
+   do i=1 to _dwords(bot_users.!list,";")
+    j=_dword(bot_users.!list,i,";")
+    if bot_users.j then k=k||" "||translate(j,"_"," ")
+   end /*do*/
+   if k="" then k=" none"
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : users :"||k||"^M"
+  end /*when*/
+
+  when bot_cmd="status" | bot_cmd="st" then do
+   bot_cmd="status"
+   bot_prompt=_synchronize()
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : build "||_g.!sbuild||" : "||bot_mode||_dword("^M; : LOCKED^M",bot_lock+1,";")
+  end /*when*/
+
+  when \bot_users.bot_user then nop
+
+#  when bot_cmd="shutup" then do
+#   _verbose=0
+#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : verbose : "||word("off on",_verbose+1)||"^M"
+#  end /*when*/
+  when bot_cmd="verbose" then do
+   if _stripint(bot_args)=bot_args then _verbose=bot_args>0
+                                   else _verbose=abs(_verbose-1)
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : "||word("off on",_verbose+1)||"^M"
+  end /*when*/
+
+#  when bot_cmd="newsub" then do
+#   if _synchronize_to_prompt("computer") then do
+#    bot_prompt=_synchronize()
+#    if _stripint(bot_args)=bot_args then n=max(min(bot_args,60000),0)
+#                                    else n=random(60000)
+#    call zocsend "n4"||n||"^Mqq"
+#    call zocsend _list_select(bot_prompt,"computer_cit;computer","x;t",";")
+#    call zocsend "t"||_g.!sname1||" : "||bot_name||" : newsub : "||n||"^M^Mqc"
+#   end /*if*/
+#  end /*when*/
+
+  when bot_cmd="details" | bot_cmd="dt" then do
+   bot_cmd="details"
+   bot_prompt=_synchronize()
+   parse value _getinfo("turns;sect") with turns ";" bot_sector
+   call zocsend "'^M"
+   call zocsend _g.!sname1||" : "||bot_name||" : build "||_g.!sbuild||" : "||bot_mode||_dword("^M; : LOCKED^M",bot_lock+1,";")
+                              call zocsend "  current sector : "||bot_sector||"^M"
+                              call zocsend "  current prompt : "||bot_prompt||"^M"
+                              call zocsend "  verbose mode   : "||word("off on",_verbose+1)||"^M"
+                              call zocsend "  key aborts cn9 : "||bot_abort||"^M"
+                              call zocsend "  turns          : "||turns||"^M"
+   if bot_planet>0       then call zocsend "  using planet # : "||bot_planet||"^M"
+   if _g.!targetlist\="" then call zocsend "  targeting      : "||_g.!targetlist||"^M"
+   if _g.!ignorelist\="" then call zocsend "  ignoring       : "||_g.!ignorelist||"^M"
+   call zocsend "^M"
+  end /*when*/
+  
+  when bot_cmd="turns" then call zocsend "'"||_getinfo("turns")||"^M"
+
+#  when bot_cmd="page" then do
+#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : paging script owner now^M"
+#   call _beep "page.wav", 5, 2
+#  end /*when*/
+  
+  when bot_cmd="setplanet" then do
+   bot_prompt=_synchronize()
+   select
+    when _stripint(bot_args)=bot_args then do
+     bot_planet=bot_args
+     call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : owner is using planet "||bot_planet||"^M"
+    end /*when*/
+    when bot_prompt="planet" | bot_prompt="citadel" then do
+     bot_planet=_get_planet_number(bot_prompt)
+     call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : owner is on planet "||bot_planet||"^M"
+    end /*when*/
+    otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : unable to get planet number^M"
+   end /*select*/
+  end /*when*/
+
+#  when bot_cmd="qs" then do
+#   s=_getinfo("all")
+#   w=0
+#   c=_dwords(s,";")
+#   do i=1 to c
+#    w=max(w,length(_dword(s,i,";")))
+#   end /*do*/
+#   w=w+1
+#   n=70%w
+#   t=c%n
+#   call zocsend "'^M"||_g.!sname1||" : "||bot_name||" : quickstats^M"
+#   do i=0 to t-1
+#    call zocsend "  "
+#    do j=1 to n-1
+#     call zocsend _pad(_dword(s,i*n+j,";"),w,"L")
+#    end /*do*/
+#    call zocsend _dword(s,i*n+n,";")||"^M"
+#   end /*do*/
+#   if c>n*t then do
+#    call zocsend "  "
+#    do i=t*n+1 to c-1
+#     call zocsend _pad(_dword(s,i,";"),w,"L")
+#    end /*do*/
+#    call zocsend _dword(s,c,";")||"^M^M"
+#   end /*if*/
+#   else call zocsend "^M"
+#  end /*when*/
+
+#  when bot_cmd="qss" then do
+  when bot_cmd="qs" then do
+   s=_getinfo("all")
+   sfx=word("B M K",4-(length(_qs.!creds)-1)%3)
+   amt=_qs.!creds; do while amt>999; amt=amt%1000; end; amt=amt||sfx
+   call zocsend "'^M"||_g.!sname1||" : "||bot_name||" : quickstats^M"
+   call zocsend " sect" _pad(_qs.!sect, 10,"R") "| ship" _pad(_qs.!ship,4,"R") "| figs" _pad(_qs.!figs, 6,"R") "| armd" _pad(_qs.!armd,   3,"R") "| twarp" _pad(_qs.!twarp,   6,"R")||"^M"
+   call zocsend " trns" _pad(_qs.!turns,10,"R") "| hlds" _pad(_qs.!hlds,4,"R") "| shld" _pad(_qs.!shlds,6,"R") "| lmpt" _pad(_qs.!lmpt,   3,"R") "| plscn" _pad(_qs.!plscn,   6,"R")||"^M"
+   call zocsend " crds" _pad(_qs.!creds,10,"R") "| fuel" _pad(_qs.!ore, 4,"R") "| phot" _pad(_qs.!phot, 6,"R") "| gtrp" _pad(_qs.!gtorp,  3,"R") "| lrs  " _pad(_qs.!lrs,     6,"R")||"^M"
+   call zocsend " aln " _pad(_qs.!aln,  10,"R") "| orgs" _pad(_qs.!org, 4,"R") "| corb" _pad(_qs.!crbo, 6,"R") "| adet" _pad(_qs.!atmdt,  3,"R") "| psprb" _pad(_qs.!psprb,   6,"R")||"^M"
+   call zocsend " exp " _pad(_qs.!exp,  10,"R") "| equ " _pad(_qs.!equ, 4,"R") "| mdis" _pad(_qs.!mdis, 6,"R") "| clck" _pad(_qs.!clks,   3,"R") "| shtyp" _pad(_qs.!shiptype,6,"R")||"^M"
+   call zocsend " corp" _pad(_qs.!corp, 10,"R") "| colo" _pad(_qs.!col, 4,"R") "| eprb" _pad(_qs.!eprb, 6,"R") "| beac" _pad(_qs.!beacns, 3,"R") "|^M^M"
+  end /*when*/
+  
+  when bot_cmd="last" then do
+   if _stripint(bot_args)=bot_args then n=max(1,bot_args); else n=30
+   list=_get_lines_above(n)
+   call zocsend "'^M"
+   do i=1 to _dwords(list,";")
+    call zocsend _dword(list,i,";")||"^M"
+   end /*do*/
+   call zocsend "^M"
+  end /*when*/
+
+  when bot_cmd="modes" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : modes : passive finder worker reloader predicter predrop^M"
+  when bot_cmd="mode"  then do
+   bot_prompt=_synchronize()
+   call _getinfo
+   list=""
+   do i=1 to _dwords(bot_users.!list,";")
+    n=_dword(bot_users.!list,i,";")
+    if n\="##OWNER##" then list=list||";"||n||";"||format(bot_auth_stamp.n-t,,0)
+   end /*do*/
+   call _ini_write dname, "settings", "bot_user_stamps", substr(list,2)
+   call _iniv "!settings", "!bot_user_stamps", substr(list,2)
+   select
+
+    /* PASSIVE */
+       when bot_args="passive" then do; bot_mode="passive";  bot_wait="::|"||_bot_passive("query wait"); end
+
+#_bot.zrx#    /* WORKER */
+#_bot.zrx#       when bot_args="worker" then do; bot_mode="worker"; bot_wait="::|"||_bot_worker("query wait"); end
+#_bot.zrx#
+#_bot.zrx#    /* FINDER */
+#_bot.zrx#       when bot_args="finder" & \_fileexists(spath||"_bit.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bit.zrx is missing^M"
+#_bot.zrx#       when bot_args="finder" then do; drop (globals) (locals); call zocdostring "^RUN=_bit.zrx finder"; exit; end
+#_bot.zrx#
+#_bot.zrx#    /* RELOADER */
+#_bot.zrx#       when bot_args="reloader" & \_fileexists(spath||"_bat.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bat.zrx is missing^M"
+#_bot.zrx#       when bot_args="reloader" & bot_prompt="command" then do; drop (globals) (locals); call zocdostring "^RUN=_bat.zrx reloader"; exit; end
+#_bot.zrx#       when bot_args="reloader" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at command prompt^M"
+#_bot.zrx#
+#_bot.zrx#    /* PREDICTER */
+#_bot.zrx#       when bot_args="predicter" & \_fileexists(spath||"_bat.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bat.zrx is missing^M"
+#_bot.zrx#       when bot_args="predicter" & bot_prompt="citadel" then do; drop (globals) (locals); call zocdostring "^RUN=_bat.zrx predicter"; exit; end
+#_bot.zrx#       when bot_args="predicter" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at citadel prompt^M"
+#_bot.zrx#
+#_bot.zrx#    /* PREDROP */
+#_bot.zrx#       when bot_args="predrop" & \_fileexists(spath||"_bat.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bat.zrx is missing^M"
+#_bot.zrx#       when bot_args="predrop" & bot_prompt="citadel" then do; drop (globals) (locals); call zocdostring "^RUN=_bat.zrx predrop"; exit; end
+#_bot.zrx#       when bot_args="predrop" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at citadel prompt^M"
+#_bot.zrx#
+#
+#_bit.zrx#    /* WORKER */
+#_bit.zrx#       when bot_args="worker" & \_fileexists(spath||"_bot.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bot.zrx is missing^M"
+#_bit.zrx#       when bot_args="worker" then do; drop (globals) (locals); call zocdostring "^RUN=_bot.zrx worker"; exit; end
+#_bit.zrx#
+#_bit.zrx#    /* FINDER */
+#_bit.zrx#       when bot_args="finder" then do; bot_mode="finder"; bot_wait="::|"||_bot_finder("query wait"); end
+#_bit.zrx#
+#_bit.zrx#    /* RELOADER */
+#_bit.zrx#       when bot_args="reloader" & \_fileexists(spath||"_bat.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bat.zrx is missing^M"
+#_bit.zrx#       when bot_args="reloader" & bot_prompt="command" then do; drop (globals) (locals); call zocdostring "^RUN=_bat.zrx reloader"; exit; end
+#_bit.zrx#       when bot_args="reloader" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at command prompt^M"
+#_bit.zrx#
+#_bit.zrx#    /* PREDICTER */
+#_bit.zrx#       when bot_args="predicter" & \_fileexists(spath||"_bat.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bat.zrx is missing^M"
+#_bit.zrx#       when bot_args="predicter" & bot_prompt="citadel" then do; drop (globals) (locals); call zocdostring "^RUN=_bat.zrx predicter"; exit; end
+#_bit.zrx#       when bot_args="predicter" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at citadel prompt^M"
+#_bit.zrx#
+#_bit.zrx#    /* PREDROP */
+#_bit.zrx#       when bot_args="predrop" & \_fileexists(spath||"_bat.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bat.zrx is missing^M"
+#_bit.zrx#       when bot_args="predrop" & bot_prompt="citadel" then do; drop (globals) (locals); call zocdostring "^RUN=_bat.zrx predrop"; exit; end
+#_bit.zrx#       when bot_args="predrop" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at citadel prompt^M"
+#_bit.zrx#
+#
+#_bat.zrx#    /* WORKER */
+#_bat.zrx#       when bot_args="worker" & \_fileexists(spath||"_bot.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bot.zrx is missing^M"
+#_bat.zrx#       when bot_args="worker" then do; drop (globals) (locals); call zocdostring "^RUN=_bot.zrx worker"; exit; end
+#_bat.zrx#
+#_bat.zrx#    /* FINDER */
+#_bat.zrx#       when bot_args="finder" & \_fileexists(spath||"_bit.zrx") then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : _bit.zrx is missing^M"
+#_bat.zrx#       when bot_args="finder" then do; drop (globals) (locals); call zocdostring "^RUN=_bit.zrx finder"; exit; end
+#_bat.zrx#
+#_bat.zrx#    /* PREDROP */
+#_bat.zrx#       when bot_args="predrop" & bot_prompt="citadel" then do
+#_bat.zrx#        bot_mode="predrop"
+#_bat.zrx#        bot_wait="::|"||_bot_predrop("query wait")
+#_bat.zrx#        call _bot_predrop "setup"
+#_bat.zrx#       end /*when*/
+#_bat.zrx#       when bot_args="predrop" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at citadel prompt^M"
+#_bat.zrx#
+#_bat.zrx#    /* RELOADER */
+#_bat.zrx#       when bot_args="reloader" & bot_prompt="command" then do
+#_bat.zrx#        bot_mode="reloader"
+#_bat.zrx#        bot_wait="::|"||_bot_reloader("query wait")
+#_bat.zrx#        call _bot_reloader "setup"
+#_bat.zrx#       end /*when*/
+#_bat.zrx#       when bot_args="reloader" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at command prompt^M"
+#_bat.zrx#
+#_bat.zrx#    /* PREDICTER */
+#_bat.zrx#       when bot_args="predicter" & bot_prompt="citadel" then do
+#_bat.zrx#        bot_mode="predicter"
+#_bat.zrx#        bot_wait="::|"||_bot_predicter("query wait")
+#_bat.zrx#        c=_bot_predicter("build matrix", mname, reclen, ns)
+#_bat.zrx#        call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : "||c||" action areas identified^M"
+#_bat.zrx#        /* INITIALIZE STUFF HERE */
+#_bat.zrx#       end /*when*/
+#_bat.zrx#       when bot_args="predicter" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_args||" : please start at citadel prompt^M"
+#_bat.zrx#
+    otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : unknown mode : "||bot_args||"^M"
+
+   end /*select*/
+   call zocsend "'status ::^M"
+   return 1
+  end /*when*/
+
+#_bat.zrx#  when bot_cmd="target" & bot_args="" & _g.!targetlist="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : targeting : nobody^M"
+#_bat.zrx#  when bot_cmd="target" & bot_args="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : targeting : "||_g.!targetlist||"^M"
+#_bat.zrx#  when bot_cmd="target" & lower(word(bot_args,1))="clr" then do
+#_bat.zrx#   _g.!targetlist=""
+#_bat.zrx#   if \_ini_write(dname,"settings","target",_g.!targetlist) then nop
+#_bat.zrx#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : target list cleared^M"
+#_bat.zrx#  end /*when*/
+#_bat.zrx#  when bot_cmd="target" & lower(word(bot_args,1))="add" then do
+#_bat.zrx#   list=substr(bot_args,wordindex(bot_args,2))
+#_bat.zrx#   _g.!targetlist=_listadd(list,_g.!targetlist,1)
+#_bat.zrx#   if \_ini_write(dname,"settings","target",_g.!targetlist) then nop
+#_bat.zrx#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : targets added^M"
+#_bat.zrx#  end /*when*/
+#_bat.zrx#  when bot_cmd="target" & lower(word(bot_args,1))="rem" then do
+#_bat.zrx#   list=substr(bot_args,wordindex(bot_args,2))
+#_bat.zrx#   _g.!targetlist=_listrem(list,_g.!targetlist)
+#_bat.zrx#   if \_ini_write(dname,"settings","target",_g.!targetlist) then nop
+#_bat.zrx#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : targets removed^M"
+#_bat.zrx#  end /*when*/
+#_bat.zrx#  when bot_cmd="target" then call zocsend "'help target ::^M"
+#_bat.zrx#
+#_bat.zrx#  when bot_cmd="ignore" & bot_args="" & _g.!ignorelist="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : ignoreing : nobody^M"
+#_bat.zrx#  when bot_cmd="ignore" & bot_args="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : ignoreing : "||_g.!ignorelist||"^M"
+#_bat.zrx#  when bot_cmd="ignore" & lower(word(bot_args,1))="clr" then do
+#_bat.zrx#   _g.!ignorelist=""
+#_bat.zrx#   if \_ini_write(dname,"settings","ignore",_g.!ignorelist) then nop
+#_bat.zrx#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : ignore list cleared^M"
+#_bat.zrx#  end /*when*/
+#_bat.zrx#  when bot_cmd="ignore" & lower(word(bot_args,1))="add" then do
+#_bat.zrx#   list=substr(bot_args,wordindex(bot_args,2))
+#_bat.zrx#   _g.!ignorelist=_listadd(list,_g.!ignorelist,1)
+#_bat.zrx#   if \_ini_write(dname,"settings","ignore",_g.!ignorelist) then nop
+#_bat.zrx#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : ignores added^M"
+#_bat.zrx#  end /*when*/
+#_bat.zrx#  when bot_cmd="ignore" & lower(word(bot_args,1))="rem" then do
+#_bat.zrx#   list=substr(bot_args,wordindex(bot_args,2))
+#_bat.zrx#   _g.!ignorelist=_listrem(list,_g.!ignorelist)
+#_bat.zrx#   if \_ini_write(dname,"settings","ignore",_g.!ignorelist) then nop
+#_bat.zrx#   call zocsend "'"||_g.!sname1||" : "||bot_name||" : ignores removed^M"
+#_bat.zrx#  end /*when*/
+#_bat.zrx#  when bot_cmd="ignore" then call zocsend "'help ignore ::^M"
+#_bat.zrx#
+  when bot_cmd="cn9" & _listin(bot_args,"spaces;allkeys") then do
+   bot_prompt=_synchronize()
+   bot_abort=_cn9(bot_args,bot_prompt)
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : "||bot_abort||"^M"
+  end /*when*/
+  when bot_cmd="cn9" & bot_args="" then do
+   bot_abort=_cn9("toggle",bot_prompt)
+   call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : "||bot_abort||"^M"
+  end /*when*/ 
+
+  when (bot_cmd="pickup" | bot_cmd="saveme") & bot_user="##OWNER##" then nop
+  when bot_cmd="pickup" | bot_cmd="saveme" then do
+   bot_prompt=_synchronize()
+   if bot_prompt="citadel" then do
+    sector=_stripint(word(bot_args,1))
+    if sector=0 then do
+     call zocsend "x"
+     sector=_get_corpie_ta(bot_user)
+     call zocsend "q"
+    end /*if*/
+    select
+     when sector="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : invalid sector^M"
+     when sector>ns then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : invalid sector^M"
+     when sector<1  then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : invalid sector^M"
+     otherwise do
+      if _pwarp(sector,20,0) then do
+       bot_sector=sector
+       call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : planet #"||bot_planet||" to "||sector||" : success on attempt "||_msg.!pwarp||"^M"
+      end /*when*/
+      else call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : error : "||_msg||" : "||_msg.!pwarp||" attempts^M"
+     end /*otherwise*/
+    end /*select*/
+   end /*if*/
+   else call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : failed, owner not in citadel^M"
+  end /*when*/
+
+  /* cim */
+     when bot_cmd="cim" then do
+ 
+      select
+       when bot_args="" then tasks="portcim;sectorcim"
+       when bot_args="p" then tasks="portcim"
+       when bot_args="s" then tasks="sectorcim"
+       otherwise tasks=""
+      end /*select*/
+   
+      parseparams='"/p:'||dpath||'"'
+      parseparams=parseparams||' "/g:'||lpath||gname||'" /n:'||ns
+      if alpha\="" & alpha\=0 then parseparams=parseparams||" /al:"||alpha
+      if rylos\="" & rylos\=0 then parseparams=parseparams||" /ry:"||rylos
+      if sd\=""    & sd\=0    then parseparams=parseparams||" /sd:"||sd
+      
+      pmap=1
+      select
+       when _fileexists(spath||"pmap2.exe") then pname=spath||"pmap2.exe"
+       when _fileexists(lpath||"pmap2.exe") then pname=lpath||"pmap2.exe"
+       when _fileexists(spath||"pmap2a.exe") then pname=spath||"pmap2a.exe"
+       when _fileexists(lpath||"pmap2a.exe") then pname=lpath||"pmap2a.exe"
+       otherwise pmap=0
+      end /*if*/
+   
+      call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh in progress^M"
+      call _logcim lpath, gname, tasks, ldefault
+      call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : parsing data^M"
+      call _fileclose mname
+      if pmap then do
+       code=zocexec('"'||pname||'" '||parseparams,0)
+       if code=0 then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : parsing completed^M"
+       else call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : parsing failed! reloading old data^M"
+      end /*if*/
+      else call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : pmap not present! reloading old data^M"
+      reclen=_mapinit(mname,1)
+      
+     end /*when*/
+
+#  /* drop corp */
+#     when bot_cmd="dropcorp" then do
+#      bot_prompt=_synchronize()
+#      select
+#       when bot_prompt="citadel" then call zocsend "xxyq'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : success^M"
+#       when bot_prompt="command" then call zocsend "txyq'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : success^M"
+#       otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : failure, owner at "||bot_prompt||" prompt^M"
+#      end /*select*/
+#     end /*when*/
+
+#  /* join corp */
+#     when bot_cmd="joincorp" then do
+#      corp=_stripint(word(bot_args,1))
+#      pwd=word(bot_args,2)
+#      if corp=0 | pwd="" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : failure, invalid corp number/pwd^M"
+#      else do
+#       bot_prompt=_synchronize()
+#       select
+#        when bot_prompt="citadel" then call zocsend "xj"||corp||"^M"||pwd||"^Mqco^Mcq'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : joined corp "||corp||"^M"
+#        when bot_prompt="command" then call zocsend "tj"||corp||"^M"||pwd||"^Mqco^Mcq'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : joined corp "||corp||"^M"
+#        otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : failure, player at "||bot_prompt||" prompt^M"
+#       end /*select*/
+#      end /*else*/
+#     end /*when*/
+
+  /* lift from planet */
+     when bot_cmd="lift" then do
+      bot_prompt=_synchronize()
+      call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : lifting^M"
+      select
+       when bot_prompt="command" then nop
+       when bot_prompt="computer_cit"  then do; call zocsend "qqq"; bot_prompt="command"; end
+       when bot_prompt="corporate_cit" then do; call zocsend "qqq"; bot_prompt="command"; end
+       when bot_prompt="citadel"       then do; call zocsend "qq";  bot_prompt="command"; end
+       when bot_prompt="planet"        then do; call zocsend "q";   bot_prompt="command"; end
+       when bot_prompt="corporate"     then do; call zocsend "q";   bot_prompt="command"; end
+       when bot_prompt="computer"      then do; call zocsend "q";   bot_prompt="command"; end
+       when bot_prompt="bank"          then do; call zocsend "qq";  bot_prompt="command"; end
+       otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : unable to lift from the "||bot_prompt||" prompt^M"
+      end /*select*/
+     end /*when*/
+
+  /* land on planet */
+     when bot_cmd="land" then do
+      bot_prompt=_synchronize()
+      n=_stripint(word(bot_args,1))
+      if n=0 then n=bot_planet
+      select
+       when n="" | n=0 then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : bad or missing planet number^M"
+       when bot_prompt="command" then do
+        call zocsend "l z^H^H"||n||"^M^M"
+        bot_prompt=_synchronize()
+        if bot_prompt="planet" then do
+         bot_planet=_get_planet_number(bot_prompt)
+         call zocsend "c^M"
+         bot_prompt=_synchronize()
+         call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : success!^M"
+        end /*if*/
+       end /*when*/
+       otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : unable to land from the "||bot_prompt||" prompt^M"
+      end /*select*/
+     end /*when*/
+
+  /* macro */
+     when bot_cmd="mac" then do
+      call zocsend bot_args
+      call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : done.^M"
+     end /*when*/
+
+  /* macro x N*/
+     when bot_cmd="nmac" & words(bot_args)<2 then call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : bad or missing argument^M"
+     when bot_cmd="nmac" then do
+      n=_stripint(word(bot_args,1))
+      mac=substr(bot_args,wordindex(bot_args,2))
+      call _send255 copies(mac,n)
+      call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : done.^M"
+     end /*when*/
+
+  /* mail */
+     when bot_cmd="mail" then do
+      bot_prompt=_synchronize()
+      if bot_prompt="command" | bot_prompt="citadel" then do
+       call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : reading^M"
+       call _twmsg "off"
+       call _read_mail lname, dname
+       call zocsend "|'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : finished^M"
+      end /*if*/
+      else call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : failed : owner is not at the command or citadel prompt.^M"
+     end /*when*/
+
+  /* figs */
+     when bot_cmd="figs" then do
+      bot_prompt=_synchronize()
+      if bot_planet=0 then bot_planet=_get_planet_number(bot_prompt)
+      select
+       when bot_prompt="command" then do
+        call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh in progress^M"
+        count=_getfigs(fname)
+        call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh complete : "||count||" sectors ("||trunc(count/ns*1000)/10||"%)^M"
+       end /*when*/
+       when bot_prompt="planet" & bot_planet>0 then do
+        call zocsend "q'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh in progress^M"
+        count=_getfigs(fname)
+        call zocsend "l"||bot_planet||"^M'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh complete : "||count||" sectors ("||trunc(count/ns*1000)/10||"%)^M"
+       end /*when*/
+       when bot_prompt="citadel" & bot_planet>0 then do
+        call zocsend "qq'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh in progress^M"
+        count=_getfigs(fname)
+        call zocsend "l"||bot_planet||"^Mc'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh complete : "||count||" sectors ("||trunc(count/ns*1000)/10||"%)^M"
+       end /*when*/
+       otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh failed, player at "||bot_prompt||" prompt^M"
+      end /*select*/
+     end /*when*/
+
+  /* voids */
+     when bot_cmd="voids" then do
+      bot_prompt=_synchronize()
+      if bot_planet=0 then bot_planet=_get_planet_number(bot_prompt)
+      select
+       when bot_prompt="command" | bot_prompt="citadel" then do
+        call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh in progress^M"
+        count=_getvoids(vname)
+        call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh complete : "||count||" sectors ("||trunc(count/ns*1000)/10||"%)^M"
+       end /*when*/
+       when bot_prompt="planet" then do
+        call zocsend "q'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh in progress^M"
+        count=_getvoids(vname)
+        call zocsend "l"||bot_planet||"^M'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh complete : "||count||" sectors ("||trunc(count/ns*1000)/10||"%)^M"
+       end /*when*/
+       otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : refresh failed, player at "||bot_prompt||" prompt^M"
+      end /*select*/
+     end /*when*/
+
+  /* exclude */
+     when bot_cmd="autoex" then do
+      if _stripint(bot_args)=bot_args then _g.!autoex=bot_args>0
+                                      else _g.!autoex=abs(_g.!autoex-1)
+      call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : "||word("off on",_g.!autoex+1)||"^M"
+     end /*when*/
+     when bot_cmd="ex" then do
+      n=word(bot_args,1)
+      select
+       when n="" then do
+        list=""
+        do i=1 to ns
+         if _ex.i then list=list i
+        end /*do*/
+        list=strip(list)
+        call zocsend "'^M"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : list : "||list||"^M^M"
+       end /*when*/
+       when n=0 then do; _ex.=0; call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : excluded search sectors cleared.^M"; end
+       when _stripint(n)>0 then do; n=_stripint(n); _ex.n=1; call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : sector "||n||" excluded from all queries.^M"; end
+       otherwise call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_cmd||" : invalid parameter.^M"
+      end /*select*/
+     end /*when*/
+
+  when bot_cmd="ping" then do
+   call _ping 4
+  end /*when*/
+
+  /* help commands */
+  when bot_cmd="help" & bot_args="status"    then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : status : displays the current script status^M"
+  when bot_cmd="help" & bot_args="details"   then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : details : displays more status details^M"
+  when bot_cmd="help" & bot_args="mode"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : mode [mode] : switch the bot mode^M"
+  when bot_cmd="help" & bot_args="modes"     then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : modes : list the bot modes^M"
+  when bot_cmd="help" & bot_args="use"       then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : use [botname] : enables usage of the bot^M"
+  when bot_cmd="help" & bot_args="users"     then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : users : lists the current bot users^M"
+  when bot_cmd="help" & bot_args="target"    then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : target [add|rem|clr] [players] : target a player^M"
+  when bot_cmd="help" & bot_args="ignore"    then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : ignore [add|rem|clr] [players] : ignore a player^M"
+#  when bot_cmd="help" & bot_args="newsub"    then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : newsub [num] : set a new subspace channel - random if no num^M"
+  when bot_cmd="help" & bot_args="verbose"   then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : verbose [on|off] : turn on/off verbose messages^M"
+  when bot_cmd="help" & bot_args="page"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : page : page the script owner^M"
+  when bot_cmd="help" & bot_args="cn9"       then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : cn9 [spaces|allkeys] : set key aborts^M"
+  when bot_cmd="help" & bot_args="qs"        then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : qs : quick stats^M"
+#  when bot_cmd="help" & bot_args="qss"       then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : qss : sorted quick stats^M"
+  when bot_cmd="help" & bot_args="last"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : last [num] : see the last lines on subspace^M"
+  when bot_cmd="help" & bot_args="ping"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : ping : report telnet ping times^M"
+  when bot_cmd="help" & bot_args="pickup"    then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : pickup [num] : emergency planet pickup^M"
+  when bot_cmd="help" & bot_args="auth"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : auth [add|rem|clr|timeout] [players|num] : authorize a player or change the auth timeout^M"
+  when bot_cmd="help" & bot_args="lock"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : lock : lock the bot from everyone but owner^M"
+  when bot_cmd="help" & bot_args="name"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : name : rename the bot^M"
+  when bot_cmd="help" & bot_args="setplanet" then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : setplanet [num] : set the planet number^M"
+  when bot_cmd="help" & bot_args="turns"     then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : turns : query available turns^M"
+  when bot_cmd="help" & bot_args="cim"       then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : cim [s|p] : get cim data^M"
+  when bot_cmd="help" & bot_args="figs"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : figs : refresh fighter list^M"
+  when bot_cmd="help" & bot_args="voids"     then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : voids : refresh void list^M"
+  when bot_cmd="help" & bot_args="mail"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : mail : read game mail^M"
+  when bot_cmd="help" & bot_args="lift"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : lift : lift off from a planet or prompt^M"
+  when bot_cmd="help" & bot_args="land"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : land [num] : land on a planet^M"
+#  when bot_cmd="help" & bot_args="dropcorp"  then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : dropcorp : quit the corp^M"
+#  when bot_cmd="help" & bot_args="joincorp"  then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : joincorp [num] [pwd] : join a corp^M"
+  when bot_cmd="help" & bot_args="ex"        then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : ex [sector] : exclude a sector from calculations^M"
+  when bot_cmd="help" & bot_args="autoex"    then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : autoex : toggle automatic exclusions for every search^M"
+  when bot_cmd="help" & bot_args="mac"       then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : mac [zocmacro] : send the zoc macro^M"
+  when bot_cmd="help" & bot_args="nmac"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : nmac [num] [zocmacro] : send the zoc macro num times^M"
+  when bot_cmd="help" & bot_args="help"      then call zocsend "'"||_g.!sname1||" : "||bot_name||" : help : help [topic] : provides help on bot commands^M"
+  when bot_cmd="help" & bot_args=""          then do
+   call zocsend "'^M"||_g.!sname1||" : "||bot_name||" : help : type 'help [command] for more help^M"
+   call zocsend "  global commands : autoex cim cn9 details ex figs help ignore^M"
+   call zocsend "                    land last lift mac mail mode modes^M"
+   call zocsend "                    nmac page pickup ping qs setplanet^M"
+   call zocsend "                    status target turns use users verbose voids^M"
+   if bot_user="##OWNER##" then call zocsend "  owner commands  : auth lock name q^M"
+   call zocsend "^M"
+  end /*when*/
+
+  otherwise nop
+ end /*select*/
+ bot_auth=bot_users.bot_user & bot_auth_stamp.bot_user+bot_auth_timeout>t & (\bot_lock | bot_user="##OWNER##")
+
+return 0

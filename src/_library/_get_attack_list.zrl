@@ -1,0 +1,63 @@
+/* _get_attack_list v.1 */
+_get_attack_list: procedure expose (globals)
+ rslt=""
+ ans=0
+ c=0
+ tab=d2c(9)
+ myfigs=0
+ call zocsend "aznznznznzn"
+ do while ans<2
+  ans=_waitmux("<Attack>|) (Y/N) [N]?|Command [")
+  line=_lastline()
+  select
+   when ans=0 then nop
+   when ans=1 then do
+    c=c+1
+    parse var line "Attack " description.c " (" myfigs "-" hisfigs.c ")" .
+    myfigs=_stripcomma(myfigs)
+    hisfigs.c=_stripcomma(hisfigs.c)
+    if c//5=0 then call zocsend "znznznznzn"
+   end /*when*/
+   when ans=2 then nop
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ rslt=myfigs
+
+ do i=1 to c
+  n=lastpos("'s unmanned ",description.i)
+  if n=0 then do
+   n=lastpos("'s ",description.i)
+   unmanned.i=0
+   hisname.i=left(description.i,n-1)
+   hisship.i=substr(description.i,n+3)
+  end /*if*/
+  else do
+   unmanned.i=1
+   hisname.i=left(description.i,n-1)
+   hisship.i=substr(description.i,n+12)
+  end /*else*/
+  rslt=rslt||tab||hisname.i||tab||hisship.i||tab||unmanned.i||tab||hisfigs.i
+ end /*do*/
+
+return rslt
+
+/*
+Command [TL=00:00:00]:[3156] (?=Help)? : A
+<Attack>
+Attack rev [1]'s unmanned Colonial Transport (980-178) (Y/N) [N]? No
+Attack rev [1]'s unmanned Colonial Transport (980-197) (Y/N) [N]? No
+Attack rev's Corporate FlagShip (980-19,809) (Y/N) [N]? No
+
+Command [TL=00:00:00]:[3156] (?=Help)? : Z
+Do you want instructions (Y/N) [N]? No
+
+Command [TL=00:00:00]:[3156] (?=Help)? : Z
+Do you want instructions (Y/N) [N]? No
+
+Command [TL=00:00:00]:[3156] (?=Help)? : 
+rev [1] Colonial Transport 1 178
+rev [1] Colonial Transport 1 197
+rev Corporate FlagShip 0 19809
+*/

@@ -1,0 +1,66 @@
+About the Rating System
+
+   The rating system is designed to be mathematically stable.  All new players start out with a rating of 100.  The overall average rating will always be 100.  This means that the rating for any given player will always be comparable to the rest of the players in the system.  Even if player A does not play for a year and all other players advance or decline during that period, player A's rating will still be comparable to everyone else's in a meaningful way.
+
+   The rating system is designed to reward underdogs for winning.  If corp A has an average rating of 90 and the rest of the field of players has an average of 150, then corp A would receive more points for winning the game because they are not favored to win.  Also, if the max corp size is 6 and corp B wins with only 2 players, then corp B will receive more points because they had a small corp.  Conversely, better players will receive less points for beating lesser players and will lose more points for losing to lesser players.
+
+   The rating system is designed to award more points for better attended games.  If a game has 50 players signed up, it will be worth more than a game with 5 players.  This concept extends to corps also, so for example, if game A has a max corp size of 2 and 60 players, then it has an average of 30 corps.  Game A will be worth more than game B with max corp size of 6 and 60 players, having an average of 10 corps.  So given two games with the same attendance, the game with a smaller max corp size is worth more because there are more corps vying for the win.
+
+   The rating system is designed to divide winning and losing points according to each player's rating.  Higher rated players will lose more points for losing and win less points for winning than lower rated players.  Lower rated players will win more points for winning and lose less points for losing than higher rated players.
+
+   The rating system is designed to reward winners more than it punishes losers.  For example, if there are 10 players in a game and 4 win, the winners may earn around 3 points each, while the losers will only lose around 2 points each.  The total points awarded is equal to the total points taken.
+
+   The rating system is designed to recognize runners up.  Players on the winning team that are eliminated are considered runners up.  Players on the second place team that are still alive are considered runners up.  Runners up receive 0 points for the game, i.e. their rating will not change for losing.  If there are less players than four times the max corp size, then runner up rules do not apply for second place players.
+
+   The rating system can be exploited in certain situations.  First, the number of losers must be greater than or equal to the number of winners for the rating system to make sense, i.e. each loser could lose more points than each winner.  For this reason, games with less players than twice the max corp size should not be included in the system (i.e. there should be about two full corps in the game).  Second, if a game has a max corp size of 6, but all the corps in the game are solo players, then the rating system would reward the winner as if he had won as a solo player against 6-man corps - a huge bonus.  In this situation, the max corp size should be considered as 1 because all the corps in the game were solo players.  Sysops should be aware of these types of exploits when designing their games.
+
+The Equations
+
+   NP  = Number Of League Players In Game On Day 7
+   MCS = Max Corp Size
+   WCS = Winning Corp Size
+   NF  = Normalize Factor
+   NCF = Normalize Corp Factor
+   NW  = Number Of Winning League Players
+   NL  = Number Of Losing League Players (NL >= NW)
+   WR  = Individual Winner's Rating
+   LR  = Individual Loser's Rating
+   RFL = Rating Floor
+   SWR = Sum Of Winners Ratings (using RFL)
+   SLR = Sum Of Losers Ratings (using RFL)
+   AWR = Average Winners Rating (using RFL)
+   ALR = Average Losers Rating (using RFL)
+
+   constants
+   NF  = 2
+   NCF = 6 <-- new factor to normalize for the "solo game bonus"
+   RFL = 20
+
+   corp size factor
+   CSF = WCS^2/(MCS*NF)               <-- old csf
+   CSF = (NF / NCF) * (MCS^2 / WCS^2) <-- modified corp size factor
+
+   the game is worth TP points
+   TP  = NL * NW / CSF  <-- old equation
+   TP  = NL * NW * CSF  <-- modified total points equ
+   TP' = ALR / AWR * TP
+
+   each winner earns W points
+   W   = TP' * (WR / SWR)
+
+   each loser loses L points
+   L   = TP' * (LR / SLR)
+
+   RUNNER UP RULES
+   1st       1
+   1st #SD#  2
+   2nd       3
+   2nd #SD#  4
+   lost      5
+
+   Category 2 and 3 players are not included in the calculations.
+   Category 2 and 3 players don't gain or lose any points.
+   Category 2 players still get a win
+   Category 3 players still get a lose
+   Category 3 and 4 players will be considered category 5 players
+     if there are less than 4 X MCS league players in the game.

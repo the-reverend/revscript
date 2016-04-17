@@ -1,0 +1,44 @@
+/** _getbusts v.2 **/
+_getbusts: procedure expose (globals)
+ fname=arg(1)
+ if arg(2,"E") then safedate=arg(2)
+               else safedate=0
+ _bust.=0
+ max=0
+
+ if _fileopenr(fname) then do
+  do while \_fileeof(fname)
+   line=linein(fname)
+   parse var line cmd . sector . stamp .
+   if lower(sector)\="all" & sector\="" then max=max(max,sector)
+   select
+    when cmd="BUST_CLR" & (lower(sector)="all" | sector=0) then do
+     do i=1 to max
+      if stamp>abs(_bust.i) & _bust.i\=0 then _bust.i=-stamp
+     end /*do*/
+    end /*when*/
+    when abs(_bust.sector)>stamp then nop
+    when cmd="BUST_ADD" & safedate=0     then _bust.sector=stamp
+    when cmd="BUST_ADD" & safedate>stamp then _bust.sector=-stamp
+    when cmd="BUST_CLR"                  then _bust.sector=-stamp
+    otherwise nop
+   end /*select*/
+  end /*do*/
+  call _fileclose fname
+ end /*if*/
+
+ call _newline _ansi("bt;fwh")
+ call zocwriteln "BUST LIST:"
+ count=0
+ earliest=999999999
+ do i=1 to max
+  if _bust.i>0 then do
+   count=count+1
+   call zocwrite _pad(i,6,"R")
+   earliest=min(earliest,_bust.i)
+   if count//12=0 then call zocwriteln
+  end /*if*/
+ end /*do*/
+ if count//12>0 then call zocwriteln
+
+return earliest

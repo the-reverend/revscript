@@ -1,0 +1,13 @@
+/** _fileready v.2 **/
+/*- _fileready fname -*/
+/*- v.2 tested -*/
+_fileready: procedure expose (globals)
+/*- this line doesn't work in XP - stream returns UNKNOWN   -*/
+/*- if stream(arg(1), "S")="READY" then rslt=1; else rslt=0 -*/
+ select
+  when \arg(1,"E") then call _error "missing parameter in _fileready"
+  when arg(1)="" then rslt=0
+  when stream(arg(1), "S")\="NOTREADY" then rslt=1
+  otherwise rslt=0
+ end /*select*/
+return rslt

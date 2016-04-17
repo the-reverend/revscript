@@ -1,0 +1,64 @@
+/* REXX _state_machine.zrx by the reverend (build 42)                         */
+/*-       built by rev-builder version 1.2 on 19 Feb 2003 at 23:34:26        -*/
+/*- ------------------------------------------------------------------------ -*/
+/*-                       Copyright (C) 2003 Ron Wilson                      -*/
+/*-                                                                          -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author. Your use of    -*/
+/*- this script is governed by the terms of the REV-LICENSE.                 -*/
+/*-                                                                          -*/
+/*- This program is provided to you WITHOUT ANY WARRANTY, even the implied   -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the -*/
+/*- REV-LICENSE for more details.                                            -*/
+/*-                                                                          -*/
+/*-                A copy of the REV-LICENSE is available at:                -*/
+/*-       http://thereverend.coastgames.com/tradewars/rev-license.html       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ------------------*/ _g.!sname="_state_machine.zrx" /*------------------ -*/
+/*- --------------*/ _g.!sbuild=42; _g.!sdate="2003-02-19" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+
+st.1="Command ["
+st.2="Computer c"
+st.3="Corporate c"
+st.4="Planet c"
+st.5="Citadel c"
+msg.1="entered sector."
+msg.2="activated"
+msg.3="<Quit>"
+
+state.=0
+
+done=0
+do while \done
+ ans=zocwaitmux(st.1, st.2, st.3, st.4, st.5, msg.1, msg.2, msg.3)
+ select
+  when ans=0 then call setstate 1
+  when ans=1 then call setstate 2
+  when ans=2 then call setstate 3
+  when ans=3 then call setstate 4
+  when ans=4 then call setstate 5
+  when ans=5 & state.1 then call dosomething
+  when ans=5 & state.2 then call dosomething
+  when ans=6 & state.1 then call dosomething
+  when ans=6 & state.2 then call dosomething
+  when ans=7 then do
+   call zocsend "n"
+   done=1
+  end /*when*/
+  when ans=640 then call zocsend "#"
+  otherwise nop
+ end /*select*/
+end /*do*/
+
+exit
+
+setstate:
+ num=arg(1)
+ state.=0
+ state.num=1
+return
+
+dosomething:
+return

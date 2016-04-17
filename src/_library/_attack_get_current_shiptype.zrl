@@ -1,0 +1,15 @@
+_attack_get_current_shiptype: procedure expose (globals)
+ if arg(1,"E") then pmt=arg(1); else pmt=_synchronize()
+ if arg(2,"E") then shiplist=arg(2); else shiplist=_iniv(!settings,"!shiplist")
+ select
+  when pmt="bank"    then do; pre="qq"; post="psgyg"; end
+  when pmt="citadel" then do; pre="";   post=""; end
+  when pmt="command" then do; pre="";   post=""; end
+  otherwise return ""
+ end /*select*/
+
+ if _sendwait(pre||"i","Ship Info      :")=640 then call _error "timeout"
+ line=translate(_grabit(" Ported=","s"),"____","|;=.")
+ rslt=_attack_strip_manufacturer(line, shiplist)
+
+return rslt

@@ -1,0 +1,21 @@
+_attack_get_current: procedure expose (globals)
+ if arg(1,"E") then pmt=arg(1); else pmt=_synchronize()
+ select
+  when pmt="bank"    then do; pre="qq"; post="psgyg"; end
+  when pmt="citadel" then do; pre="qq"; post="l ^H"||_get_planet_number(pmt)||"^M c"; end
+  when pmt="command" then do; pre="";   post=""; end
+  otherwise return ""
+ end /*select*/
+
+ if _sendwait(pre||"c","<Computer activated>")=640 then call _error "timeout"
+ call zocreceivebuf(3*1024)
+ if _sendwait(";q"||post,"Photon Missiles")=640 then call _error "timeout"
+ if _wait("(?=Help)?")=640 then call _error "timeout"
+ shipcat=_parse_ship_desc(translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10)))
+ mf=_dword(shipcat,5,";")
+ mfa=_dword(shipcat,2,";")
+ off=_dword(shipcat,12,";")
+ def=_dword(shipcat,13,";")
+
+ rslt=mfa off def
+return rslt

@@ -1,0 +1,50 @@
+SYSOP/SERVER GUIDELINES
+
+1  Terminology
+
+   GAME   = a sanctioned league game
+   SYSOP  = gameop, sysop, co-sysop, etc. managing the GAME
+   SERVER = TWGS server hosting the GAME
+   PLAYER = a single player account registered in the GAME
+   LEAGUE = the league governing body
+
+2  Advertizing a GAME
+
+2.1 The GAME shall be advertized in the appropriate public forums at least one week and no more than six weeks in advance of the start time.  Such advertizement shall include the start time and date, the SERVER address, the GAME letter, the TWGS version, the GAME edits (i.e. any edits beyond stock), and the version number of these rules being enforced.  The GAME shall be subject to the most recent rules as posted by the LEAGUE at the time of the GAME announcement until the GAME completion.  The SYSOP may also include any GAME rules that apply and even strengthen some or all of the LEAGUE player rules.
+
+2.2 The SYSOP shall specify the victory conditions in detail.  Victory conditions shall be objective and not subjective.  Victory may not be shared by more than one team.
+
+3  Hosting a GAME
+
+3.1 The SYSOP may not play a GAME on his/her own SERVER.  The SYSOP may have an observer account for the GAME on his/her SERVER.  The LEAGUE may also request an observer account provided that the LEAGUE observer is not also a PLAYER in the GAME.  No other person may have an observer account for the GAME.  The SYSOP shall not provide sector or port information to any PLAYER.  Furthermore, the SYSOP shall not provide any other GAME information to a PLAYER except what was provided in the advertizement.  The SYSOP may reset lost ship and account passwords for PLAYERS who request such help.
+
+3.2 The GAME shall start within an hour of the advertized start time.  If the start is delayed more than an hour, the GAME shall be delayed a full 24 hours from the original start time.
+
+3.3 The GAME shall be closed to new PLAYERS after 7 days, i.e. 168 hours after the start time.  The GAME shall remain closed for its duration.  The SYSOP shall submit the team rosters to the LEAGUE within 48 hours of closing the game to new PLAYERS.  Such submission shall include a list of all PLAYERS.  The SYSOP shall take measures to ensure that no PLAYER is deleted before he/she submits the team rosters.  If the GAME has less PLAYERS than twice the max corp size (MCS) then it shall be de-sanctioned.
+
+3.4 The SYSOP shall take measures to prevent PLAYERS with duplicate IPs from participating in the GAME.  PLAYERS suspected of playing duplicate accounts shall have their password changed until the situation can be reviewed.  The SYSOP shall resolve such situations in a timely manner.  A LEAGUE mediator may be provided at the request of the SYSOP.  If the SYSOP has authorized two PLAYERS to play from the same location, then the SYSOP shall notify the LEAGUE before the GAME begins.
+
+3.5 The SYSOP shall take reasonable measures to ensure that the SERVER is available for the duration of the game.  Extended SERVER outages (more than 3 hours) should be announced in public forums if possible.  A GAME re-start after an extended outage should be announced at least 12 hours in advance.  A PLAYER may be disconnected by the SYSOP upon their explicit request.  The SYSOP shall inform the LEAGUE of significant problems with the GAME or with the SERVER.
+
+3.6 The SYSOP may host up to two GAMES per year.
+
+4  Completing a GAME
+
+4.1 Upon satisfaction of the victory conditions, the SYSOP shall close the GAME and submit the GAME results and scores to the LEAGUE within 48 hours.  The SYSOP shall be responsible for the accuracy of the GAME results he/she submits.  Such results submission shall include the status of each PLAYER whether alive, dead, or deleted, what team they were part of, which PLAYERS are winners and/or runners up, and any rule infractions they committed.  In addition, the SYSOP shall submit the max corp size (MCS) and the winning corp size (WCS).  The winning corp size is the total number of players on the winning team including non-league players.
+
+5  Discipline
+
+5.1 The SYSOP shall report PLAYER rule violations to the LEAGUE.  PLAYERS may also report GAME irregularities to the LEAGUE.  In order to investigate alleged problems, the LEAGUE shall be given administrative access to the SERVER upon request and in a timely manner.
+
+5.2 The following disciplinary actions may be taken by the SYSOP or by the LEAGUE:
+      A - PLAYER password change and IP boot
+      B - PLAYER turns penalty
+      C - PLAYER login penalty
+      D - PLAYER deletion
+
+5.3 Type A discipline occurs when the SYSOP or LEAGUE suspects a PLAYER of rule violation, and may be reversed if the evidence fails to convict the PLAYER.  Type A discipline will always progress to Type B-D discipline if the evidence convicts the PLAYER.  SYSOPS should be aware that Type A discipline can cause harm to the PLAYER and result in their death under certain circumstances; SYSOPS should take measures to prevent this from happening until the case is resolved.  Type B discipline is a reduction of PLAYER turns, e.g. 100 turns may be appropriate for spamming.  Type C discipline can block a PLAYER from logging in for a number of days, e.g. 2 days may be appropriate for bug use.  Type D discipline is PLAYER deletion and loss of the game for that PLAYER.  If such a PLAYER was part of the winning team, that team's size will not be reduced for points calculations.
+
+5.4 The following disciplinary actions may be taken by the LEAGUE:
+      E - PLAYER suspension
+
+5.5 Type E discipline may be effected by the LEAGUE.  Each suspension will be evaluated on a case-by-case basis.  No PLAYER will ever be removed from the LEAGUE, but an indefinite suspension is possible.  Suspended PLAYERS will not be shown in the ratings, but their rating will still be stored and used again when their suspension ends.  Suspended PLAYERS may complete any GAME that they are currently playing in good standing.

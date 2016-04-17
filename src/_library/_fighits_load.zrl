@@ -1,0 +1,26 @@
+/** _fighits_load v.2 **/
+/*- _fighits_load [infile] -*/
+_fighits_load: procedure expose (globals)
+ infile=arg(1)
+ _fh.=0; _fhp.=""; c=0
+ if _fileopenr(infile) then do
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||"loading fig hits from" infile "... "
+  do while \_fileeof(infile)
+   line=linein(infile)
+ /* 4877 : 09/21/14, 20:52:32 - ENTER zep (Mrc Frg) */
+   parse var line s ":" d t . p
+   s=strip(s); d=strip(d); t=strip(t)
+   _fhp.s=p
+   if line\="" & _dwords(d,"/")=3 then do
+    c=c+1
+    parse var d mm "/" dd "/" yr "," .
+    parse var t hr ":" mn ":" sc .
+    yyyy=yr-12+2000
+    parse value _calc_base_date(yyyy, mm, dd, hr, mn, sc) with base ";" doy ";" sod ";" .
+    _fh.s=max(_fh.s,base*86400+sod)
+   end /*if*/
+  end /*do*/
+  call _fileclose infile
+  if _verbose then call zocwriteln _ansi("clearline;bt;fwh")||c||" fig hits loaded. "
+ end /*if*/
+return c

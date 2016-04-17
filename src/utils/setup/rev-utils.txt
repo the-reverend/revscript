@@ -1,0 +1,8 @@
+welcome to rev-utils!
+
+to install rev-utils, just extract this archive to
+your zoc\script folder.
+
+it is as easy as that!  good luck and god speed!
+
+the reverend.

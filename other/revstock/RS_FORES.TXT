@@ -1,0 +1,23 @@
+
+~bÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´REV-STOCKÃÄÄÄ
+~eÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ~EÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+~c                 forest                ~E³~A ú  ú   ú    ú~EÜÜÜÜÜÜÜÜÜ~A ú       ú   ú
+~eÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ~E³~A ú     ú    ~EÜÛ~mß~c~m±±°°±²°~E~mßÛ~EÜ~A   ú   ú ú
+~E                Figs  Fuel  Orgs   Equ ~E³~A   ú      ú~EÛ~mß~c~mÛ²±±°²²±°±²~E~mßÛ~A     ú   ú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~A ú   ú   ú~EÞ~mß~c~m²±°°°±±²²²Û²°~E~mß~EÝ~A  ú
+~E   Capacity    ~A³~g  1M ~A³~g200k ~A³~g200k ~A³~g100k ~E³~A       ú  ~EÛ~c~m²Û²°±²²°²Û°±Û°²~EÛ~Aú   ú  ú ú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~Aú   ú    ú~EÞ~mÜ~c~m°°±²ÛÛ²±°°°±²~E~mÜ~EÝ~A   ú
+~E   Max Colos   ~A³~g     ~A³~g100k ~A³~g100k ~A³~g100k ~E³~A   ú       ~EÛ~mÜ~c~m°²±°²°±°²±°~E~mÜÛ~A          úú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~A ú      ú ú ~EßÛ~mÜ~c~m²²°±°°Û~E~mÜÛ~Eß~A    ú   ú
+~E   Production  ~A³~g  12 ~A³~g   2 ~A³~g   5 ~A³~g  20 ~E³~A   ú  ú  ú    ~Eßßßßßßßßß~Aú
+~AÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ³ÄÄÄÄÄ~E³~A ú      ú   ú     ú ú     ú     ú  ~f_~Fp~f_
+~E                                       ~EÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+~bÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+~C              Level         Days  TD  Colos   Fuel   Orgs    Equ
+~c              1 (citadel)      0   0    400    150    100    150
+~c              2 (computer)     3   3  1,400    200     50    250
+~c              3 (cannon)       1   4  3,600    600    250    700
+~c              4 (transwarp)    3   7  5,600  1,000  1,200  1,000
+~c
+~c
+~bÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ

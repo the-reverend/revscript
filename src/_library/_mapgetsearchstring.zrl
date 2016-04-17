@@ -1,0 +1,170 @@
+/** _mapgetsearchstring v.2 **/
+/*- v.2 tested -*/
+_mapgetsearchstring: procedure expose (globals)
+ msg=arg(1)
+ rslt=arg(2)
+ yes="> "
+ no="   "
+/*-                                                                    -*/
+/*- search string:                                                     -*/
+/*-   r:0/1       reverse course plot?                                 -*/
+/*-   v:0/1       find voided sectors?                                 -*/
+/*-   f:0/1       find figged sectors?                                 -*/
+/*-   e:0/1       find explored sectors?                               -*/
+/*-   pv:0/1      find visible ports?                                  -*/
+/*-   pb:0/1      find busted ports?                                   -*/
+/*-   d:0/1       find deadends?                                       -*/
+/*-   b:0/1       find bubbles?                                        -*/
+/*-   pt:0/1/xxx  find port type?                                      -*/
+/*-   p1:>#       find ore?                                            -*/
+/*-   p2:>#       find org?                                            -*/
+/*-   p3:>#       fine equ?                                            -*/
+/*-   tm:>#       find # hops to msl?                                  -*/
+/*-   fm:>#       find # hops from msl?                                -*/
+/*-                                                                    -*/
+ ptype="XXX"
+ symbol.="="
+ quant.=0
+ menustr.1="r;reverse plot;find from A to B,find from B to A"
+ menustr.2="f;figs;no criteria,without figs,with figs"
+ menustr.3="v;voids;no criteria,unvoided sectors,voided sectors"
+ menustr.4="e;explored;no criteria,unexplored sectors,explored sectors"
+ menustr.5="pv;port visible;no criteria,port blocked,port visible"
+ menustr.6="pb;port busted;no criteria,port clear,port busted"
+ menustr.7="d;deadend;no criteria,not a deadend sector,deadend sector"
+ menustr.8="b;bubble;no criteria,not in a bubble,in a bubble"
+ menustr.9="pt;port type;no criteria,no port,any port,specific port="||ptype
+ menustr.10="p1;fuel ore;no criteria,quantity"||symbol.10||quant.10
+ menustr.11="p2;organics;no criteria,quantity"||symbol.11||quant.11
+ menustr.12="p3;equipment;no criteria,quantity"||symbol.12||quant.12
+ menustr.13="tm;dist to msl;no criteria,distance"||symbol.13||quant.13
+ menustr.14="fm;dist from msl;no criteria,distance"||symbol.14||quant.14
+ menustr.0=14
+
+ menuval.1=1
+ do i=2 to menustr.0
+  menuval.i=1
+ end /*do*/
+ menuval.0=menustr.0
+
+ ans=99
+ do while ans>0
+  menu="DONE"
+  do i=1 to menustr.0
+   menutag=_dword(menustr.i,1,";")
+   do j=1 to _dwords(rslt,";")
+    tag=_dword(rslt,j,";")
+    tag1=_dword(tag,1,":")
+    tag2=_dword(tag,2,":")
+    if tag1=menutag then do
+     select
+      when i=1 then menuval.i=tag2+1
+      when i<=8 then menuval.i=tag2+2
+      when i=9 & _portmatch("xxx",tag2) then do
+       menuval.i=4
+       ptype=tag2
+       menustr.i="pt;port type;no criteria,no port,any port,specific port="||ptype
+      end /*when*/
+      when i=9 then menuval.i=tag2+2
+      when i<=14 & tag2\=-1 then do
+       menuval.i=2
+       quant.i=_stripint(tag2)
+       symbol.i=strip(translate(tag2," ",quant.i))
+      end /*when*/
+      when i<=14 then menuval.i=tag2+2
+      otherwise nop
+     end /*select*/
+    end /*if*/
+   end /*do*/
+   select
+    when i=10 then menustr.10="p1;fuel ore;no criteria,quantity"||symbol.10||quant.10
+    when i=11 then menustr.11="p2;organics;no criteria,quantity"||symbol.11||quant.11
+    when i=12 then menustr.12="p3;equipment;no criteria,quantity"||symbol.12||quant.12
+    when i=13 then menustr.13="tm;dist to msl;no criteria,distance"||symbol.13||quant.13
+    when i=14 then menustr.14="fm;dist from msl;no criteria,distance"||symbol.14||quant.14
+    otherwise nop
+   end /*select*/
+   menutxt=_dword(menustr.i,2,";")
+   menulst=_dword(menustr.i,3,";")
+   menuitem=menutxt||" - "||_dword(menulst,menuval.i,",")
+   if menuval.i=1 then s=no
+   else s=yes
+   menu=menu||";"||s||menuitem
+  end /*do*/
+ 
+
+  ans=_drequestlisti(msg,menu,";")-1
+
+  select
+   when ans=-1 then call _quit "script cancelled by user."
+   when ans=0 then nop
+   when ans=1 then menuval.ans=abs(menuval.ans-2)+1
+   when ans<=8 then do
+    submenu=_dword(menustr.ans,3,";")
+    menuval.ans=_drequestlisti("pick an option",submenu,",")
+   end /*when*/
+   when ans=9 then do
+    submenu=_dword(menustr.ans,3,";")
+    menuval.ans=_drequestlisti("pick an option",submenu,",")
+    if menuval.ans=4 then do
+     ptype=_askporttype(, ptype, "c")
+     menustr.ans="pt;port type;no criteria,no port,any port,specific port="||ptype
+    end /*if*/
+   end /*when*/
+   when ans<=14 then do
+    submenu=_dword(menustr.ans,3,";")
+    menuval.ans=_drequestlisti("pick an option",submenu,",")
+    if menuval.ans=2 then do
+     select
+      when ans=10 then msg1="how much fuel ore?"
+      when ans=11 then msg1="how much organics?"
+      when ans=12 then msg1="how much equipment?"
+      when ans>=13 then msg1="how many hops?"
+      otherwise nop
+     end /*select*/
+     symbol.ans=_chooselist("choose:","<;>=;=;<>",";","c")
+     quant.ans=_askint(msg1, menuval.ans, "c")
+     select
+      when ans=10 then menustr.ans="p1;fuel ore;no criteria,quantity"||symbol.ans||quant.ans
+      when ans=11 then menustr.ans="p2;organics;no criteria,quantity"||symbol.ans||quant.ans
+      when ans=12 then menustr.ans="p3;equipment;no criteria,quantity"||symbol.ans||quant.ans
+      when ans=13 then menustr.ans="tm;dist to msl;no criteria,distance"||symbol.ans||quant.ans
+      when ans=14 then menustr.ans="fm;dist from msl;no criteria,distance"||symbol.ans||quant.ans
+      otherwise nop
+     end /*select*/
+    end /*if*/
+    else do
+     symbol.ans="="
+     quant.ans=0
+     select
+      when ans=10 then menustr.ans="p1;fuel ore;no criteria,quantity"||symbol.ans||quant.ans
+      when ans=11 then menustr.ans="p2;organics;no criteria,quantity"||symbol.ans||quant.ans
+      when ans=12 then menustr.ans="p3;equipment;no criteria,quantity"||symbol.ans||quant.ans
+      when ans=13 then menustr.ans="tm;dist to msl;no criteria,distance"||symbol.ans||quant.ans
+      when ans=14 then menustr.ans="fm;dist from msl;no criteria,distance"||symbol.ans||quant.ans
+      otherwise nop
+     end /*select*/
+    end /*else*/
+   end /*when*/
+   otherwise nop
+  end /*select*/
+  if ans>0 then do
+   rslt=""
+   do i=1 to menustr.0
+    select
+     when menuval.i=1 then nop
+     when i=1                  then rslt=rslt||";"||_dword(menustr.i,1,";")||":"||menuval.i-1
+     when i<=8                 then rslt=rslt||";"||_dword(menustr.i,1,";")||":"||menuval.i-2
+     when i=9 & menuval.i=4    then rslt=rslt||";"||_dword(menustr.i,1,";")||":"||ptype
+     when i=9                  then rslt=rslt||";"||_dword(menustr.i,1,";")||":"||menuval.i-2
+     when i<=14 & menuval.i\=1 then rslt=rslt||";"||_dword(menustr.i,1,";")||":"||symbol.i||quant.i
+     when i<=14                then rslt=rslt||";"||_dword(menustr.i,1,";")||":"||menuval.i-2
+     otherwise nop
+    end /*select*/
+   end /*do*/
+   rslt=substr(rslt,2)
+  end /*if*/
+
+ end /*do*/
+
+return rslt

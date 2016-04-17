@@ -1,0 +1,31 @@
+/** _saveportcim v.3 **/
+_saveportcim: procedure expose (globals)
+ fname=arg(1)
+ ns=arg(2)
+ if ns="" then call _error "number of sectors missing."
+
+ if \_filenew(fname, "delete") then call _error "unable to create "||fname||"."
+
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"writing "||fname||" "
+
+ mon=0
+ wns=length(ns)
+ do i = 1 to ns
+  if _p.i\="" then do
+   parse var _p.i type ";" pq.1 "," pp.1 ";" pq.2 "," pp.2 ";" pq.3 "," pp.3
+   line=_pad(i,wns,"R")||" "
+   neg.=" "
+   if left(type,1)="B" then neg.1="-"
+   if substr(type,2,1)="B" then neg.2="-"
+   if right(type,1)="B" then neg.3="-"
+   do j=1 to 3
+    line=line||neg.j||_pad(abs(pq.j),5,"R")||_pad(pp.j,4,"R")||"% "
+   end /*do*/
+   call lineout fname, line
+   mon=_spinner(mon,500)
+  end /*if*/
+ end /*do*/
+
+ call _fileclose fname
+return

@@ -1,0 +1,112 @@
+/** _portreport v.5 **/
+_portreport: procedure expose (globals)
+ if _p.1="_P.1" then _p.=""
+ sec=arg(1)
+
+ call zocreceivebuf 3*1024
+ call zocsend "cr"||sec||"^M"
+ if zocwait("Commerce report")=640 then call _error "timeout"
+ if zocwait("Computer command")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ call zocsend "q"
+ if sec="" then do
+  i=pos("What sector is the port in? [", buff)+29
+  sec=substr(buff,i,pos("]",buff,i)-i)
+ end /*if*/
+
+ select
+  when pos("Fuel Ore   ",buff)>0 then type="port"
+  when pos("A  Cargo holds     :    ",buff)>0 then type="class 0"
+  when pos("You have never visted sector",buff)>0 then type="no port"
+  when pos("I have no information about a port in that sector.",buff)>0 then type="no port"
+  otherwise type="no port"
+ end /*select*/
+
+ rslt=""
+
+ select
+
+  when type="class 0" then do
+   i=pos("A  Cargo holds     :    ",buff)
+   cr=pos(d2c(13),buff,i)
+   line.1=substr(buff,i,cr-i)
+   i=pos("B  Fighters        :    ",buff)
+   cr=pos(d2c(13),buff,i)
+   line.2=substr(buff,i,cr-i)
+   i=pos("C  Shield Points   :    ",buff)
+   cr=pos(d2c(13),buff,i)
+   line.3=substr(buff,i,cr-i)
+ 
+   parse var line.1 . ":" c "credits / next hold" a
+   c=_stripint(c)
+   a=_stripint(a)
+   rslt=rslt||";"||c||","||a
+
+   parse var line.2 . ":" c "credits per fighter" a
+   c=_stripint(c)
+   a=_stripint(a)
+   rslt=rslt||";"||c||","||a
+
+   parse var line.3 . ":" c "credits per point" a
+   c=_stripint(c)
+   a=_stripint(a)
+   rslt="0"||rslt||";"||c||","||a
+  end /*when*/
+
+  when type="port" then do
+   i=pos("Fuel Ore   ",buff)
+   cr=pos(d2c(13),buff,i)
+   line.1=substr(buff,i,cr-i)
+   i=pos("Organics   ",buff)
+   cr=pos(d2c(13),buff,i)
+   line.2=substr(buff,i,cr-i)
+   i=pos("Equipment  ",buff)
+   cr=pos(d2c(13),buff,i)
+   line.3=substr(buff,i,cr-i)
+
+   parse var line.1 "Fuel Ore" bs q p "%" .
+   q=_stripint(q)
+   p=strip(p)
+   if bs="Buying" then do
+    type="B"
+    rslt=rslt||";-"||q||","||p
+   end /*if*/
+   else do
+    type="S"
+    rslt=rslt||";"||q||","||p
+   end /*else*/
+
+   parse var line.2 "Organics" bs q p "%" .
+   q=_stripint(q)
+   p=strip(p)
+   if bs="Buying" then do
+    type=type||"B"
+    rslt=rslt||";-"||q||","||p
+   end /*if*/
+   else do
+    type=type||"S"
+    rslt=rslt||";"||q||","||p
+   end /*else*/
+
+   parse var line.3 "Equipment" bs q p "%" .
+   q=_stripint(q)
+   p=strip(p)
+   if bs="Buying" then do
+    type=type||"B"
+    rslt=type||rslt||";-"||q||","||p
+   end /*if*/
+   else do
+    type=type||"S"
+    rslt=type||rslt||";"||q||","||p
+   end /*else*/
+
+   _p.sec=rslt
+  end /*when*/
+
+  when type="no port" then rslt="##NOPORT##"
+  when ans=640 then call _error "timeout"
+  otherwise nop
+
+ end /*select*/
+
+return rslt

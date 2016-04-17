@@ -1,0 +1,85 @@
+/** _buyhaggle3 v.3 **/
+/*- HAGGLE MESSAGES THAT DUMP YOU OUT OF PLANET NEGOTIATION         -*/
+/*- I think you'd better leave if you value your life!              -*/
+/*- I see you are as stupid as you look, get lost...                -*/
+/*- Swine, go peddle your wares somewhere else, you make me sick.   -*/
+/*- Get lost creep, that junk isn't worth half that much!           -*/
+/*- HA!  You think me a fool?  Thats insane!  Get out of here!      -*/
+/*- HAGGLE MESSAGES THAT I KNOW OF:                                 -*/
+/*-  -- my time --                                                  -*/
+/*- Quit playing around, you're wasting my time!                    -*/
+/*- I have much better things to do than waste my time.  Try again. -*/
+/*-  -- a real offer --                                             -*/
+/*- Make a real offer or get the h*ll out of here!                  -*/
+/*- So, you think I'm as stupid as you look? Make a real offer.     -*/
+/*- What do you take me for, a fool?  Make a real offer!            -*/
+/*- This is the big leagues Jr.  Make a real offer.                 -*/
+/*- Get real ion-brain, make me a real offer.                       -*/
+/*-  -- miscellaneous --                                            -*/
+/*- WHAT?!@!? you must be crazy!                                    -*/
+/*- My patience grows short with you.                               -*/
+/*- HA! HA, ha hahahhah hehehe hhhohhohohohh!  You choke me up!     -*/
+_buyhaggle3: procedure expose (globals)
+ portoffer=arg(1)
+ op=arg(2)
+ if op="" then op=43
+ offer=trunc(portoffer*((100+op)/100),0)
+
+ success=1
+
+ call zocwrite "^[[1;32m< overpaying by "||op||"% >^[[0;35m "
+ call zocsend offer||"^M"
+ op=op-1
+ opcount=1
+
+ done=0
+ do while \done
+
+  ans=_waitmux("We'll sell them for|my time|a real offer|WHAT?!@!?|short with you|choke me up!|Our final offer|We're not interested.|You have")
+  select
+
+   when ans<=5 then do
+    if _wait("Your offer [")=640 then call _error "timeout"
+    offer=trunc(portoffer*((100+op)/100),0)
+    call zocwrite "^[[1;32m< overpaying by "||op||"% >^[[0;35m "
+    call zocsend offer||"^M"
+    opcount=opcount+1
+    op=op-1
+   end /*when*/
+
+   when ans=6 then do
+    if _wait("Your offer [")=640 then call _error "timeout"
+    offer=trunc(portoffer*((100+op)/100),0)
+    call zocwrite "^[[1;32m< overpaying by "||op||"% >^[[0;35m "
+    call zocsend offer||"^M"
+    opcount=opcount+1
+    op=op-1
+   end /*when*/
+
+   when ans=7 then do
+    done=1
+    success=0
+   end /*when*/
+
+   when ans=8 then done=1
+
+   when ans=640 then call _error "timeout"
+
+   otherwise nop
+
+  end /*select*/
+
+ end /*while*/
+
+ if datatype(overpay,"W") then do
+  select
+/*- THESE LINES FORCE 2 HAGGLES                     -*/
+/*-   when opcount=1 then overpay=overpay+1         -*/
+/*-   when opcount>2 then overpay=overpay-opcount+2 -*/
+   when opcount>1 then overpay=overpay-opcount+1
+   otherwise nop
+  end /*select*/
+ end /*if*/
+ _msg=op+1
+
+return success

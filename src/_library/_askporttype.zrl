@@ -1,0 +1,23 @@
+/** _askporttype v.5 **/
+/*- _askporttype msg, default, flags -*/
+/*- v.5 tested -*/
+_askporttype: procedure expose (globals)
+ do i=1 to 3
+  select
+   when i=1 & arg(i,"E") then msg=arg(i)
+   when i=1              then msg="what type of port?"
+   when i=2 & arg(i,"E") then default=arg(i)
+   when i=2              then default=""
+   when i=3 & arg(i,"E") then cflag=min(verify(lower(arg(i)),"c","M"),1)
+   when i=3              then cflag=0
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ rslt=upper(strip(zocask(msg, default)))
+ do while \(verify(rslt,"XBS")=0 & length(rslt)=3)
+  default=rslt||" [please enter a valid port string or ESC to cancel.]"
+  if rslt="##CANCEL##" then leave
+  else rslt=upper(strip(zocask(msg, default)))
+ end /*do*/
+ if cflag & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+return rslt

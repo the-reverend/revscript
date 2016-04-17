@@ -1,0 +1,32 @@
+/** _setgame v.6 **/
+/*- _setgame [gname] -*/
+/*- v.6 tested -*/
+_setgame: procedure expose (globals)
+
+ parse value zocgetglobaloption("CapturePath") with . '="' lpath '"'
+ if left(zocgetinfo("VERSION"),1)>4 then lpath = zocfilename("RESOLV", lpath)
+ lpath=dosfname(lpath)
+ if right(lpath,1)\="\" then lpath=lpath||"\"
+ if \dosisdir(lpath) then call _error "invalid log path in _setgame"
+
+ if arg(1,"E") then gname=arg(1)
+ else do
+  list=_ini_list_games(lpath)
+  if c=0 then gname="CLEAR"
+  else gname=_drequestlist("select a game:", list||";CLEAR", ";", "c")
+ end /*if*/
+ if gname="CLEAR" | gname="" then do
+  gname="%ZOCORHOST% %OPTIONS%"
+  call zoclogging 0, 1
+  call zoclogname "zoc_log_^3^2^1_^8.txt"
+  call zocsetoption 'CaptDefaultName="zoc_log_^3^2^1_^8.txt"'
+  call zoclogging 1, 1
+ end/*if*/
+ else do
+  call zoclogging 0, 1
+  call zoclogname gname||"_log_^3^2^1_^8.txt"
+  call zocsetoption 'CaptDefaultName="'||gname||'_log_^3^2^1_^8.txt"'
+  call zoclogging 1, 1
+ end /*else*/
+ call zocsetglobaloption 'WindowTitle="'||gname||'"'
+return gname

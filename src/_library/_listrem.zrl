@@ -1,0 +1,24 @@
+/** _listrem v.1 **/
+_listrem: procedure expose (globals)
+ rem=arg(1)
+ list=arg(2)
+ if arg(3,"E") then delim=arg(4)
+               else delim=";"
+ if list\="" then do
+  do i=1 to _dwords(rem,delim)
+   n=_dwords(list,delim)
+   r=_dword(rem,i,delim)
+   found=0
+   do f=1 to n
+    if r=_dword(list,f,delim) then leave
+   end /*do*/
+   select
+    when f=1 & n=1 then list=""
+    when f=1 then list=substr(list,_dwordindex(list,f+1,delim))
+    when f<n then list=left(list,_dwordindex(list,f,delim)-1)||substr(list,_dwordindex(list,f+1,delim))
+    when f=n then list=left(list,_dwordindex(list,f,delim)-2)
+    otherwise nop
+   end /*select*/
+  end /*do*/
+ end /*if*/
+return list

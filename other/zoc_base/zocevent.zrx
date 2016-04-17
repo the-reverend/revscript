@@ -1,0 +1,60 @@
+/*********************************************************************** 
+
+   PLEASE SEE ZOCEVENT.DOC FOR A DESCRIPTION OF HOW TO USE THIS FILE
+
+***********************************************************************/
+
+
+/**********************************************************************/
+/* The line below exits at once -- remove it to make it all work      */
+/**********************************************************************/
+
+EXIT  /* >>>>>>>  to make it all work delete this line  <<<<<<<<<<<<< */
+
+
+
+/**********************************************************************/
+/* Parse the command line arguments                                   */
+/**********************************************************************/
+PARSE ARG Event " '" DeviceName "'" "'" DeviceOpts "'"
+
+
+
+/**********************************************************************/
+/* Find out where FaxWorks is installed                               */
+/**********************************************************************/
+CALL RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
+CALL SysLoadFuncs
+faxdir= SysIni("USER", "Fax", "ExeDir")
+faxdir= LEFT(faxdir,LENGTH(faxdir)-1)  /* remove trailing nul */
+faxrcv= faxdir||"fxrcv"
+
+
+/**********************************************************************/
+/* Here comes the big action ...                                      */
+/**********************************************************************/
+SELECT 
+    /* if ZOC was started *********************************************/
+    WHEN Event="OPEN" THEN DO
+        faxrcv "-off"
+    END /* WHEN */
+
+    /* if a ZOC-device will be opened *********************************/
+    WHEN Event="DEVOPEN" THEN DO
+        /* nothing yet */
+    END /* WHEN */
+
+    /* if a ZOC-device was closed *************************************/
+    WHEN Event="DEVCLOSE" THEN DO
+        /* nothing yet */
+    END /* WHEN */
+
+    /* if ZOC was closed **********************************************/
+    WHEN Event="CLOSE" THEN DO
+        faxrcv "-on"
+    END /* WHEN */
+
+END /* SELECT */
+
+EXIT
+

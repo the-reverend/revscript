@@ -1,0 +1,148 @@
+/** _planet v.11 **/
+_planet: procedure expose (globals)
+ planet=arg(1)
+ if planet="" then planet=0
+ comm=arg(2)
+ msg=arg(3)
+ if msg="" then msg="which planet?"
+ mode=arg(4)
+
+/* MESSAGES TO ACCOUNT FOR:                          */
+/* They don't have room for that many on the planet! */
+/* Planetary Attack Command [Q] */
+
+ list=""
+ scanner=0
+
+ call zocsend "l"
+ rslt="l"
+
+ done=0
+ prompt=0
+ do while \done
+  ans=_waitmux("Planet command",
+            ||"|Land on which planet",
+            ||"|   <",
+            ||"|There isn't a planet in this sector.",
+            ||"|Citadel RLvl Fighters",
+            ||"|couldn't possibly stand the stress",
+            ||"| in sector ")
+  select
+   when ans=0 then done=1
+   when ans=1 & prompt then nop
+   when ans=1 then do
+    prompt=1
+    if planet=0 then do
+     if pos(";",list)>0 then planet=_drequestlist(msg, list, ";", "c")
+     else planet=list
+     parse var planet planet "-" .
+     planet=strip(planet)
+    end /*if*/
+    if comm="" then do
+     call zocsend "q^M"
+     rslt=rslt||"q^M"
+     done=1
+    end /*if*/
+    else do
+     call zocsend planet||"^M"
+     rslt=rslt||planet||"^M"
+    end /*else*/
+   end /*when*/
+   when ans=2 then do
+    if planet=0 then do
+     if scanner then do
+      if _wait("%")=640 then call _error "timeout"
+     end /*if*/
+     else if _wait("^M")=640 then call _error "timeout"
+     line=strip(_lastline())
+     parse var line num "> " name
+     name=strip(left(name,36))
+     if list="" then list=num||copies(" ",2*(4-length(num)))||" - "||name
+     else list=list||";"||num||copies(" ",2*(4-length(num)))||" - "||name
+    end /*if*/
+   end /*when*/
+   when ans=3 then do
+    planet=0
+    done=1
+   end /*when*/
+   when ans=4 then scanner=1
+   when ans=5 then do
+    planet=0
+    done=1
+   end /*when*/
+   when ans=6 then do
+    if planet=0 then do
+     parse value _lastline() with . "#" planet " in sector" .
+    end /*if*/
+   end /*when*/
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ if ans=0 then do
+  if mode="quant" then do
+   buflen=3*1024
+   call zocreceivebuf buflen
+   call zocsend "d"
+   if _wait("Planet #")=640 then call _error "timeout"
+   if _wait("Fighters")=640 then call _error "timeout"
+   buff=translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10))
+   if length(buff)=buflen then call _error "buffer overflow"
+   i=pos("Fuel Ore",buff)
+   if i>0 then j=pos(d2c(13),buff,i)
+   else j=0
+   if i>0 & j>0 then parse value substr(buff,i,j-i) with "Fuel Ore" . . . ore .
+   else ore=0
+   ore=_space(translate(ore," ",","),0)
+
+   i=pos("Organics",buff)
+   if i>0 then j=pos(d2c(13),buff,i)
+   else j=0
+   if i>0 & j>0 then parse value substr(buff,i,j-i) with "Organics" . . . org .
+   else org=0
+   org=_space(translate(org," ",","),0)
+
+   i=pos("Equipment",buff)
+   if i>0 then j=pos(d2c(13),buff,i)
+   else j=0
+   if i>0 & j>0 then parse value substr(buff,i,j-i) with "Equipment" . . . equ .
+   else equ=0
+   equ=_space(translate(equ," ",","),0)
+  end /*if*/
+
+  if comm="" then do
+   call zocsend "q"
+   rslt=rslt||"q"
+   if _wait("Command [")=640 then call _error "timeout"
+  end /*if*/
+  else do
+   do while comm\=""
+    parse var comm c1 ";" comm
+    call zocsend c1||"@"
+    rslt=rslt||c1
+    if _wait("Average Interval Lag:")=640 then call _error "timeout"
+   end /*do*/
+   ans2=_waitmux("Planet command|Command [")
+   select
+    when ans2=0 then do
+     call zocsend "q"
+     rslt=rslt||"q"
+     if _wait("Command [")=640 then call _error "timeout"
+    end /*when*/
+    when ans2=1 then nop
+    when ans2=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*else*/
+
+ end /*if*/
+
+ /* if not learn mode then return planet number */
+ select
+  when lower(mode)="learn" then rslt=planet||";"||rslt
+  when lower(mode)="quant" then rslt=planet||";"||ore||";"||org||";"||equ
+  otherwise rslt=planet
+ end /*select*/
+
+return rslt

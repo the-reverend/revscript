@@ -1,0 +1,80 @@
+_attack_get_list: procedure expose (globals)
+ if arg(1,"E") then pmt=arg(1); else pmt=_synchronize()
+ if arg(2,"E") then shiplist=arg(2); else shiplist=_iniv(!settings,"!shiplist")
+ if arg(3,"E") then mycorp=arg(3); else mycorp=0;
+ if arg(4,"E") then myname=arg(4); else myname="";
+ buflen=16*1024
+ call zocreceivebuf buflen
+ if _sendwait(_list_select(pmt,"citadel;command;bank","s;d;qqd",";"),_list_select(pmt,"citadel;command;bank","<Scan Sector>;<Re-Display>;<Re-Display>",";"))=640 then call _error "timeout"
+ if _wait("Warps to Sector(s) :")=640 then call _error "timeout"
+ if _wait("^M")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0), "   ", d2c(0)||d2c(7)||d2c(10))
+ if length(buff)=buflen then call _error "buffer overflow"
+ fedspace=pos("Beacon  : FedSpace, FedLaw Enforced",buff)>0
+ beacon=(pos("Beacon  :",buff)>0) & \fedspace
+ c=0
+ i=1
+ cr=d2c(13)
+ do forever
+  k=pos(" ftrs,",buff,i)
+  if k>0 then do
+   c=c+1
+   j=lastpos(cr,buff,k)+1
+   part1.c=strip(substr(buff,j,k-j))
+   j=pos(cr,buff,k)+1
+   k=pos(cr,buff,j+1)
+   part2.c=strip(substr(buff,j,k-j))
+   i=k+1
+  end /*if*/
+  else leave
+ end /*do*/
+
+ t=0
+ do i=1 to c
+  select
+   when left(part1.i,10)="Federals: " then do; t=1; part1.i=substr(part1.i,11); end
+   when left(part1.i,10)="Ships   : " then do; t=3; part1.i=substr(part1.i,11); end
+   when left(part1.i,10)="Traders : " then do; t=4; part1.i=substr(part1.i,11); end
+   when substr(part1.i,9,2)=": "     then do; t=2; part1.i=substr(part1.i,11); end
+   otherwise nop
+  end /*select*/
+
+  type.i=t
+  select
+   when t=0 then nop
+   when t=1 | t=2 | t=4 then parse var part1.i name.i ", w/ " figs.i
+   when t=3 then parse var part1.i . "[Owned by] " name.i ", w/ " figs.i
+   otherwise type.i=0
+  end /*select*/
+
+  parse value _online_split_name_corp(name.i) with name.i ";" corp.i
+  figs.i=_stripcomma(figs.i)
+  parse value reverse(part2.i) with ")" shiptype.i "(" .
+  shiptype.i=translate(shiptype.i,"____","|;=.")
+  shiptype.i=_attack_strip_manufacturer(reverse(shiptype.i), shiplist)
+
+  rank.i=0
+  if type.i=4 then parse value _online_split_rank_name(name.i) with rank.i ";" name.i
+  select
+   when type.i<=1                                   then protected.i=1
+   when type.i=2                                    then protected.i=1
+   when type.i=4 & fedspace & rank.i>=0 & rank.i<=9 then protected.i=1
+   when type.i=4 & corp.i=mycorp                    then protected.i=1
+   when type.i=3 & fedspace                         then protected.i=1
+   when type.i=3 & corp.i=mycorp                    then protected.i=1
+   when type.i=3 & name.i=myname                    then protected.i=1
+   otherwise                                             protected.i=0
+  end /*select*/
+
+ end /*do*/
+
+ rslt=beacon
+ do j=1 to 4
+  do i=1 to c
+   if type.i=j then rslt=rslt||";"||type.i||"|"||protected.i||"|"||rank.i||"|"||corp.i||"|"||name.i||"|"||figs.i||"|"||shiptype.i
+  end /*do*/
+ end /*do*/
+
+ call zocsend _list_select(pmt,"citadel;command;bank","^M ; ;psgyg ",";")
+
+return rslt

@@ -1,0 +1,53 @@
+/** _figs_get v.2 **/
+/*- _figs_get -*/
+_figs_get: procedure expose (globals)
+ c1=0
+ if arg(1,"E") then do
+  fname=arg(1)
+  parse value _figs_load(fname) with c1 m .
+ end /*if*/
+ _f.=0
+ c=0 /* total count */
+ cf=0 /* crp figs */
+ pf=0 /* per figs */
+ df=0 /* def figs */
+ of=0 /* off figs */
+ tf=0 /* tol figs */
+ tot=0 /* amount */
+ buflen=2048*1024
+ call zocreceivebuf buflen
+ call zocsend "g"
+ if _wait("Deployed  Fighter  Scan")=640 then call _error "timeout"
+ ans=0
+ do while ans=0
+  ans=_waitmux("r|Total|deployed")
+ end /*do*/
+ if ans=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=buflen then call _error "buffer overflow"
+ m=0; i=0; j=0
+ i=pos(d2c(13),buff,pos("==",buff)+1)+1
+ if i>1 then j=pos(d2c(13),buff,i)
+ finish=pos("Total",buff,i)
+ do while j>0 & j<finish
+  line=strip(substr(buff,i,j-i))
+  parse var line s1 amt type mode .
+  if (type="Corp" | type="Personal") & _stripint(s1)=s1 then do
+   amt=zocstring("REPLACE",amt,"T","000")
+   amt=zocstring("REPLACE",amt,"M","000000")
+   if datatype(amt,'N') then tot=tot+amt
+   if (type="Personal") then pf=pf+1
+   else cf=cf+1
+   if (mode="Defensive") then df=df+1
+   if (mode="Offensive") then of=of+1
+   if (mode="Toll") then tf=tf+1
+   _f.s1=1
+   c=c+1
+   m=max(m,s1)
+  end /*if*/
+  i=j+1
+  j=pos(d2c(13),buff,i)
+ end /*do*/
+ if _verbose then call zocwrite _ansi("clearline;bt;fwh")||c||" figs read. "
+ rslt=c m cf pf df of tf tot c-c1
+return rslt

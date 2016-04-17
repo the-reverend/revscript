@@ -1,0 +1,48 @@
+
+  ¦¯¯¯¯¦_         _¦¯¯¦¯¯¯¯¯¯¯¯¯¯¯¯¦__¦¯¯¯¯¯¯¯¯¯¯¯¯¦__   ___¦¯¯¯¯¯¯¯¯¯¦___
+  ¦ ¦¦_ ¯¦_      ¦¯ _¦¯ _¦¦¦¦¦¦¦¦¦_  ¦¯ _¦¦¦¦¦¦¦¦¦_  ¦  ¦¯ ___¦¦¦__¦¦___ ¯¦
+  ¦ ¯¦¦¦_ ¦      ¦ _¦¦ ¦¦¦¦      ¦¦¦ ¦ ¦¦¦¦      ¦¦¦ ¦  ¦ ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦ ¦
+  ¯¦_ ¦¦¦ ¦      ¦ ¦¦¦ ¦¦¦¦_      ¦¦ ¦ ¦¦¦¦_      ¦¦ ¦  ¦_ ¦¦¯  ¯¦¦¯  ¯¦¦ ¦
+    ¦ ¯¦¦ ¦ _¦¦_ ¦ ¦¦¦_ ¯¦¦¦¦¦_   ___¦_ ¯¦¦¦¦¦_   ___¦  _¦ ¦¦ ¦¯_  _¯¦ ¦¦ ¯¦
+    ¯¦ ¦¦ ¦_¯  ¯_¦ ¦¦     ¯¯¦¦¦¦¦_  ¦_¯¯  ¯¯¦¦¦¦¦_  ¦_  ¦ _¦¦ ¦ ¯¦¦¯ ¦ ¦¦¦ ¦_
+    ¦¯ ¦¦_  _¦¦_  _¦¦  ¦¦_   ¯¦¦¦¦¦_ ¯ ¦¦_   ¯¦¦¦¦¦_ ¯¦¦¯ ¦¦¦ ¦      ¦ ¦¦¦_ ¯¦
+    ¦ ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦  ¦¦¦_     ¦¦¦¦¦  ¦¦¦_     ¦¦¦¦¦ ¦ _¦¦¦¯ ¦      ¦ ¯¦¦¦¦ ¦
+    ¦_ ¯¯¯¦¦¦¯¯¦¦¯¯¯ __ ¯¦¦¦¦¦¦¦¦¦¦¦¯ _ ¯¦¦¦¦¦¦¦¦¦¦¦¯ ¦ ¦¦¯ _¦¯      ¦_ ¯¦¦¦ ¦
+     ¯¯¯¦_________¦¯¯¯¯¦_ ¯¯¯¯¯¯¯¯ __¦¯¦_ ¯¯¯¯¯¯¯¯ __¦¯____¦¯         ¯¦_____¦
+                        ¯¯¯¯¯¯¯¯¯¯¯¯    ¯¯¯¯¯¯¯¯¯¯¯¯
+                              Version 2.90
+
+  +------------------------------------------------------------------------+
+  ¦     P     r     o     d     u      c     t     i     o     n     S     ¦
+  |   +----------------------------------------------------------------+   |
+  :  :¦                   --- RELEASE INFORMATION ---                  ¦:  :
+  +-·++----------------------------------------------------------------++·-+
+  ¦                 ··Zoc Scripts Inc. TM  Proudly Presents··              ¦
+  ¦                                                                        ¦
+  ¦ Program     [ WorldSSM v2.90 (for Zoc v4.03 and up) 	         ] ¦
+  +------------------------------------------------------------------------¦
+  ¦ Released    [ October 28, 2001                                       ] ¦
+  +------------------------------------------------------------------------¦
+  ¦ Description  + The latest version of WorldSSM will search for ports  + ¦
+  ¦              ¦ by holo scan, and will use density scan to see if     ¦ ¦
+  ¦              ¦ sector is safe to warp in, this version will also     ¦ ¦
+  ¦              ¦ have the ablity to record time when script started    ¦ ¦
+  ¦              ¦ and where it warped to and ssm at and busted at,      ¦ ¦
+  ¦              ¦ for more information visit the website at the HTTP    ¦ ¦
+  ¦              + down below.                                           + ¦
+  ¦                                                                        ¦
+  ¦ Running the  + You must have at least 750+ experience, and 100-200k    ¦
+  ¦ script       ¦ credits. If you have any problem feel free to contact   ¦
+  ¦              ¦ me at any time. VIA email at dell_bond@yahoo.com or at  ¦
+  ¦              + dell_bond@zocscripts.bbsnet.ca.                         ¦
+  ¦                                                                        ¦
+  +------------------------------------------------------------------------¦
+  ¦ Notes       [ Check out our WebSite on a weekly base for New Info    ] ¦
+  +------------------------------------------------------------------------¦
+  ¦ Zoc Scripts [ http://zocscripts.bbsnet.ca                            ] ¦
+  ¦  WebSite      							   ¦
+  +------------------------------------------------------------------------¦
+  ¦ Contact     [ dell_bond@zocscripts.bbsnet.ca or dell_bond@yahoo.com  ] ¦
+  +------------------------------------------------------------------------+
+
+    ··----------------- Copyright Zoc Scripts TM 2001 -----------------··

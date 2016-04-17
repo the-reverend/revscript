@@ -1,0 +1,161 @@
+/** _bot_predrop v.1 **/
+_bot_predrop: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then do; _g.!predrop=0; return "INACTIVITY WARNING|entered sector.|activated|launched a P-Missile in sector|TransWarp Drive:"; end
+  when lower(arg(1))="setup" then do
+   _g.!sectorcannon="##UNDEF##"
+   _g.!hide="f:1;d:1"
+   _g.!waves1=5
+   _g.!wait1=2
+   _g.!waves2=0
+   _g.!mfpa=9999
+   _g.!killport=0
+   prompt=_synchronize()
+   if prompt="citadel" then call zocsend "c;q"
+   return
+  end /*when*/
+  when lower(arg(1))="cannon" then do
+   damage=_stripint(arg(2))
+   prompt=_synchronize()
+   select
+    when prompt\="citadel" then nop
+    when damage<0 then nop
+    when damage<=100 then do; _g.!sectorcannon=damage; call zocsend "ls"||damage||"^M"; end
+    otherwise _g.!sectorcannon=_set_sector_quasar_damage(damage, 30*400, prompt)
+   end /*select*/
+   return prompt
+  end /*when*/
+  when  lower(arg(1))="hide" then do
+   _g.!hide=arg(2)
+  end /*when*/
+  when  lower(arg(1))="waves1" then do
+   _g.!waves1=_stripint(arg(2))
+  end /*when*/
+  when  lower(arg(1))="waves2" then do
+   _g.!waves2=_stripint(arg(2))
+  end /*when*/
+  when  lower(arg(1))="mfpa" then do
+   _g.!mfpa=_stripint(arg(2))
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ line=arg(2)
+ user=arg(3)
+ cmd=arg(4)
+ args=arg(5)
+ name=arg(6)
+ mode=arg(7)
+ prompt=arg(8)
+ sector=arg(9)
+ planet=arg(10)
+ auth=arg(11)
+ abort=arg(12)
+ mname=arg(13)
+ reclen=arg(14)
+ select
+  when ans=0 & auth then do
+   select
+    when cmd="cannon" then do
+     damage=_stripint(word(args,1))
+     prompt=_synchronize()
+     select
+      when prompt\="citadel" then nop
+      when damage<0 then nop
+      when damage<=100 then do; _g.!sectorcannon=damage; call zocsend "ls"||damage||"^M"; end
+      otherwise _g.!sectorcannon=_set_sector_quasar_damage(damage, 30*400, prompt)
+     end /*select*/
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="hide" then do
+     _g.!hide=args
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="waves1" then do
+     _g.!waves1=_stripint(args)
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="waves2" then do
+     _g.!waves2=_stripint(args)
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="mfpa" then do
+     _g.!mfpa=_stripint(args)
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="status" then do
+     call zocsend "'^M  cannon   : "||_g.!sectorcannon||"^M",
+                   ||"  mfpa     : "||_g.!mfpa||"^M",
+                   ||"  waves    : "||_g.!waves1||",w"||_g.!wait1||","||_g.!waves2||"^M",
+                   ||"  killport : "||_g.!killport||"^M",
+                   ||"  hide     : "||_g.!hide||"^M^M"
+    end /*when*/
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  when ans=1 then call zocsend "^["
+  when ans=2 | ans=3 then do
+   if ans=2 then do
+    parse var line temp "Deployed Fighters Report Sector " target ": " player "entered sector." .
+    if pos("'s",player)>0 then do
+     ship=substr(player,lastpos("'s",player)+3)
+     player=left(player,lastpos("'s",player)-1)
+    end /*if*/
+    else do
+     player="fighter"
+     ship=""
+    end /*else*/
+   end /*if*/
+   else do
+    parse var line temp "Limpet mine in " target " activated"
+    player="limpet"
+    ship=""
+   end /*else*/
+   _f.target=0
+   if strip(temp)="" then do
+    select
+     when target=_g.!prelock then do
+      call zocsend "y"
+      sector=_getinfo("sect")
+      if sector=target then do
+       call zocsend "'i just pre-dropped "||player||"^Ms^M"
+       if _qss.!phot>0 then call zocsend "cpy"||_g.!previous||"^M^Mq"
+       call zocsend "qmnt^Mqayqz"||_g.!mfpa||"^Msdshl ^H"||planet||"^M c "
+       do _g.!waves1; call zocsend "qmnt^Mqayqz"||_g.!mfpa||"^Ml ^H"||planet||"^M c "; end
+       if (_g.!waves2>0) then do
+        call zocdelay _g.!wait1
+        do _g.!waves2; call zocsend "qmnt^Mqayqz"||_g.!mfpa||"^Ml ^H"||planet||"^M c "; end
+       end /*if*/
+       if _g.!killport then call zocsend "qmnt^Mqpqnzqpay"||_g.!mfpa||"a^M ^M l ^H"||planet||"^M c "
+      end /*if*/
+      _ex.sector=1
+      select
+       when _g.!hide="" then nop
+       when _g.!hide=0 then nop
+       when _stripint(_g.!hide)=_g.!hide then call zocsend "p"||_g.!hide||"^My'"
+       otherwise do
+        t=_mapfind(sector, _g.!hide, mname, reclen, 255)
+        if t>0 then call zocsend "p"||t||"^My"
+       end /*otherwise*/
+      end /*select*/
+     end /*when*/
+     otherwise do
+      _g.!previous=target
+      adj=_mapfind(target, "r:1;f:1", mname, reclen, 1)
+      if adj>0 then do
+       call zocsend "^M p"||adj||"^M'prelock "||adj||"^M"
+       _g.!prelock=adj
+      end /*if*/
+     end /*otherwise*/
+    end /*select*/
+   end /*if*/
+  end /*when*/
+  when ans=4 then nop /* photon */
+  when ans=5 then do /* set max figs per attack */
+   parse value _lastline() with . "Per Attack:" n .
+   _g.!mfpa=_stripint(n)
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=prompt planet sector
+return rslt

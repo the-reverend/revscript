@@ -1,0 +1,167 @@
+/** _buydown v.2 **/
+_buydown: procedure expose (globals)
+ if arg(1,"E") then pmt=arg(1); else pmt=_synchronize()
+ parse value _getinfo("sect;creds;turns;hlds") with sect ";" cr ";" turns ";" holds
+ if _g.!minholds="_G.!MINHOLDS" then minholds=0; else minholds=max(_stripint(_g.!minholds),0)
+ if _iniv("!settings","!turns")=0 then turns=65000
+ prod=lower(left(arg(2),1))
+ meth=lower(left(arg(3),1))
+ if arg(4,"E") then runs=arg(4); else runs=turns
+ if arg(5,"E") then dname=arg(5); else dname=""
+ select
+  when holds<minholds       then do; _msg="##HOLDS##";   return 0; end
+  when pmt\="citadel"       then do; _msg="##PROMPT##";  return 0; end
+  when \_in("foe123",prod)  then do; _msg="##PRODUCT##"; return 0; end
+  when \_in("sbw",meth)     then do; _msg="##METHOD##";  return 0; end
+  when _stripint(runs)<=0   then do; _msg="##RUNS##";    return 0; end
+
+  otherwise do
+   prod=_list_select(prod,"f;o;e;1;2;3","1;2;3;1;2;3")
+   /* get player info */
+      runs=min(runs,turns)
+      if runs=0 then do; _msg="##TURNS##"; return 0; end
+   /* get planet info */
+      call zocsend "qtnl1^Mtnl2^Mtnl3^Msnl1^M"
+      pi=_planet_get_info("planet")
+      call zocsend "c"
+      planet=word(pi,1)
+      sector=word(pi,2)
+      pq=word(pi,3+prod*6-2)
+      pm=word(pi,3+prod*6)
+      runs=min(runs,max((pm-pq)%holds,0))
+      if runs=0 then do; _msg="##FULL##"; return 0; end
+   /* scan sector if unexplored */
+      if \_sv.sector then do
+       call zocsend "s"
+       _sv.sector=1
+       ans=_waitmux(", Class |Warps to Sector(s)")
+       select
+        when ans=0 then ptype=_portn2str(_grabit(" (","s"))
+        when ans=1 then return 0
+        when ans=640 then call _error "timeout"
+        otherwise nop
+       end /*select*/
+       call zocsend "^M"
+      end /*if*/
+   /* get warps */
+      warps=_getwarps(sect)
+   /* get port info */
+      call _portreport
+      if _p.sector="" then do; _msg="##NO PORT##"; return 0; end
+      parse var _p.sector f 2 o 3 e 4 ";" fq "," fp ";" oq "," op ";" eq "," ep
+   /* get port max product */
+      runs=min(runs,word(fq oq eq, prod)%holds)
+      mp=trunc(word(fq/min(fp+1,100) oq/min(op+1,100) eq/min(ep+1,100),prod)*100)
+   /* get min creds to buy if port is full */
+      if meth="w" then mincr=mp*word(35 70 120, prod)
+                  else mincr=mp*word(25 48  82, prod)
+   /* get port percentage*/
+      pp=min(word(fp op ep,prod)+1,100)
+   /* trapezoid calc for how much creds needed at actual percentage */
+      mincr_adj=trunc(mincr*(25-0.09*pp)*pp/1600)+word(8100 15200 25300,prod)
+   /* straight line adjust for buying only part of whats there */
+      mincr_adj=trunc(mincr_adj*(runs*holds)/word(fq oq eq, prod))+1
+      if cr<mincr_adj then do
+       call zocsend "tf"||mincr_adj-cr||"^Mtf999999^M"
+       cr=_getinfo("creds")
+      end /*if*/
+      if cr<mincr_adj then do
+       call zocsend "'buy : insufficient funds in citadel : need "||mincr_adj||" creds^M"
+       _msg="##CREDS##"
+       return 0
+      end /*if*/
+
+   select
+    when prod=1 & f="S" then macro="p t "
+    when prod=2 & f="S" & o="S" then macro="p t 0^M"
+    when prod=2 & f="B" & o="S" then macro="p t "
+    when prod=3 & f="S" & o="S" & e="S" then macro="p t 0^M0^M"
+    when prod=3 & f="B" & o="S" & e="S" then macro="p t 0^M"
+    when prod=3 & f="S" & o="B" & e="S" then macro="p t 0^M"
+    when prod=3 & f="B" & o="B" & e="S" then macro="p t "
+    otherwise do; _msg="##PORT TYPE##"; return 0; end
+   end /*select*/
+
+   /* set voids */
+      call zocsend "'buy : setting voids^M^^"
+      do i=1 to _dwords(warps," ")
+       n=_dword(warps,i," ")
+       call zocsend "s"||n||"^M"
+      end /*do*/
+      call zocsend "q"
+
+   select
+    when meth="w" then do
+     call zocsend "qqznjyl ^H"||planet||"^M"
+     if dname\="" then overpay=_ini_read(dname,word("buy_ore buy_org buy_equ",prod),"worst."||sector)
+                  else overpay="##EOF##"
+     if _stripint(overpay)\=overpay then overpay=47
+     do i=1 to runs
+      call zocsend "q"||macro||"^M"
+      ans=_waitmux("We'll sell them for ",
+                 ||"|buy [0]",
+                 ||"|don't have anything",
+                 ||"|Nothing in this universe is free, my friend.")
+      select
+       /* We'll sell them for 2,085 credits. -- IN the haggle */
+          when ans=0 then offer=_stripint(_grabit(" credits.","s"))
+       /* Fuel Ore do you want to buy [0]? -- you have few creds, now at command prompt */
+          when ans=1 then leave
+       /* You don't have anything they want, and they don't have anything you can buy. -- you have NO creds */
+          when ans=2 then leave
+       /* Nothing in this universe is free, my friend. -- out of creds */
+          when ans=3 then leave
+          when ans=640 then call _error "timeout"
+          otherwise nop
+      end /*select*/
+      if i=1 then do
+       success=_buyhaggle3(offer,overpay+1)
+       overpay=_msg
+       call _ini_write dname, word("buy_ore buy_org buy_equ",prod), "worst."||sector, overpay
+      end /*if*/
+      else do
+       call zocsend "z"||offer*(100+overpay+1)%100||"^M",
+                    "z"||offer*(100+overpay+0)%100||"^M",
+                    "z"||offer*(100+overpay-1)%100||"^M",
+                    "z"||offer*(100+overpay-2)%100||"^M",
+                    "z0^M" /* <-- break out of a buydown with insufficient funds */
+      end /*if*/
+      call zocsend "l ^H"||planet||"^M tnl"||prod||"^M"
+     end /*do*/
+     call zocsend "c"
+    end /*when*/
+    when meth="b" then do
+     call zocsend "qqznjyl ^H"||planet||"^M"
+     i=runs
+     do while i>0
+      call zocsend "q"||macro||"^M"
+      if zocwait("Your offer [")=640 then calll _error "timeout"
+      offer=_stripint(_grabit("]","s"))
+      i=i-_buyhaggle2(offer)
+      call zocsend "l ^H"||planet||"^M tnl"||prod||"^M"
+     end /*do*/
+     call zocsend "c"
+    end /*when*/
+    when meth="s" then do
+     call _send255 "qqznjyl ^H"||planet||"^M "||copies("q"||macro||"^M^Ml ^H"||planet||"^M tnl"||prod||"^M",runs)||"c@"
+     do while _waitmux("Average Interval Lag:|?")=1; nop; end
+    end /*when*/
+    otherwise nop
+   end /*select*/
+
+   /* clear voids */
+      call zocsend "'buy : clearing voids^M^^"
+      do i=1 to _dwords(warps," ")
+       n=_dword(warps,i," ")
+       if \_v.n then call zocsend "c"||n||"^M"
+      end /*do*/
+      call zocsend "q"
+
+   call _portreport
+   cr2=_getinfo("creds")
+   call zocsend "'buy : spent "||cr-cr2||" credits and "||runs||" turns.^M"
+
+  end /*otherwise*/
+
+ end /*select*/
+return 1

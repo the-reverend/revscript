@@ -1,0 +1,5 @@
+_xport: procedure expose (globals)
+ if _sendwait("x   "||arg(1)||"^M ^M ","(?=Help)? : X")=640 then call _error "timeout"
+ ans=_waitmux("Command [|engaging transporter control.")
+ if ans=640 then call _error "timeout"
+return ans

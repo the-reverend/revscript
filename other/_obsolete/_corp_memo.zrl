@@ -1,0 +1,10 @@
+_corp_memo: procedure expose (globals)
+ msg=arg(1)
+ if arg(2,"E") then pmt=arg(2); else pmt=_synchronize()
+ if \_listin(pmt,"command;planet;citadel;bank",";") then return 0
+ pre=_list_select(pmt,"command;planet;citadel;bank","tt;qtt;xt;qqtt",";")
+ if _listin(pmt,"planet;citadel",";") then planet=_get_planet_number(pmt); else planet="";
+ post=_list_select(pmt,"command;planet;citadel;bank","q;ql ^H"||planet||"^M ;ql ^H"||planet||"^M c;qpsgyg",";")
+ call zocsend pre||msg||"^M^M"||post
+ if _wait("CMS link terminated.")=640 then call _error "timeout"
+return 1

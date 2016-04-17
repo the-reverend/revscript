@@ -1,0 +1,1134 @@
+/* REXX _twarpphoton_blue script by the reverend */
+/* rev. 0 - initial release                      */
+
+call zoctimeout 180
+call zocsynctime 500
+
+/* CHECK PROMPT AND ASK QUESTIONS */
+if \_pcheck("Command [") then call _error "please start at the command prompt."
+call _warning
+targetlist="Freejack;Cherokee;Ryukin;Hudini;Blue Adept"
+targetlist=zocask("enter a list of players to target separated by semi-colons",targetlist)
+if targetlist="##CANCEL##" then call _quit "script cancelled by user."
+resetlist=targetlist
+
+/* GET INFORMATION FROM USER OR INI FILE */
+call _newline _ansi("b", "green")
+parse value _getgameinfo() with spath ";" iname ";" game
+sd=_ini_asknum("stardock?", 1, iname, game, "sd")
+cr=_ini_asknum("cr?", 600, iname, game, "cr")
+ns=_ini_asknum("how many sectors in universe?", 5000, iname, game, "ns")
+if ns<1 | ns>20000 then call _error "number out of range"
+cname=_ini_askstr("enter cim filename (no extension):", "cim", iname, game, "cim")
+cname=_get_log_path()||cname
+if _fileexists(cname||".ref") then cname=cname||".ref"
+else cname=cname||".sct"
+
+/* MAKE SURE YOU HAVE PHOTONS AND GET HOMESEC */
+call zocsend "i"
+ans=zocwaitmux("Photon Missiles: ", "Command [")
+select
+ when ans=0 then do
+  if zocwait("^M")=640 then call _error "timeout"
+  ptc=_stripint(left(zoclastline(),4))
+  if zocwait("Command [")=640 then call _error "timeout"
+  if zocwait("]:[")=640 then call _error "timeout"
+  if zocwait("]")=640 then call _error "timeout"
+  homesec=_stripint(zoclastline())
+ end /* when */
+ when ans=1 then ptc=0
+ when ans=640 then call _error "timeout"
+end /* select */
+if ptc=0 then call _error "you don't have any photon torpedoes."
+
+/* GET PLANET FOR ORE */
+planet=_planet(0, "snl1^M;tnl2^M;tnl3^M;tnt1^M", "which planet will you use for ore?")
+
+/* GET FIG INFO AND SECTORCIM INFO */
+call _getfigs
+call _loadsectorcim cname
+
+/* MAIN LOOP - WAIT FOR FIG MESSAGES AND KILL */
+done=0
+killcount=0
+do while \done
+ call _newline
+ call zocwrite _ansi("b","red")||"<< script running... "||ptc||" photon(s) loaded. >> "||_ansi("magenta")
+ ans=zocwaitmux("Deployed Fighters Report Sector ", ,
+                "<Quit>", ,
+                "of your fighters in sector ", ,
+                "Command [", ,
+                "Computer command", ,
+                "REFRESH", ,
+                "STATUS", ,
+                "ADD ", ,
+                "CLEAR", ,
+                "RESET", ,
+                "HELP")
+ select
+
+  when ans=0 then do
+   if zocwait("sector.")=640 then call _error "timeout"
+   line=zoclastline()
+   if zocwait("Command [")=640 then call _error "timeout"
+   parse var line sector ": " player " entered sector."
+   if _kill(sector, player) then do
+    ptc=ptc-1
+    killcount=killcount+1
+    if \done then do
+     if ptc=0 then call _quit "script cancelled by user."
+     if ptc=0 then done=1
+     else planet=_planet(planet,"tnt1^M")
+    end /* if */
+   end /* if */
+   else do
+    call _radiomsg "twarp photon failed at "||sector||":^Mone-way, no figs, not enough ore,^Mor "||player||" not a target."
+    if zocwait("Command [")=640 then call _error "timeout"
+   end /* else */
+  end /* when */
+
+  when ans=1 then do
+   call zocsend "n"
+   if zocwait("Command [")=640 then call _error "timeout"
+   call _quit "script cancelled by user."
+  end /* when */
+
+  when ans=2 then do
+   if zocwait("^M")=640 then call _error "timeout"
+   sector=zoclastline()
+   figs.sector=0
+  end /* when */
+
+  when ans=3 then donothing=1
+
+  when ans=4 then do
+   call zocsend "q"
+   if zocwait("Command [")=640 then call _error "timeout"
+   call _getfigs
+  end /* when */
+
+  when ans=5 then do
+   parse value zoclastline() with ch player " REFRESH" .
+   player=strip(player)
+   if ch="R" then do
+    call zocnotify player||" initiated fighter list refresh."
+    call _sradiomsg player||" initiated fighter list refresh."
+    call _getfigs
+    call _sradiomsg "refresh complete."
+   end /* do */
+  end /* when */
+
+  when ans=6 then do
+   parse value zoclastline() with ch player " STATUS" .
+   player=strip(player)
+   if ch="R" then do
+    call zocnotify player||" requested status check."
+    call _radiomsg "STATUS^Mkills ("||killcount||"), photons onboard ("||ptc||")^M"||"targets: "||targetlist
+   end /* do */
+  end /* when */
+
+  when ans=7 then do
+   parse value zoclastline() with ch player " ADD "
+   player=strip(player)
+   if ch="R" then do
+    if zocwait("^M")=640 then call _error "timeout"
+    newtargets=strip(zoclastline())
+    call zocnotify player||" added "||newtargets||" to list."
+    if targetlist="" then targetlist=newtargets
+    else targetlist=targetlist||";"||newtargets
+    call _radiomsg "STATUS^Mkills ("||killcount||"), photons onboard ("||ptc||")^M"||"targets: "||targetlist
+   end /* do */
+  end /* when */
+
+  when ans=8 then do
+   parse value zoclastline() with ch player " CLEAR"
+   player=strip(player)
+   if ch="R" then do
+    call zocnotify player||" cleared the target list."
+    targetlist=""
+    call _radiomsg "STATUS^Mkills ("||killcount||"), photons onboard ("||ptc||")^M"||"targets: "||targetlist
+   end /* do */
+  end /* when */
+
+  when ans=9 then do
+   parse value zoclastline() with ch player " RESET"
+   player=strip(player)
+   if ch="R" then do
+    call zocnotify player||" reset the target list."
+    targetlist=resetlist
+    call _radiomsg "STATUS^Mkills ("||killcount||"), photons onboard ("||ptc||")^M"||"targets: "||targetlist
+   end /* do */
+  end /* when */
+
+  when ans=10 then do
+   parse value zoclastline() with ch player " HELP"
+   player=strip(player)
+   if ch="R" then do
+    msg="HELP^MSTATUS - request status report^M"
+    msg=msg||"REFRESH - refresh the fig list^M"
+    msg=msg||"CLEAR - clear the target list^M"
+    msg=msg||"RESET - reset the target list^M"
+    msg=msg||"ADD playername - adds a player to the target list^M"
+    msg=msg||"HELP - show this message"
+    call _radiomsg msg
+   end /* do */
+  end /* when */
+
+  when ans=640 then do
+   call zocsend "@"
+   if zocwait("Command [")=640 then call _error "timeout"
+  end /* when */
+
+ end /* select */
+end /* do */
+
+call _quit
+
+exit
+
+_buyphotons:
+ bpr=0
+ planet=_planet(planet,"tnt1^M")
+ if _twarp(sd,cr) then do
+  bpr=_buyhardware("p0")
+  if bpr>0 then if \_twarp(homesec,cr) then bpr=0
+ end /* if */
+return bpr
+
+_kill:
+ ksector=arg(1)
+ kplayer=arg(2)
+
+ kmoved=0
+ if targetlist="" | _listinstr(targetlist, kplayer) then do
+  alist=s.ksector
+  do while alist\=""
+   parse var alist asec ";" alist
+   asec=_stripint(asec)
+   if figs.asec & _listin(ksector,s.asec) then do
+
+    if _twarp(asec,cr) then do
+
+     /* PHOTON */
+     call zocsend "cpy"||ksector||"^Mq"
+     if zocwait("Command [")=640 then call _error "timeout"
+
+     /* RETURN HOME */
+     if \_twarp(homesec,cr) then do
+      if \_move(homesec,"p","fct1",cr) then done=1
+      else call _getfigs
+     end /* if */
+
+     /* REPORT */
+     call _sradiomsg "twarp photon launched from "||asec||" to "||ksector||"."
+     if zocwait("Command [")=640 then call _error "timeout"
+     call _newline
+     call zocwriteln _ansi("b", "red")||"<< twarp photon launched from "||asec||" to "||ksector||", "||ptc-1||" photons remain. >> "||_ansi("magenta")
+     call zocnotify "photon launched"
+     kmoved=1
+     alist=""
+
+    end /* if */
+   end /* if */
+  end /* do */
+ end /* if */
+
+return kmoved
+
+_warning:
+ msg0="DO NOT GIVE THIS SCRIPT TO ANYBODY.  IF YOU DO I WILL FIND OUT AND NOBODY WILL EVER TRUST YOU AGAIN."
+ msg1="enter a list of players you want to target for pdrop here.  the list must be semi-colon "
+ msg2="delimited.  for example, if you want to hit hekate, illusion, and <-- Adomma -->, then enter the following list:  "
+ msg3="hekate;illusion;<-- Adomma -->"
+ msg4="this list is not case sensitive.  you can also put partial names, so the following will also work:  "
+ msg5="hek;ill;adom"
+ msg6="keep in mind though that if you abbreviate, then the script will kill hekate, thekiller, and hekman."
+ 
+ call zocwriteln _ansi("b", "yellow")
+ call _notice 30, msg0
+ call zocwriteln _ansi("b", "green")
+ call _notice 70, msg1, msg2
+ call zocwrite _ansi("b", "red")
+ call _notice 70, msg3
+ call zocwrite _ansi("b", "green")
+ call _notice 70, msg4
+ call zocwrite _ansi("b", "red")
+ call _notice 70, msg5
+ call zocwrite _ansi("b", "green")
+ call _notice 70, msg6
+return
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*    last updated: 13 Feb 2001, 20:53:46     */
+
+/** _getfigs v.1 **/
+
+_getfigs:
+ figs.=0
+ gfline.=""
+
+ call zocsend "g"
+ if zocwait("===^M")=640 then call _error "timeout"
+
+ gfdone=0
+ gfi=1
+ do while \gfdone 
+  gfans=zocwaitmux("Command [", "Personal", "Corp")
+  select
+   when gfans=0 then gfdone=1
+   when gfans=640 then call _error "timeout"
+   otherwise do
+    gfline.gfi=zoclastline()
+    gfi=gfi+1
+   end /* when */
+  end /* select */
+ end /* do */
+
+ gfi=1
+ do while gfline.gfi\=""
+  gfn=_stripint(left(gfline.gfi,6))
+  if gfn\="" then figs.gfn=1
+  gfi=gfi+1
+ end /* do */
+
+return
+
+/** _loadsectorcim v.1 **/
+
+_loadsectorcim:
+ lcname=arg(1)
+
+ if _fileopenr(lcname) then lceof=_fileeof(lcname)
+ else call _error "unable to open "||lcname||"."
+  
+ call _newline
+ call zocwrite _ansi("b", "cyan")||"reading "||lcname||"."
+ 
+ s.=""
+ lcmon=0
+ do while \lceof
+ 
+  lcline=linein(lcname)
+  parse var lcline lcrow lcline
+  lcrow=_stripint(lcrow)
+  if lcrow\="" then do
+   parse var lcline s.lcrow lcline
+   s.lcrow=_stripint(s.lcrow)
+ 
+   do while lcline\=""
+    parse var lcline lctemp lcline
+    lctemp=_stripint(lctemp)
+    s.lcrow=s.lcrow||";"||lctemp
+   end /* do */
+ 
+   lcmon=lcmon+1
+   if lcmon//500=0 then call zocwrite "."
+  end /* if */
+ 
+  lceof=_fileeof(lcname)
+ 
+ end /* do */
+ 
+ call _fileclose lcname
+return
+
+/** _chooselist v.4 **/
+
+_chooselist:
+ clprompt=arg(1)
+ cllist=arg(2)
+ if cllist="" then call _error "no list"
+ cldelim=arg(3)
+ if cldelim=""        then call _error "missing delimiter"
+ if length(cldelim)>1 then call _error "long delimiter"
+ clch.=""
+
+ cldone=0
+ cli=0
+ cld=pos(cldelim, cllist)
+ if cld=0 then do
+  clch.1=cllist
+  cldone=1
+ end /* if */
+
+ do while \cldone
+  cli=cli+1
+  clch.cli=left(cllist, cld-1)
+  cllist=substr(cllist, cld+1)
+  cld=pos(cldelim, cllist)
+  if cld=0 then cldone=1
+ end /* while */
+ if length(cllist)>0 then do
+  cli=cli+1
+  clch.cli=cllist
+ end /* if */
+ if cli<7 then clmax=1
+ if cli<5 then clmax=0
+ if cli>=7 then clmax=(cli-5)%2+1
+
+ cldone=0
+ clpos=0
+ do while \cldone
+  if clpos<0 then clpos=0
+  if clpos>clmax then clpos=clmax
+
+  select
+   when clpos=0 then do
+    if clmax=0 then clans=zocrequest(clprompt, clch.1, clch.2, clch.3, clch.4)
+    else clans=zocrequest(clprompt, clch.1, clch.2, clch.3, "next")
+   end /* when */
+   when clpos=clmax then do
+    clp1=(clpos-1)*2+4
+    clp2=clp1+1
+    clp3=clp1+2
+    clans=zocrequest(clprompt, "back", clch.clp1, clch.clp2, clch.clp3)
+   end /* when */
+   otherwise do
+    clp1=(clpos-1)*2+4
+    clp2=clp1+1
+    clans=zocrequest(clprompt, "back", clch.clp1, clch.clp2, "next")
+   end /* otherwise */
+  end /* select */
+
+  select
+   when clans="next" then clpos=clpos+1
+   when clans="back" then clpos=clpos-1
+   when clans="##CANCEL##" then cldone=1
+   when clans="" then donothing=1
+   otherwise cldone=1
+  end /* select */
+
+ end /* do */
+
+ if lower(arg(4))="c" & clans="##CANCEL##" then call _quit "script cancelled by user."
+
+return clans
+
+/** _ini v.4 **/
+
+_getinivar:
+ ininame=arg(1)
+ inihead=arg(2)
+ inivar=arg(3)
+
+ if ininame="" then call _error "no filename"
+ if inihead="" then call _error "no heading"
+ if inivar="" then call _error "no variable"
+
+ if stream(ininame, "C", "QUERY EXISTS")="" then inival="##EOF##"
+ else do
+  call stream ininame, "C", "OPEN READ"
+ 
+  inidone=0
+  inieof=0
+  if stream(ininame, "S")\="READY" then inieof=1
+ 
+  do while \(inidone | inieof)
+   iniline=linein(ininame)
+   if left(iniline,1)=="[" then do
+    if substr(iniline,2,length(iniline)-2)==inihead then inidone=1
+   end /* if */
+   if stream(ininame, "S")\="READY" then inieof=1
+  end /* do */
+ 
+  inidone=0
+ 
+  do while \(inidone | inieof)
+   iniline=linein(ininame)
+   if left(iniline,1)="[" then inieof=1
+   inieq=pos("=",iniline)
+   if inieq>0 then do
+    if left(iniline,inieq-1)==inivar then inidone=1
+   end /* if */
+   if stream(ininame, "S")\="READY" then inieof=1
+  end /* do */
+ 
+  call stream ininame, "C", "CLOSE"
+ 
+  if inieof then inival="##EOF##"
+  else inival=substr(iniline,inieq+1)
+ end /* else */
+
+return inival
+
+_getiniheadings:
+ ininame=arg(1)
+ if ininame="" then call _error "no filename"
+ if stream(ininame, "C", "QUERY EXISTS")="" then inilist="##EOF##"
+ else do
+  call stream ininame, "C", "OPEN READ"
+ 
+  inilist=""
+  inieof=0
+  if stream(ininame, "S")\="READY" then inieof=1
+ 
+  do while \inieof
+   iniline=linein(ininame)
+   if left(iniline,1)=="[" then do
+    inilist=inilist||substr(iniline,2,length(iniline)-2)||";"
+   end /* if */
+   if stream(ininame, "S")\="READY" then inieof=1
+  end /* do */
+ 
+  if length(inilist)=0 then inilist="##EOF##"
+  call stream ininame, "C", "CLOSE"
+ end /* else */
+return inilist
+
+/** _ini_asknum v.1 **/
+
+_ini_asknum:
+ aipmt=arg(1)
+ aidef=arg(2)
+ aifname=arg(3)
+ aisect=arg(4)
+ aivar=arg(5)
+ aiflag=0
+
+ if aisect="##EOF##" then aiflag=1
+ if \aiflag then ainum=_getinivar(aifname, aisect, aivar)
+ if ainum="##EOF##" then aiflag=1
+ ainum=_stripint(ainum)
+ if ainum="" then aiflag=1
+ if aiflag then do
+  if aipmt="##DEFAULT##" then ainum=aidef
+  else ainum=_asknum(aipmt,aidef)
+ end /* if */
+ else call zocwriteln "<< using "||aifname||" - "||aivar||"="||ainum||" >>"
+ if ainum="##CANCEL##" then call _quit "script cancelled by user."
+return ainum
+
+/** _ini_askstr v.2 **/
+
+_ini_askstr:
+ aipmt=arg(1)
+ aidef=arg(2)
+ aifname=arg(3)
+ aisect=arg(4)
+ aivar=arg(5)
+ aiflag=0
+
+ if aigame="##EOF##" then aiflag=1
+ if \aiflag then aistr=_getinivar(aifname, aisect, aivar)
+ if aistr="##EOF##" then aiflag=1
+ if aiflag then do
+  if aipmt="##DEFAULT##" then aistr=aidef
+  else aistr=zocask(aipmt,aidef)
+ end /* if */
+ else do
+  parse var aistr aitemp "^" .
+  if length(aitemp)>17 then aitemp=left(aitemp,20)
+  if aitemp\=aistr then aitemp=aitemp||"..."
+  call zocwriteln "<< using "||aifname||" - "||aivar||"="||aitemp||" >>"
+ end /* else */
+ if aistr="##CANCEL##" then call _quit "script cancelled by user."
+return aistr
+
+/** _ansi v.1 **/
+
+_ansi:
+ b=0
+ if arg(1)="b" then do
+  b=1
+  c=arg(2)
+ end /* if */
+ else c=arg(1)
+ select
+  when c="gray" then ansi=30
+  when c="red" then ansi=31
+  when c="green" then ansi=32
+  when c="yellow" then ansi=33
+  when c="blue" then ansi=34
+  when c="magenta" then ansi=35
+  when c="cyan" then ansi=36
+  when c="white" then ansi=37
+  otherwise ansi=37
+ end /* select */
+ ansi="^[["||b||";"||ansi||"m"
+return ansi
+
+/** _commsg v.2 **/
+
+_fedcommsg:
+ call zocsend "`^M"||"REV SCRIPT:  "||arg(1)||"^M^M"
+ if zocwait("Federation comm-link terminated.")=640 then call _error "timeout"
+return
+
+_radiomsg:
+ call zocsend "'^M"||"REV SCRIPT:  "||arg(1)||"^M^M"
+ if zocwait("Sub-space comm-link terminated")=640 then call _error "timeout"
+return
+
+_sfedcommsg:
+ call zocsend "`"||"REV SCRIPT:  "||arg(1)||"^M"
+ if zocwait("Message sent on Federation comm-link.")=640 then call _error "timeout"
+return
+
+_sradiomsg:
+ call zocsend "'"||"REV SCRIPT:  "||arg(1)||"^M"
+ if zocwait("Message sent on sub-space channel")=640 then call _error "timeout"
+return
+
+/** _quit v.2 **/
+
+_quit:
+ if arg(1)=="" then 
+  qmsg="<< Script Ended. >>"
+ else 
+  qmsg="<< Script Ended:  "||arg(1)||" >>"
+ call zocwriteln
+ call zocwriteln "^[[1;32m"||qmsg||"^[[0;35m"
+ call zocbeep 1
+ exit
+return 1
+
+/** _error v.2 **/
+
+_error:
+ if arg(1)=="" then 
+  errmsg="<< Script Error. >>"
+ else
+  errmsg="<< Script Error:  "||arg(1)||" >>"
+ call zocwriteln
+ call zocwriteln "^[[1;31m"||errmsg||"^[[0;35m"
+ call zocbeep 1
+ if arg(2)=="" then exit
+return arg(2)
+
+/** _stripint v.1 **/
+
+_stripint:
+ stint=""
+ sttemp=strip(arg(1))
+ if datatype(sttemp,"W") then stint=sttemp
+ else do
+  do sti=1 to length(sttemp)
+   stchar=substr(sttemp,sti,1)
+   if length(stint)=0 then do
+    if verify(stchar,"1234567890-")=0 then stint=stint||stchar
+   end /* if */
+   else if verify(stchar,"1234567890")=0 then stint=stint||stchar
+  end /* do */
+  if \datatype(stint,"W") then stint=""
+ end /* do */
+return stint
+
+/** _instr v.2 **/
+
+_instr:
+ ifind=arg(1)
+ istr=arg(2)
+
+ if lower(arg(3))\="cs" then do
+  ifind=lower(ifind)
+  istr=lower(istr)
+ end /* if */
+
+ if pos(ifind,istr)>0 then ir=1
+ else ir=0
+
+return ir
+
+/** _list v.1 **/
+
+_listadd:
+ laadd=arg(1)
+ lalist=arg(2)
+ latemp1=lalist
+ lafound=0
+ if lalist="" then lalist=laadd
+ else do
+  do while latemp1\=""
+   parse var latemp1 latemp2 ";" latemp1
+   if latemp2=laadd then lafound=1
+   if lafound then latemp1=""
+  end /* do */
+  if \lafound then lalist=lalist||";"||laadd
+ end /* else */
+return lalist
+
+_listsort:
+ lslist=arg(1)
+ lsa.=""
+ lsi=0
+ do while lslist\=""
+  lsi=lsi+1
+  parse var lslist lsa.lsi ";" lslist
+ end /* do */
+ do lsk=lsi-1 to 1 by -1
+  do lsj= 1 to lsk
+   lsj2=lsj+1
+   if lsa.lsj>lsa.lsj2 then do
+    lstemp=lsa.lsj
+    lsa.lsj=lsa.lsj2
+    lsa.lsj2=lstemp
+   end /* if */
+  end /* do */
+ end /* do */
+ lslist=lsa.1
+ lsi=2
+ do while lsa.lsi\=""
+  lslist=lslist||";"||lsa.lsi
+  lsi=lsi+1
+ end /* do */
+return lslist
+
+_listinstr:
+ lilist=arg(1)
+ lr=0
+ do while lilist\=""
+  parse var lilist liitem ";" lilist
+  if pos(liitem, arg(2))>0 then do
+   lr=1
+   lilist=""
+  end /* if */
+ end /* do */
+return lr
+
+_listin:
+ lilist=arg(2)
+ lir=0
+ do while lilist\=""
+  parse var lilist litemp ";" lilist
+  if litemp==arg(1) then do
+   lir=1
+   lilist=""
+  end /* if */
+ end /* do */
+return lir
+
+/** _notice v.1 **/
+
+_notice:
+ nwidth=arg(1)
+ if nwidth>75 then nwidth=75
+ nline=arg(2)
+
+ ni=3
+ do while arg(ni)\=""
+  nw1=length(arg(ni))
+  if nw1+nwidth>250 then nwidth=250-nw1
+  ni=ni+1
+ end /* do */
+ if nwidth<20 then call _error "notice error"
+
+ ni=3
+ do while length(nline)>0
+  if length(nline)<=nwidth & arg(ni)\="" then do
+   nline=nline||arg(ni)
+   ni=ni+1
+  end /* if */
+  if length(nline)<=nwidth then do
+   call zocwriteln "<< "||nline||_space(nwidth-length(nline))||">>"
+   nline=""
+  end /* if */
+  else do
+   np=nwidth
+   do while substr(nline,np,1)\=" "
+    np=np-1
+   end /* do */
+   call zocwriteln "<< "||left(nline,np)||_space(nwidth-np)||">>"
+   nline=substr(nline,np+1)
+  end /* else */
+ end /* do */
+return
+
+/** _space v.2 **/
+
+_space:
+ spw=arg(1)
+ spr=""
+ if spw>0 then spr=copies(" ",spw)
+return spr
+
+/** _pcheck v.2 **/
+
+_pcheck:
+ pc1=arg(1)
+ pc2=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+ if _instr(pc1,pc2,"cs") then pcr=1
+ else pcr=0
+return pcr
+
+/** _file v.2 **/
+
+_fileclose:
+ call stream arg(1), "C", "CLOSE"
+return
+
+_fileeof:
+ if stream(arg(1), "S")="READY" then feofr=0
+ else feofr=1
+return feofr
+
+_fileexists:
+ if stream(arg(1), "C", "QUERY EXISTS")="" then fer=0
+ else fer=1
+return fer
+
+_fileopenr:
+ for=1
+ foname=arg(1)
+ if foname="" then call _error "no filename"
+ for=_fileexists(foname)
+ if for then do
+  call stream foname, "C", "OPEN READ"
+  for=\_fileeof(foname)
+  if \for then call _fileclose foname
+ end /* if */
+return for
+
+_fileopenw:
+ for=1
+ foname=arg(1)
+ if foname="" then call _error "no filename"
+ for=_fileexists(foname)
+ if for then do
+  call stream foname, "C", "OPEN WRITE"
+  call stream foname, "C", "SEEK <0"
+ end /* if */
+return for
+
+_filenew:
+ fnr=1
+ fnname=arg(1)
+ if fnname="" then call _error "no filename"
+ if \_fileexists(fnname) then call stream fnname, "C", "OPEN WRITE"
+ else do
+  if lower(arg(2))="delete" then do
+   call dosdel fnname
+   if \_fileexists(fnname) then call stream fnname, "C", "OPEN WRITE"
+   else fnr=0
+  end /* if */
+  else fnr=0
+ end /* else */
+return fnr
+
+/** _twarp v.2 **/
+
+_twarp:
+ twsuccess=0
+ twsector=arg(1)
+ twcr=arg(2)
+
+ if twcr="" then call zocsend "m"||twsector||"^M"
+ else do
+  if twsector<twcr then call zocsend twsector||"^M"
+  else call zocsend twsector
+ end /* else */
+
+ twans=zocwaitmux("Command [", ,
+                  "already in that sector!", ,
+                  "Engage the Autopilot?", ,
+                  "engage the TransWarp drive?")
+ select
+  when twans=0 then do
+   if zocwait("]:[")=640 then call _error "timeout"
+   if zocwait("]")=640 then call _error "timeout"
+   if zoclastline()=mlsec then twsuccess=1
+  end /* when */
+  when twans=1 then donothing=1
+  when twans=2 then do
+   call zocsend "n"
+   if zocwait("Command [")=640 then call _error "timeout"
+   twsuccess=0
+  end /* when */
+  when twans=3 then do
+   call zocsend "y"
+   twans2=zocwaitmux("not have enough Fuel Ore", ,
+                     "make this jump blind?", ,
+                     "shall we engage?")
+   select
+    when twans2=0 then if zocwait("Command [")=640 then call _error "timeout"
+    when twans2=1 then do
+     call zocsend "n"
+     if zocwait("Command [")=640 then call _error "timeout"
+    end /* when */
+    when twans2=2 then do
+     call zocsend "y"
+     if zocwait("Command [")=640 then call _error "timeout"
+     twsuccess=1
+    end /* when */
+    when twans2=640 then call _error "timeout"
+   end /* select */
+  end /* when */
+  when twans=640 then call _error "timeout"
+ end /* select */
+
+return twsuccess
+
+/** _newline v.1 **/
+
+_newline:
+ if zocgetinfo("CURSOR-X")>0 then call zocwriteln arg(1)
+ else call zocwrite arg(1)
+return
+
+/** _debug v.1 **/
+
+_debug:
+ call zocwriteln "^[[1;34mDEBUG <"||arg(1)||">^[[0;35m"
+return
+
+/** _asknum v.3 **/
+
+_asknum:
+ aninit=arg(2)
+ andone=0
+ do while \andone
+  anans=zocask(arg(1), aninit)
+  if anans="##CANCEL##" then andone=1
+  else do
+   anans=_stripint(anans)
+   if anans\="" then andone=1
+  end /* else */
+  if \andone then aninit="please enter a number or ESC to cancel."
+ end /* do */
+ if lower(arg(3))="c" & anans="##CANCEL##" then call _quit "script cancelled by user."
+return anans
+
+/** _planet v.5 **/
+
+_planet:
+ pplanet=arg(1)
+ pcomm=arg(2)
+ pmsg=arg(3)
+ if pmsg="" then pmsg="which planet?"
+
+/* MESSAGES TO ACCOUNT FOR:                          */
+/* They don't have room for that many on the planet! */
+
+ call zocsend "l"
+ plist=""
+ pscanner=0
+ pdone=0
+ do while \pdone
+  pans=zocwaitmux("Planet command", ,
+                  "Land on which planet", ,
+                  "  <", ,
+                  "There isn't a planet in this sector.", ,
+                  "Citadel RLvl Fighters", ,
+                  "couldn't possibly stand the stress",
+                  "Command [")
+  select
+   when pans=0 then pdone=1
+   when pans=1 then do
+    if pplanet=0 then do
+     pplanet=_chooselist(pmsg, plist, ";", "c")
+     parse var pplanet pplanet "-" .
+    end /* if */
+    call zocsend pplanet||"^M"
+   end /* when */
+   when pans=2 then do
+    if pplanet=0 then do
+     if pscanner then do
+      if zocwait("%")=640 then call _error "timeout"
+     end /* if */
+     else if zocwait("^M")=640 then call _error "timeout"
+     pline=zoclastline()
+     pnum=_stripint(left(pline,6))
+     pname=right(pline,length(pline)-5)
+     pname=left(pname,6)
+     if plist="" then plist=pnum||"-"||pname
+     else plist=plist||";"||pnum||"-"||pname
+    end /* if */
+   end /* when */
+   when pans=3 then pplanet=0
+   when pans=4 then pscanner=1
+   when pans=5 then pplanet=0
+   when pans=6 then pdone=1
+   when pans=640 then call _error "timeout"
+  end /* select */
+ end /* do */
+
+ if pans=0 then do
+
+  do while pcomm\=""
+   parse var pcomm dc1 ";" pcomm
+   call zocsend dc1
+   pans=zocwaitmux("Planet command", "Command [")
+   select
+    when pans=0 then donothing=1
+    when pans=1 then pcomm=""
+    when pans=640 then call _error "timeout"
+   end /* select */
+  end /* do */
+ 
+  if pans=0 then do
+   call zocsend "q"
+   if zocwait("Command [")=640 then call _error "timeout"
+  end /* if */
+
+ end /* if */
+
+return pplanet
+
+/** _buyhardware v.3 **/
+
+/*------------------------------+
+¦ The Emporium Daily Specials:  ¦
+¦                               ¦
+¦ <A> Atomic Detonators         ¦ done
+¦ <B> Marker Beacons            ¦
+¦ <C> Corbomite Devices         ¦
+¦ <D> Cloaking Devices          ¦
+¦ <E> SubSpace Ether Probes     ¦ done
+¦ <F> Planet Scanners           ¦
+¦ <L> Limpet Tracking Mines     ¦
+¦ <M> Space Mines               ¦
+¦ <P> Photon Missiles           ¦ done
+¦ <R> Long Range Scanners       ¦
+¦ <S> Mine Disruptors           ¦
+¦ <T> Genesis Torpedoes         ¦ done
+¦ <W> TransWarp Drives          ¦
+¦ <Y> Psychic Probes            ¦
+¦                               ¦
+¦ <!> Hardware Emporium Help    ¦
+¦ <Q> Leave the Emporium        ¦
++------------------------------*/
+
+_buyhardware:
+ bhsdfound=1
+ bhlist=arg(1)
+ bhlistq=""
+
+ call zocsend "p"
+ bhans=zocwaitmux("There is no port in this sector!", ,
+                  "<Q> Quit, nevermind", ,
+                  "<S> Land on the StarDock")
+ select
+  when bhans=0 then do
+   if zocwait("Command [")=640 then call _error "timeout"
+   call zocwrite _ansi("b", "green")||"<< stardock not available >> "||_ansi("magenta")
+   bhsdfound=0
+  end /* when */
+  when bhans=1 then do
+   call zocsend "q"
+   if zocwait("Command [")=640 then call _error "timeout"
+   call zocwrite _ansi("b", "green")||"<< stardock not available >> "||_ansi("magenta")
+   bhsdfound=0
+  end /* when */
+  when bhans=2 then call zocsend "s"
+  when bhans=640 then call _error "timeout"
+ end /* select */
+
+ if bhsdfound then do
+  zocsend "h"
+  if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+
+  do while bhlist\=""
+
+   parse var bhlist bhitem ";" bhlist
+   bhquant=_stripint(substr(bhitem,2))
+   bhitem=upper(left(bhitem,1))
+   select
+
+    when bhitem="A" then do
+     call zocsend "a"
+     if zocwait("(Max ")=640 then call _error "timeout"
+     if zocwait("[")=640 then call _error "timeout"
+     bhavail=_stripint(zoclastline())
+     if bhquant=0 then bhquant=bhavail
+     if bhavail=0 then bhquant=0
+     call zocsend bhquant||"^M"
+     if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /* when */
+
+    when bhitem="E" then do
+     call zocsend "e"
+     if zocwait("(Max ")=640 then call _error "timeout"
+     if zocwait("[")=640 then call _error "timeout"
+     bhavail=_stripint(zoclastline())
+     if bhquant=0 then bhquant=bhavail
+     if bhavail=0 then bhquant=0
+     call zocsend bhquant||"^M"
+     if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /* when */
+
+    when bhitem="P" then do
+     call zocsend "P"
+     bhans=zocwaitmux("not equipped to handle Photon Missiles!", "(Max ", "Photon Missiles are disabled")
+     select
+      when bhans=0 then do
+       if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+       bhquant=0
+       call zocwrite "<< ship not capable >>"
+      end /* when */
+      when bhans=1 then do
+       if zocwait("[")=640 then call _error "timeout"
+       bhavail=_stripint(zoclastline())
+       if bhquant=0 then bhquant=bhavail
+       if bhavail=0 then bhquant=0
+       call zocsend bhquant||"^M"
+      if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+      end /* when */
+      when bhans=2 then do
+       if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+       bhquant=0
+       call zocwrite "<< photons are disabled >>"
+      end /* when */
+      when bhans=640 then call _error "timeout"
+     end /* select */
+    end /* when */
+
+    when bhitem="T" then do
+     call zocsend "t"
+     if zocwait("(Max ")=640 then call _error "timeout"
+     if zocwait("[")=640 then call _error "timeout"
+     bhavail=_stripint(zoclastline())
+     if bhquant=0 then bhquant=bhavail
+     if bhavail=0 then bhquant=0
+     call zocsend bhquant||"^M"
+     if zocwait("<Hardware Emporium>")=640 then call _error "timeout"
+    end /* when */
+
+    otherwise bhquant=0
+
+   end /* select */
+
+   if bhlistq="" then bhlistq=bhquant
+   else bhlistq=bhlistq||";"||bhquant
+
+  end /* do */
+
+  call zocsend "qq"
+  if zocwait("Command [")=640 then call _error "timeout"
+
+ end /* if */
+
+ else do
+  do while bhlist\=""
+   parse var bhlist . ";" bhlist
+   if bhlistq="" then bhlistq=0
+   else bhlistq=bhlistq||";"||0
+  end /* do */
+ end /* else */
+
+return bhlistq
+
+/** _getgameinfo v.1 **/
+
+_getgameinfo:
+ parse value zocgetglobaloption("ScriptPath") with . '="' ggpath '"'
+ ggpath=ggpath||"\"
+ ggini=ggpath||"script.ini"
+ 
+ parse value zocgetglobaloption("WindowTitle") with . '="' gggame '"'
+ if gggame="" then do
+  gglist=_getiniheadings(ggini)
+  if gglist="##EOF##" then gggame="##EOF##"
+  else gggame=_chooselist("select a game:", gglist, ";", "c")
+ end /* do */
+
+ call zocwriteln "<< using "||ggini||" - ["||gggame||"] >>"
+
+ ggr=ggpath||";"||ggini||";"||gggame
+return ggr
+
+/** _get_log_path v.1 **/
+
+_get_log_path:
+ parse value zocgetglobaloption("CapturePath") with . '="' glpath '"'
+ glpath=glpath||"\"
+return glpath
+

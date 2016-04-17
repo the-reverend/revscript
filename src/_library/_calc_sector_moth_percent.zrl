@@ -1,0 +1,20 @@
+/** _calc_sector_moth_percent v.1 **/
+_calc_sector_moth_percent: procedure expose (globals)
+ fuelore=arg(1)
+ damage=arg(2)
+ count=arg(3)-1
+
+/*- notes:                                            -*/
+/*-  max damage occurs at 100/count percent           -*/
+/*-  so to kill 4 moths, max damage is at 25% setting -*/
+
+ rslt=0
+ m=100%(count+1)
+ do p=1 to m
+  if count>0 then f.p=trunc(fuelore*(1-p/100)**(count))
+             else f.p=fuelore
+  d.p=trunc(f.p*p/300)
+  if d.p>=damage & rslt=0 then rslt=p
+ end /*do*/
+ rslt=rslt||";"||d.rslt||";"||m||";"||d.m
+return rslt

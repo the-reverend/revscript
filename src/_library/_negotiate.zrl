@@ -1,0 +1,211 @@
+/** _negotiate v.1 **/
+_negotiate: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _negotiate"; else planet=arg(1)
+ if \arg(2,"E") then sector=_getinfo("sect");  else sector=arg(2)
+ if \arg(3,"E") then dname="";                 else dname=arg(3)
+ if \arg(4,"E") then tradepercent=100;         else tradepercent=arg(4)
+ if \arg(5,"E") then product_list="1 2 3";     else product_list=arg(5)
+ if \arg(6,"E") then quantity_list="0 0 0";    else quantity_list=arg(6)
+ if \arg(7,"E") then forcebestprice="0 0 0";   else forcebestprice=arg(7)
+ if \arg(8,"E") then memo=0;                   else memo=arg(8)
+ mtext="tt"
+
+ rslt=strip(copies(" 0",words(_product_list)))
+ abort=strip(copies(" 0",words(_product_list)))
+
+ /* get products and quantities */
+    sell.=0
+    quan.=0
+    mcic.=0
+    do i=1 to words(product_list)
+     n=_list_select(lower(word(product_list,i)),"f;o;e;1;2;3","1;2;3;1;2;3")
+     c=_stripint(word(quantity_list,i))
+     m=_iniv("!buy_"||word("ore org equ",n), "!mcic."||sector)
+     f=word(forcebestprice,i)
+     if n\="" & c>=0 then do
+      sell.n=1
+      quan.n=c
+      if \_undef(m) then mcic.n=m
+      fbp.n=f
+     end /*if*/
+    end /*do*/
+
+ /* port and get port info */
+    if _sendwait("pzn","(?=Help)? : P")=640 then call _error "timeout"
+    ans=_waitmux("Do you want instructions (Y/N) [N]?|Captain! Are you sure|You don't have any turns left.|Enter your choice [T] ?")
+    select
+     when ans<3 then return abort
+     when ans=3 then nop
+     when ans=640 then call _error "timeout"
+     otherwise nop
+    end /*select*/
+    ans=_waitmux("(?=Help)? :|of max OnBoard")
+    select
+     when ans=0 then return rslt
+     when ans=1 then nop
+     when ans=640 then call _error "timeout"
+     otherwise nop
+    end /*select*/
+    ans=_waitmux("%|Registry#")
+    perc.=0
+    do while ans=0
+#  Items     Status  Trading % of max OnBoard
+#  -----     ------  ------- -------- -------
+# Fuel Ore   Buying    2110    100%       0  
+# Organics   Selling   1640    100%       0  
+# Equipment  Buying    1600     99%       0  
+     line=_lastline()
+     parse var line pr 9 12 bs 13 19 . pc "%"
+     n=_list_select(pr,"Fuel Ore;Organics;Equipmen","1;2;3")
+     perc.n=strip(pc)
+     ans=_waitmux("%|Registry#")
+    end /*do*/
+    if ans=640 then call _error "timeout"
+
+ call zocsend planet||"^M"
+
+ done=0
+ pflag.=0
+ success.=1
+ midhaggles.=0
+
+ do while \done
+  ans=_waitmux("Fuel Ore do you want to sell [",
+            ||"|Organics do you want to sell [",
+            ||"|Equipment do you want to sell [",
+            ||"|Command [",
+            ||"|That planet is not in this sector.",
+            ||"|You don't own that planet!")
+  line=_lastline()
+  select
+   when ans<=2 & \pflag.ans then do
+    n=ans+1
+    q=_grabit("]","s")
+    if quan.n=0 then quan.n=q
+    quan.n=min(quan.n,q)
+
+    /* IF SELLING THIS PRODUCT THEN DO ALL THIS */
+       if sell.n then do
+        success.n=0
+        call zocsend quan.n||"^M"
+        if _wait("Your offer [")=640 then call _error "timeout"
+        offer=_stripint(_grabit("]"))
+        puo=trunc(offer/quan.n*1000)/1000-.001 /* 3 digit puo rounding fudge */
+        if mcic.n=0 then do
+         mcic.n=_negotiate_get_mcic(n,perc.n,puo,tradepercent)
+        /* NOTE: if port percent >=(100,94,82) then calculated mcic for (ore,org,equ) is exact, so write to _data.ini */
+         if dname\="" & perc.n>=word("100 94 82", n) then do
+          call _iniv "!buy_"||word("ore org equ",n), "!mcic."||sector, mcic.n
+          call _ini_write dname, "buy_"||word("ore org equ",n), "mcic."||sector, mcic.n
+          if memo then mtext=mtext||"REV-CMD : set_var : buy_"||word("ore org equ",n)||" : mcic."||sector||"="||mcic.n||" ::^M"
+         end /*if*/
+        end /*if*/
+        cop=_list_select(mcic.n,_mcic.n.101,_mcic.n.102," ",1)
+        co1=trunc(offer*(cop-word("0.0015 0.0015 0.0018",n))) /* cop fudge factor 0.001 more equ fails 0.0015 OK */
+        co=_trunc(co1,min(3-length(co1),0))
+        call zocsend co||"^M"
+        do FOREVER
+         ans2=_waitmux("We'll buy them for",
+                    ||"|Our final offer",
+                    ||"|We're not interested.",
+                    ||"|You have",
+                    ||"|value your life!|look, get lost...|you make me sick.|Get lost creep|Thats insane!",
+                    ||"|my time|a real offer|WHAT?!@!?|short with you|choke me up!")
+         select
+          when ans2=0 then do
+           if _wait("Your offer [")=640 then call _error "timeout"
+           newoffer=_stripint(_grabit("]"))
+           priceshift=newoffer-offer
+           co=trunc(co-priceshift*0.60)
+           offer=newoffer
+           midhaggles.n=midhaggles.n+1
+           call zocsend co||"^M"
+          end /*when*/
+          when ans2=1 then do
+           if _wait("Your offer [")=640 then call _error "timeout"
+           newoffer=_stripint(_grabit("]"))
+           priceshift=newoffer-offer
+           if fbp.n then do
+            fbpt.1=((56-51)-(38-36))/(90-40)
+            fbpt.2=((102-94)-(70-66))/(75-30)
+            fbpt.3=((170-160)-(112-109))/(65-20)
+            diff=mcic.n*fbpt.n*quan.n
+            /* NOTE: given ideal megarobbing conditions your turns are worth about
+                     40k creds each.  if you force 2 mid haggles, it will average 4-5
+                     tries... so you should look to gain 40k*4.5 creds to make a retry
+                     worth while. */
+            fbp.n=diff>40000*4.5
+           end /*if*/
+           select
+            when fbp.n & midhaggles.n<2 then nop
+            when mcic>75 then co=trunc(co-priceshift*3.0)
+            when mcic>65 then co=trunc(co-priceshift*2.7)
+            otherwise         co=trunc(co-priceshift*2.5)
+           end /*select*/
+           offer=newoffer
+           call zocsend co||"^M"
+          end /*when*/
+          when ans2=2 then leave
+          when ans2=3 then do; success.n=1; leave; end
+          when ans2=640 then call _error "timeout"
+          when ans2>3 & fbp.n & midhaggles.n<2 then do; success.n=0; leave; end
+          when ans2>3 then do
+           success.n=0
+           call _iniv "!buy_"||word("ore org equ",n), "!mcic."||sector, mcic.n-1
+#           call _ini_write dname, "buy_"||word("ore org equ",n), "mcic."||sector, mcic.n-1
+#           if memo then mtext=mtext||"REV-CMD : set_var : buy_"||word("ore org equ",n)||" : mcic."||sector||"="||mcic.n-1||" ::^M"
+           leave
+          end /* when */
+          otherwise nop
+         end /*select*/
+        end /*while*/
+        if success.n & _verbose then call zocsend "'neg : "||quan.n||" "||_dword("fuel ore;organics;equipment",n,";")||" for "||co||" credits ("||trunc(co/quan.n)||" per unit) at mcic "||mcic.n||"^M"
+       end /*if*/
+       else call zocsend "0^M"
+       pflag.ans=1
+
+   end /*when*/
+   when ans=3 then done=1
+   when ans=4 then do
+    call zocsend "q^M"
+    if _wait("Command [")=640 then call _error "timeout"
+    success.n=0
+   end /*when*/
+   when ans=5 then do
+    call zocsend "q^M"
+    if _wait("Command [")=640 then call _error "timeout"
+    success.n=0
+   end /*when*/
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ if memo & mtext\="tt" then call _send255 mtext||"^Mq"
+
+ rslt=""
+ do i=1 to words(product_list)
+  n=word(product_list,i)
+  rslt=strip(rslt success.n)
+ end /*do*/
+return rslt
+/*- HAGGLE MESSAGES THAT DUMP YOU OUT OF PLANET NEGOTIATION         -*/
+/*- I think you'd better leave if you value your life!              -*/
+/*- I see you are as stupid as you look, get lost...                -*/
+/*- Swine, go peddle your wares somewhere else, you make me sick.   -*/
+/*- Get lost creep, that junk isn't worth half that much!           -*/
+/*- HA!  You think me a fool?  Thats insane!  Get out of here!      -*/
+/*- HAGGLE MESSAGES THAT I KNOW OF:                                 -*/
+/*-  -- my time --                                                  -*/
+/*- Quit playing around, you're wasting my time!                    -*/
+/*- I have much better things to do than waste my time.  Try again. -*/
+/*-  -- a real offer --                                             -*/
+/*- Make a real offer or get the h*ll out of here!                  -*/
+/*- So, you think I'm as stupid as you look? Make a real offer.     -*/
+/*- What do you take me for, a fool?  Make a real offer!            -*/
+/*- This is the big leagues Jr.  Make a real offer.                 -*/
+/*- Get real ion-brain, make me a real offer.                       -*/
+/*-  -- miscellaneous --                                            -*/
+/*- WHAT?!@!? you must be crazy!                                    -*/
+/*- My patience grows short with you.                               -*/
+/*- HA! HA, ha hahahhah hehehe hhhohhohohohh!  You choke me up!     -*/

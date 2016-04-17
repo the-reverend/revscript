@@ -1,0 +1,276 @@
+?;2;<<Doctor Who>>
+typh00n;4;<No one>
+Cbs228;1;Cbs228
+big12ozhog;1;<No one>
+mythrandir;2;Tweety
+ccc;0;<No one>
+supg;3;<<Doctor Who>>
+severian;2;Xide
+Strider;0;<No one>
+Father Cajone;2;Father Cajone
+sir lancelot;2;<No one>
+kazmeir;0;<No one>
+Cherokee;3;<No one>
+Tweety;1;<No one>
+traitor;2;traitor
+fearme;3;fearme
+Shyenkur;1;Shyenkur
+Prophet;1;Prophet
+Jasper;1;Jasper
+Wyluli;2;<No one>
+Dr. Bad;1;<No one>
+silence;3;<No one>
+LadyRogue;0;<No one>
+didaskalos;1;<No one>
+ranger one;1;Ranger One
+alexio;2;<No one>
+Xide;2;<No one>
+Alani;3;Alani
+arucard;1;arucard
+hollywood;0;<No one>
+Uncle Sam;3;Uncle Sam
+Kemper3;1;Kemper3
+zep;2;zep
+Jhereg;0;<No one>
+prestone;1;<No one>
+deimos;1;Deimos
+Krimsonblade;0;<No one>
+vader;1;Tweety
+feral;0;<No one>
+space ghost;2;Xide
+!;1;<No one>
+Kasey;4;<<Doctor Who>>
+HHH;1;Hunter Hearst Helmsley
+White Knight;2;didaskalos
+River Rat;1;River Rat
+dieslow;1;DeViLs
+jon;1;<No one>
+Underlord;1;Underlord
+Freejack;1;Freejack
+DOV;0;
+timborulz;1;Blue Adept
+Phoe6e;1;Phoe6e
+ElderProphet;2;<<Doctor Who>>
+dpblues;1;<No one>
+rev;0;
+?;2;<<Doctor Who>>
+typh00n;4;<No one>
+Cbs228;1;Cbs228
+big12ozhog;1;<No one>
+mythrandir;2;Tweety
+ccc;0;<No one>
+supg;3;<<Doctor Who>>
+severian;2;Xide
+Strider;0;<No one>
+Father Cajone;2;Father Cajone
+sir lancelot;2;<No one>
+kazmeir;0;<No one>
+Cherokee;3;<No one>
+Tweety;1;<No one>
+traitor;2;traitor
+fearme;3;fearme
+Shyenkur;1;Shyenkur
+Prophet;1;Prophet
+Jasper;1;Jasper
+Wyluli;2;<No one>
+Dr. Bad;1;<No one>
+silence;3;<No one>
+LadyRogue;0;<No one>
+didaskalos;1;<No one>
+ranger one;1;Ranger One
+alexio;2;<No one>
+Xide;2;<No one>
+Alani;3;Alani
+arucard;1;arucard
+hollywood;0;<No one>
+Uncle Sam;3;Uncle Sam
+Kemper3;1;Kemper3
+zep;2;zep
+Jhereg;0;<No one>
+prestone;1;<No one>
+deimos;1;Deimos
+Krimsonblade;0;<No one>
+vader;1;Tweety
+feral;0;<No one>
+space ghost;2;Xide
+!;1;<No one>
+Kasey;4;<<Doctor Who>>
+HHH;1;Hunter Hearst Helmsley
+White Knight;2;didaskalos
+River Rat;1;River Rat
+dieslow;1;DeViLs
+jon;1;<No one>
+Underlord;1;Underlord
+Freejack;1;Freejack
+DOV;0;
+timborulz;1;Blue Adept
+Phoe6e;1;Phoe6e
+ElderProphet;2;<<Doctor Who>>
+dpblues;1;<No one>
+rev;0;
+?;2;<<Doctor Who>>
+typh00n;4;<No one>
+Cbs228;1;Cbs228
+big12ozhog;1;<No one>
+mythrandir;2;Tweety
+ccc;0;<No one>
+supg;3;<<Doctor Who>>
+severian;2;Xide
+Strider;2;Tweety
+Father Cajone;2;Father Cajone
+sir lancelot;2;<No one>
+kazmeir;2;<<Doctor Who>>
+Cherokee;3;<No one>
+Tweety;2;<No one>
+traitor;2;traitor
+fearme;3;<No one>
+Shyenkur;1;Shyenkur
+Prophet;1;Prophet
+Jasper;1;Jasper
+Wyluli;2;<No one>
+Dr. Bad;3;Dr. Bad
+silence;5;didaskalos
+LadyRogue;0;<No one>
+didaskalos;1;<No one>
+ranger one;1;Ranger One
+alexio;3;<<Doctor Who>>
+Xide;2;<No one>
+Alani;3;Alani
+arucard;1;arucard
+hollywood;2;<<Doctor Who>>
+Uncle Sam;3;Uncle Sam
+Kemper3;1;Kemper3
+zep;2;zep
+Jhereg;0;<No one>
+prestone;1;<No one>
+deimos;1;Deimos
+Krimsonblade;1;Krimsonblade
+vader;1;<No one>
+feral;0;<No one>
+space ghost;3;<No one>
+!;2;<No one>
+Kasey;4;<<Doctor Who>>
+HHH;1;Hunter Hearst Helmsley
+White Knight;2;didaskalos
+River Rat;1;River Rat
+dieslow;1;DeViLs
+jon;1;<No one>
+Underlord;1;Underlord
+Freejack;1;Freejack
+DOV;0;
+timborulz;1;Blue Adept
+Phoe6e;1;Phoe6e
+ElderProphet;2;<<Doctor Who>>
+dpblues;1;<No one>
+rev;0;
+?;2;<<Doctor Who>>
+typh00n;4;<No one>
+Cbs228;1;Cbs228
+big12ozhog;1;<No one>
+mythrandir;2;Tweety
+ccc;0;<No one>
+supg;3;<<Doctor Who>>
+severian;3;severian
+Strider;2;Tweety
+Father Cajone;2;Father Cajone
+sir lancelot;2;<No one>
+kazmeir;2;<<Doctor Who>>
+Cherokee;3;<No one>
+Tweety;2;<No one>
+traitor;2;traitor
+fearme;4;didaskalos
+Shyenkur;1;Shyenkur
+Prophet;1;Prophet
+Jasper;1;Jasper
+Wyluli;2;<No one>
+Dr. Bad;3;Dr. Bad
+silence;6;Silence
+LadyRogue;0;<No one>
+didaskalos;1;<No one>
+ranger one;1;Ranger One
+alexio;3;<<Doctor Who>>
+Xide;2;<No one>
+Alani;3;Alani
+arucard;1;arucard
+hollywood;2;<<Doctor Who>>
+Uncle Sam;3;Uncle Sam
+Kemper3;1;Kemper3
+zep;2;zep
+Jhereg;0;<No one>
+prestone;3;Tweety
+deimos;1;Deimos
+Krimsonblade;1;Krimsonblade
+vader;2;didaskalos
+feral;0;<No one>
+space ghost;5;<<Doctor Who>>
+!;3;The Smashing Machine
+Kasey;4;<<Doctor Who>>
+HHH;1;Hunter Hearst Helmsley
+White Knight;4;Cherokee
+River Rat;1;River Rat
+dieslow;1;DeViLs
+jon;1;<No one>
+Underlord;1;Underlord
+Freejack;1;Freejack
+DOV;0;
+timborulz;1;Blue Adept
+Phoe6e;1;Phoe6e
+ElderProphet;2;<<Doctor Who>>
+dpblues;1;<No one>
+rev;0;
+?;2;<<Doctor Who>>
+typh00n;5;didaskalos
+Cbs228;1;Cbs228
+big12ozhog;2;<No one>
+mythrandir;2;Tweety
+ccc;2;didaskalos
+supg;3;<<Doctor Who>>
+severian;3;severian
+Strider;2;Tweety
+Father Cajone;2;Father Cajone
+sir lancelot;4;didaskalos
+kazmeir;2;<<Doctor Who>>
+Cherokee;3;<No one>
+Tweety;2;<No one>
+traitor;3;traitor
+fearme;4;didaskalos
+Shyenkur;1;Shyenkur
+Prophet;1;Prophet
+Jasper;1;Jasper
+Wyluli;4;<<Doctor Who>>
+Dr. Bad;3;Dr. Bad
+silence;7;big12ozhog
+LadyRogue;1;didaskalos
+didaskalos;1;<No one>
+ranger one;1;Ranger One
+alexio;3;<<Doctor Who>>
+Xide;2;<No one>
+Alani;3;Alani
+arucard;1;arucard
+hollywood;2;<<Doctor Who>>
+Uncle Sam;3;Uncle Sam
+Kemper3;1;Kemper3
+zep;2;zep
+Jhereg;2;didaskalos
+prestone;6;prestone
+deimos;1;Deimos
+Krimsonblade;1;Krimsonblade
+vader;2;didaskalos
+feral;2;didaskalos
+space ghost;6;big12ozhog
+!;3;The Smashing Machine
+Kasey;4;<<Doctor Who>>
+HHH;1;Hunter Hearst Helmsley
+White Knight;7;big12ozhog
+River Rat;1;River Rat
+dieslow;1;DeViLs
+jon;2;<No one>
+Underlord;1;Underlord
+Freejack;1;Freejack
+DOV;0;
+timborulz;1;Blue Adept
+Phoe6e;1;Phoe6e
+ElderProphet;2;<<Doctor Who>>
+dpblues;2;didaskalos
+rev;0;
+oldtimer;0;

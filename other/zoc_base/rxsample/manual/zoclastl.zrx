@@ -1,0 +1,50 @@
+/* REXX script to dial (and retry) a phone number */
+
+/* Ask user what number should be dialled */
+number= ZocAsk("What number shall I dial?")
+
+/* dial the number if it was non empty and if user 
+   did not press the ESC key */
+
+IF number\="" & number\="##CANCEL##" THEN DO 
+   /* redial 5 times max. */
+   DO TRY=1 TO 5  
+
+      SAY "Try #" TRY 
+
+      CALL ZocDial number
+
+      /* wait for CONNECT within 60 seconds */
+      CALL ZocTimeout 60 
+
+      /* scan the next 6 lines for something interesting */
+      DO LINE=1 TO 6
+         /* receive next line of text */
+         timeout= ZocGetLine()
+
+         /* if timed out, end script with error */
+         IF timeout=640 THEN SIGNAL ERROR
+
+         /* if BUSY was received, try again (leave inner loop) */
+         IF ZOCLASTLINE()="BUSY" THEN LEAVE LINE
+
+         /* if NO CARRIER was received, end with error */
+         IF ZOCLASTLINE()="NO CARRIER" THEN DO
+            SAY "Error!"
+            LEAVE TRY    /* leave outer loop (DO TRY=1 ...) */
+         END
+
+         /* if CARRIER or CONNECT was received, everythings ok */
+         IF LEFT(ZOCLASTLINE(),7)="CONNECT" | ,
+             LEFT(ZOCLASTLINE(),7)="CARRIER" THEN DO 
+            CALL ZocBeep 3  /* page user */
+            LEAVE TRY    /* leave outer loop */
+         END 
+
+      END LINE
+
+      CALL ZOCDELAY 30 /* wait 30 seconds to dial next */
+
+   END TRY 
+
+END /* IF */

@@ -1,0 +1,24 @@
+_time_text_to_stamp: procedure expose (globals)
+ type=arg(2)
+ line=arg(1)
+
+ select
+/* 10740: 07/30/15, 15:34:25 - ENTER Skukkukt (Crp Trd) */
+  when type=0 then do
+   parse var line g_month "/" g_day "/" g_year ", " g_hr ":" g_min ":" g_sec .
+   g_year=g_year-12+2000
+  end /*when*/
+  otherwise return 0
+ end /*select*/
+
+ parse value _calc_base_date(g_year, g_month, g_day, g_hr, g_min, g_sec) with g_base ";" g_doy ";" g_sod ";" g_base_sec
+
+ select
+  when arg(3)="seconds"   then rslt=g_sod
+  when arg(3)="minutes"   then rslt=g_sod%60
+  when arg(3)="hours"     then rslt=g_sod%3600
+  when arg(3)="stamp_old" then rslt=g_year-2000||copies("0",3-length(g_doy))||g_doy||copies("0",5-length(g_sod))||g_sod
+  when arg(3)="stamp"     then rslt=g_base_sec
+  otherwise                    rslt=g_base_sec
+ end /*select*/
+return rslt

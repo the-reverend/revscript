@@ -1,0 +1,70 @@
+/** _bot_reloader v.1 **/
+_bot_reloader: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then return "INACTIVITY WARNING| fighters."
+  when lower(arg(1))="setup" then do
+   if _sendwait("c","<Computer activated>")=640 then call _error "timeout"
+   call zocreceivebuf(3*1024)
+   if _sendwait(";","Photon Missiles")=640 then call _error "timeout"
+   if _wait("(?=Help)?")=640 then call _error "timeout"
+   shipcat=_parse_ship_desc(translate(zocreceivebuf(0),"  ",d2c(0)||d2c(10)))
+   call zocsend "q"
+   temp=_dword(shipcat,5,";")
+   select
+    when _stripint(_g.!minfigs)\=_g.!minfigs then _g.!minfigs=temp%2
+    when _g.!maxfigs\=temp                   then _g.!minfigs=temp%2
+    otherwise nop
+   end /*select*/
+   _g.!maxfigs=temp
+   return 1
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ line=arg(2)
+ user=arg(3)
+ cmd=arg(4)
+ args=arg(5)
+ name=arg(6)
+ mode=arg(7)
+ prompt=arg(8)
+ sector=arg(9)
+ planet=arg(10)
+ auth=arg(11)
+ abort=arg(12)
+ select
+  when ans=0 & auth then do
+   select
+    when cmd="min" then do
+     n=_stripint(word(args,1))
+     if n>0 then _g.!MINFIGS=min(n, _g.!MAXFIGS)
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="p" then do
+     n=_stripint(word(args,1))
+     if n>0 then planet=n
+     call zocsend "'status ::^M"
+    end /*when*/
+    when cmd="status" then do
+     prompt=_synchronize()
+     call zocsend "'^M  planet# : "||planet||"^M",
+                   ||"  minfigs : "||_g.!MINFIGS||"^M",
+                   ||"  prompt  : "||prompt||"^M^M"
+    end /*when*/
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  when ans=1 then call zocsend "^["
+  when ans=2 then do
+   parse value reverse(line) with . n .
+   n=_stripint(reverse(n))
+   _qs.!FIGS=_qs.!FIGS-n
+   if _qs.!FIGS<=_g.!MINFIGS & planet>0 & prompt="command" then do
+    call zocsend "l z^H^H"||planet||"^M^Mmnt^Mqzn"
+    _qs.!FIGS=_g.!MAXFIGS
+   end /*if*/
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=prompt planet
+return rslt

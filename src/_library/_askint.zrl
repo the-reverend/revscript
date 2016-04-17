@@ -1,0 +1,23 @@
+/** _askint v.2 **/
+/*- _askint msg, default, flags -*/
+/*- v.2 tested -*/
+_askint: procedure expose (globals)
+ do i=1 to 3
+  select
+   when i=1 & arg(i,"E") then msg=arg(i)
+   when i=1              then msg="enter an integer:"
+   when i=2 & arg(i,"E") then default=arg(i)
+   when i=2              then default=""
+   when i=3 & arg(i,"E") then cflag=min(verify(lower(arg(i)),"c","M"),1)
+   when i=3              then cflag=0
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ rslt=strip(zocask(msg, default))
+ do while _stripint(rslt)\=rslt | rslt=""
+  default=rslt||" [please enter an integer or ESC to cancel.]"
+  if rslt="##CANCEL##" then leave
+  else rslt=strip(zocask(msg, default))
+ end /*do*/
+ if cflag & rslt="##CANCEL##" then call _quit "script cancelled by user.", "nocopy"
+return rslt

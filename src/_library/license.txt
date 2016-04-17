@@ -1,0 +1,8 @@
+This script is free, and can be modified for your personal use, but you
+cannot copy or distribute this script or any derivative work based upon
+this script without the express permission of the author.
+
+This script is provided to you WITHOUT ANY WARRANTY, even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+                      Copyright (C) 2009 Ron Wilson

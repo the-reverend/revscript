@@ -1,0 +1,8 @@
+..\src\
+..\src\blue\
+..\src\info\
+..\src\red\
+..\src\utils\
+..\src\utils\setup\
+..\src\utils\reporter\
+..\src\war\

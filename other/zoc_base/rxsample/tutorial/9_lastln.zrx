@@ -1,0 +1,26 @@
+/* REXX */
+
+/* send something to the modem and wait for an anwser */
+CALL ZocSend "AT\S^M"
+
+/* wait for answer */
+CALL ZocTimeout 10
+
+/* read text linewise and wait for a line containing OK */
+DO X=1 TO 999 UNTIL ZocLastline()="OK"
+    timeout= ZocGetline()
+    IF timeout=640 THEN DO 
+        LEAVE
+    END
+
+    /* remember all lines */
+    A.X= ZocLastline()
+END 
+
+/* show all lines again */
+DO Y=1 TO X
+    SAY Y ":" A.Y
+END
+
+EXIT
+

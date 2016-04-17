@@ -1,0 +1,49 @@
+/** _mapdistprecalc v.1 **/
+_mapdistprecalc:
+ mdstart=arg(1)
+ mddepth=arg(2)
+ mdns=arg(3)
+ mdname=arg(4)
+ mdreclen=arg(5)
+ q.=""
+ q.1=mdstart||" 0 "||mdstart
+
+ call _newline
+ call zocwrite _ansi("b","cyan")||"searching "
+ mdrow=mdstart
+ mdi=_progress(0,mdns)
+ mdi2=2
+ mddone=0
+ do while \mddone
+  mdrow=word(q.mdi,1)
+  call _mapseek mdname, mdreclen, mdrow
+  mdj=1
+  mdw1=_mdwarp(s.mdrow,mdj)
+  do while \(mdw1=0 | mddone)
+   if \_mdinq(mdw1) then do
+    q.mdi2=mdw1||" "||word(q.mdi,2)+1||" "||word(q.mdi,3)||";"||mdw1
+    mdlist=word(q.mdi2,3)
+    md2=word(q.mdi2,2)
+    do while mdlist\=mdw1
+     parse var mdlist md1 ";" mdlist
+     md.md1.mdw1=md2
+     md2=md2-1
+    end /* do */
+    mdi2=mdi2+1
+   end /* do */
+   if md.mdstart.mdw1>mddepth then mddone=1
+   else do
+    mdj=mdj+1
+    mdw1=_mdwarp(s.mdrow,mdj)
+   end /* else */
+  end /* do */
+  mdi=_progress(mdi,mdns)
+  if mdi>=mdi2 then mddone=1
+ end /* do */
+ call zocwriteln
+return
+/** _newline **/
+/** _progress **/
+/** _ansi **/
+/** _mapseek **/
+/** _mapdist **/

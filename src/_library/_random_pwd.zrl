@@ -1,0 +1,24 @@
+/** _random_pwd v.3 **/
+/*- _random_pwd [width] -*/
+/*- v.3 tested -*/
+_random_pwd: procedure expose (globals)
+ if arg(1,"E") then w=arg(1); else w=6
+ if arg(2,"E") then n=arg(2); else n=4
+ if n=0 then set.0=arg(3)
+ set.1="1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+ set.2="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+ set.3="1234567890abcdefghijklmnopqrstuvwxyz"
+ set.4="34679abcdefghijkmnopqrstuvwxyzACDEFGHJKLMNPQRTUVWXY"
+ set.5="abcdefghijklmnopqrstuvwxyz"
+ set.6="bcdfghjklmnpqrstvwxz"
+ set.7="aeiouy"
+ set.8="BCDFGHJKLMNPQRSTVWXZ"
+ set.9="AEIOUY"
+ set.10="1234567890"
+ rslt=""
+ len=length(set.n)
+ do i=1 to w
+  ch=substr(set.n,random(1,len),1)
+  rslt=rslt||ch
+ end /*do*/
+return rslt

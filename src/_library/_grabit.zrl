@@ -1,0 +1,8 @@
+/** _grabit v.2 **/
+/*- _grabit waitstring [,"s"] -*/
+/*- v.2 tested -*/
+_grabit: procedure expose (globals)
+ if _wait(arg(1))=640 then call _error "timeout"
+ rslt=_lastline()
+ if lower(arg(2))="s" then rslt=reverse(substr(reverse(rslt),length(arg(1))+1))
+return rslt

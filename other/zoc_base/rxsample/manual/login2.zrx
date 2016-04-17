@@ -1,0 +1,68 @@
+/* A REXX sample to show how to log into a bbs and do 
+   work automatically */
+
+CALL ZocTimeout 60   /* general time out */
+
+/***** Wait for name prompt or bail out *****/
+timeout= ZocWait("Name?")
+IF timeout=0 THEN DO
+   /* received "Name?" */
+   CALL ZocSend "Zaphod^M"
+END
+ELSE DO
+   /* Ouch, "Name?" was not received */
+   CALL ZocWriteln "ERROR (Name)!!"
+   SIGNAL BailOut   /* this command jumps to the end */
+END
+
+/***** Wait for password prompt or bail out *****/
+timeout= ZocWait("Password?")
+IF timeout=0 THEN DO
+   /* received "Password?" */
+   CALL ZocSend "HeartOfGold^M"
+END
+ELSE DO
+   /* Ouch, "Password?" was not received */
+   CALL ZocWriteln "ERROR (Password)!!"
+   CALL ZocHangup
+   SIGNAL BailOut
+END
+
+/***** Skip host's intro screens             *****/
+/***** (and probably security feature)       *****/
+
+CALL ZocReply "Press ENTER to continue", "^M" 
+CALL ZocReply "Enter your birthdate", "270466^M" 
+
+CALL ZocWait "Main Menu"    /* we just assume that it will work */
+                            /* and don't check the timeout      */
+
+CALL ZocReply "Press ENTER to continue"  /* cancel ZocReply commands */
+CALL ZocReply "Enter your birthdate"
+
+/***** Wait for the prompt and go to the      *****/
+/***** mail area and download a mail packet   *****/
+/***** using the Zmodem protocol              *****/
+
+CALL ZocWait "your choice>"
+CALL ZocSend "MAIL^M"
+
+CALL ZocWait "your choice>"
+CALL ZocSend "RECEIVE^M"
+
+CALL ZocWait "protocol>"
+CALL ZocSend "ZMODEM^M"
+
+/* download into C:\MAIL directory */
+CALL ZocDownload "ZMODEM", "C:\MAIL"
+
+/***** Go back to the main menu and log off   *****/
+
+CALL ZocSend "QUIT^M"
+
+CALL ZocWait "your choice>"
+CALL ZocSend "LOGOUT^M"
+
+BailOut:  /* this is the target for the SIGNAL command */ 
+CALL ZocHangup
+EXIT

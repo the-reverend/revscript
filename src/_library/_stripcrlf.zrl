@@ -1,0 +1,13 @@
+/** _stripcrlf v.4 **/
+/*- _stripcrlf str -*/
+/*- v.4 tested -*/
+_stripcrlf: procedure expose (globals)
+ if arg(1,"E") then line=arg(1)
+ else call _error "missing argument in _stripcrlf"
+ line=zocstring("REMOVE",line,d2c(10))
+ line=zocstring("REMOVE",line,"^j")
+ line=zocstring("REMOVE",line,"^J")
+ line=zocstring("REMOVE",line,d2c(13))
+ line=zocstring("REMOVE",line,"^m")
+ line=zocstring("REMOVE",line,"^M")
+return line

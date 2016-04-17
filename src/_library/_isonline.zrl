@@ -1,0 +1,15 @@
+/** _isonline v.3 **/
+/*- _isonline timeout -*/
+/*- v.3 tested -*/
+_isonline: procedure expose (globals)
+ if zocgetinfo("ONLINE")="##YES##" then return 1
+ if arg(1,"E") then t=arg(1)
+ else call _error "missing parameter in _isonline"
+ rslt=0
+ o="##NO##"
+ call time "R"
+ do while time("E")<=t & o\="##YES##"
+  o=zocgetinfo("ONLINE")
+  if o="##YES##" then rslt=1
+ end /*do*/
+return rslt

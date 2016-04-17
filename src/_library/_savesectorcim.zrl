@@ -1,0 +1,27 @@
+/** _savesectorcim v.4 **/
+_savesectorcim: procedure expose (globals)
+ fname=arg(1)
+ ns=arg(2)
+ if ns="" then call _error "number of sectors missing."
+
+ if \_filenew(fname, "delete") then call _error "unable to create "||fname||"."
+
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"writing "||fname||" "
+
+ mon=0
+ wns=length(ns)
+ do i = 1 to ns
+  if _s.i\="" then do
+   line=_pad(i,wns,"R")
+   do j=1 to words(_s.i)
+    temp=word(_s.i,j)
+    line=line||_pad(temp,wns+1,"R")
+   end /*do*/
+   call lineout fname, line
+   mon=_spinner(mon,500)
+  end /*if*/
+ end /*do*/
+
+ call _fileclose fname
+return

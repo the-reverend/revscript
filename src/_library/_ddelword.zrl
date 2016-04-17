@@ -1,0 +1,7 @@
+/** _ddelword v.1 **/
+/*- _ddelword string, index, length, delimiter -*/
+/*- v.1 tested -*/
+_ddelword: procedure expose (globals)
+ if arg(3,"E") then rslt=translate(delword(translate(arg(1),arg(4)||" "," "||arg(4)),arg(2),arg(3))," "||arg(4),arg(4)||" ")
+               else rslt=translate(delword(translate(arg(1),arg(4)||" "," "||arg(4)),arg(2))," "||arg(4),arg(4)||" ")
+return rslt

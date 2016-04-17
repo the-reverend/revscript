@@ -1,0 +1,110 @@
+/** _mapdist v.1 **/
+_mapdist:
+ mdstart=arg(1)
+ mdtarget=arg(2)
+ mdns=arg(3)
+ mdname=arg(4)
+ mdreclen=arg(5)
+ q.=""
+ q.1=mdstart||" 0 "||mdstart
+ mdr=mdstart
+
+ select
+
+  when mdstart=mdtarget then mdr="0;"||mdr
+
+  when md.mdstart.mdtarget>0 then do
+    md1=s.mdstart
+    do mdi=md.mdstart.mdtarget to 2 by -1
+     do while md1\=""
+      parse var md1 mdsec ";" md1
+      if md.mdsec.mdtarget=mdi-1 then leave
+     end /* do */
+     mdr=mdr||";"||mdsec
+     md1=s.mdsec
+    end
+    mdr=md.start.target||";"||mdr||";"||mdtarget
+  end /* when */
+
+  otherwise do
+   call _newline
+   call zocwrite _ansi("b","cyan")||"searching "
+   mdrow=mdstart
+   mdi=_progress(0,mdns)
+   mdi2=2
+   mddone=0
+   do while \mddone
+    mdrow=word(q.mdi,1)
+    call _mapseek mdname, mdreclen, mdrow
+    mdj=1
+    mdw1=_mdwarp(s.mdrow,mdj)
+    do while \(mdw1=0 | mddone)
+     if \_mdinq(mdw1) then do
+      q.mdi2=mdw1||" "||word(q.mdi,2)+1||" "||word(q.mdi,3)||";"||mdw1
+      mdlist=word(q.mdi2,3)
+      md2=word(q.mdi2,2)
+      do while mdlist\=mdw1
+       parse var mdlist md1 ";" mdlist
+       md.md1.mdw1=md2
+       md2=md2-1
+      end /* do */
+      mdi2=mdi2+1
+     end /* do */
+     if md.mdstart.mdtarget>0 then mddone=1
+     else do
+      mdj=mdj+1
+      mdw1=_mdwarp(s.mdrow,mdj)
+     end /* else */
+    end /* do */
+    mdi=_progress(mdi,mdns)
+    if mdi>=mdi2 then mddone=1
+   end /* do */
+   if mdw1=0 then mdr="0;0"
+   else do
+    md1=s.mdstart
+    do mdi=md.mdstart.mdtarget to 2 by -1
+     do while md1\=""
+      parse var md1 mdsec ";" md1
+      if md.mdsec.mdtarget=mdi-1 then leave
+     end /* do */
+     mdr=mdr||";"||mdsec
+     md1=s.mdsec
+    end
+    mdr=md.start.target||";"||mdr||";"||mdtarget
+   end /* else */
+   call zocwriteln
+  end /* otherwise */
+
+ end /* select */
+return mdr
+/** _newline **/
+/** _progress **/
+/** _ansi **/
+/** _mapseek **/
+
+_mdinq:
+ mdiseek=arg(1)
+ mdifound=0
+ if mdiseek>0 then do
+  mdidone=0
+  mdiindex=1
+  do while \mdidone
+   if mdiseek=word(q.mdiindex,1) then do
+    mdidone=1
+    mdifound=1
+   end /* if */
+   else mdiindex=mdiindex+1
+   if q.mdiindex="" then mdidone=1
+  end /* do */
+ end /* if */
+return mdifound
+
+_mdwarp:
+ mdwlist=arg(1)
+ mdwnum=arg(2)
+ do mdwindex=1 to mdwnum
+  parse var mdwlist mdwr ";" mdwlist
+  if mdwr="" then leave
+ end /* do */
+ if mdwr="" then mdwr=0
+return mdwr

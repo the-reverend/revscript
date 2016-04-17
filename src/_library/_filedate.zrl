@@ -1,0 +1,10 @@
+/** _filedate v.1 **/
+/*- _filedate fname -*/
+/*- v.1 tested -*/
+_filedate: procedure expose (globals)
+ select
+  when \arg(1,"E") then call _error "missing parameter in _filedate"
+  when arg(1)="" then rslt=""
+  otherwise rslt=stream(arg(1), "C", "QUERY DATETIME")
+ end /*select*/
+return rslt

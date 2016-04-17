@@ -1,0 +1,4 @@
+_iniv: procedure expose (globals)
+ s=arg(1); v=arg(2)
+ if arg(3,"E") then _ini.s.v=arg(3)
+return _ini.s.v

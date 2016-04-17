@@ -1,0 +1,119 @@
+/* REXX */
+
+CR=d2c(13)
+CRCR=CR||CR
+PARSE VALUE ARG(1) WITH file
+
+IF file="" THEN DO
+    msg= "This REXX program is only for use by the ZOC order form!"||CRCR
+    CALL ZocMsgBox msg
+    EXIT
+END
+
+msg= "You are about to transfer your order form to BMT Micro via modem."||CR,
+    CR"This is a 3 step procedure which you may abort at any point."||CR,
+    CR"Do you want to continue?"
+result= ZocMsgBox(msg, 2)
+IF result=="##NO##" THEN SIGNAL aborted
+
+msg= "Please make sure that ZOC is correctly configured for modem",
+    "communication."||CR,
+    CR"Do you want to continue?"
+result= ZocMsgBox(msg, 2)
+IF result=="##NO##" THEN SIGNAL aborted
+
+msg= "In the next step, the order form will be shown.  Please check",
+    "if ordered products, credit card numbers, etc. are correct."CR,
+    CR"Do you want to continue?"
+result= ZocMsgBox(msg, 2)
+IF result=="##NO##" THEN SIGNAL aborted
+
+PARSE VALUE ZocOS() with osysstr osversion
+IF osysstr="OS2" then 
+    ADDRESS CMD "E "file
+else
+    ADDRESS CMD "NOTEPAD "file
+
+
+msg= "The next step will show the phone number of the support BBS in",
+    "the USA."CR,
+    CR"Do you want to continue?"
+result= ZocMsgBox(msg, 2)
+if result=="##NO##" THEN SIGNAL aborted
+
+phone= ZocAsk("Please complete the following phone number", "1 910 799 0923")
+IF phone="##CANCEL##" THEN SIGNAL aborted
+
+msg= "ZOC will now try to CALL the support BBS and send your order form."CR,
+    CR"(You can watch the transfer by moving the order form window aside.)"CR,
+    CR"Do you want to continue?"
+result= ZocMsgBox(msg, 2)
+IF result=="##NO##" THEN SIGNAL aborted
+
+CALL ZocTimeout 3
+CALL ZocSend "AT^M"
+CALL ZocWait "OK"
+CALL ZocConnect phone
+CALL ZocTimeout 60
+
+result= ZocWaitmux("CONNECT", "download purposes", "NO CARRIER", "NO DIALTONE", "BUSY", "ERROR")
+IF result=0 | result=1 THEN DO
+    CALL ZocTimeout 40
+
+    result= ZocWait("and last name:")
+    IF result=640 THEN SIGNAL fail
+    
+    CALL ZocDelay 1
+    CALL ZocSend "ZOC^M" 
+
+    result= ZocWait("your password:")
+    IF result=640 THEN SIGNAL fail
+
+    CALL ZocDelay 1
+    CALL ZocSend "zocuser^M"
+
+    /* Answer all "Press Any Key" prompts with Enter */
+    CALL ZocReply "Press Any Key", "^M"
+
+    result= ZocWait("Upload ZOC-Orderform")
+    IF result=640 THEN SIGNAL fail
+
+    CALL ZocSend "E"
+
+    result= ZocWait("file name.ext:")
+    IF result=640 THEN SIGNAL fail
+    
+    newname= LEFT(RIGHT(DATE('D'),2,"X")||TIME('S'),8,"0")||".ORD"
+    CALL ZocSend newname
+    CALL ZocSend "^M"
+
+    result= ZocUpload("ZModem", ".\"file)
+
+    IF result="##OK##" THEN DO
+        CALL ZocWait "<D> Disconnect"
+        CALL ZocDelay 1
+        CALL ZocSend "D"
+        CALL ZocDelay 5
+        CALL ZocDisconnect
+        CALL ZocMsgBox "Your order was delivered successfully. Thank you!"
+    END
+    ELSE DO
+        CALL ZocMsgBox "Error while sending. The order was *NOT* sent!"
+    END
+END /* IF */
+ELSE DO
+    CALL ZocDisconnect
+    CALL ZocMsgBox "Sorry, connection failed. The order was *NOT* sent!"
+END /* ELSE */
+EXIT
+
+
+fail:
+    CALL ZocDisconnect
+    CALL ZocMsgBox "Sorry, connection failed. The order was *NOT* sent!"
+    EXIT
+
+aborted:
+    CALL ZocMsgBox "User aborted. The order was *NOT* sent!"
+    EXIT
+

@@ -1,0 +1,57 @@
+/** _synchronize v.5 **/
+_synchronize: procedure expose (globals)
+
+ if arg(1,"E") then checkcitprompts=arg(1); else checkcitprompts=1
+
+ synchw=_synchronize_vars("w")
+ synchr=_synchronize_vars("r")
+
+ call zocsend "&&"
+ ans=_waitmux("&&|Pausing is")
+ select
+  when ans=0 then return "unknown_text_entry"
+  when ans=1 then nop
+  when ans=640 then return "timeout"
+  otherwise nop
+ end /*select*/
+ 
+ ans=_waitmux(synchw)
+ select
+  when ans=640 then rslt="timeout"
+  when ans>0 then do
+   if _wait("Pausing is")=640 then call _error "timeout"
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ rslt=_dword(synchr,ans+1,";")
+
+ select
+  when \checkcitprompts then nop
+  when rslt="computer" then do
+   call zocsend "q"
+   ans=_waitmux("Command [|Citadel command")
+   select
+    when ans=0 then nop
+    when ans=1 then rslt="computer_cit"
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+   call zocsend "c"
+  end /*when*/
+  when rslt="corporate" then do
+   call zocsend "q"
+   ans=_waitmux("Command [|Citadel command")
+   select
+    when ans=0 then call zocsend "t"
+    when ans=1 then do
+     rslt="corporate_cit"
+     call zocsend "x"
+    end /*when*/
+    when ans=640 then call _error "timeout"
+    otherwise nop
+   end /*select*/
+  end /*when*/
+  otherwise nop
+ end /*select*/
+
+return rslt

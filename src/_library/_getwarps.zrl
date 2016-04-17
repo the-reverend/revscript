@@ -1,0 +1,20 @@
+/** _getwarps v.5 **/
+_getwarps: procedure expose (globals)
+ if _s.1="_S.1" then _s.=""
+ sec=arg(1)
+ call zocreceivebuf 1024*3
+ call zocsend "ci"||sec||"^Mq"
+ if _wait("<Computer deactivated>")=640 then call _error "timeout"
+ if _waitmux("Command [|Citadel command")=640 then call _error "timeout"
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if sec="" then do
+  i=pos("What sector do you wish to examine? [",buff)+37
+  j=pos("]",buff,i)
+  if i>0 & j>0 then sec=substr(buff,i,j-i)
+ end /*if*/
+ i=pos("warps to sector(s) :",buff)+20
+ j=pos(d2c(13),buff,i)
+ if i>20 & j>0 then rslt=_space(translate(substr(buff,i,j-i),"   ","-()"),1)
+ else rslt=""
+ if sec\="" & rslt\="" & _s.sec="" then _s.sec=rslt
+return rslt

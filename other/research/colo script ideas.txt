@@ -1,0 +1,31 @@
+colo-close
+
+%base%
+%terra%
+%planet%
+%fuelup%
+%depart%
+%grab%
+%return%
+
+transport
+  twarp
+  tpad
+  express
+target
+  direct
+  indirect
+fuel source
+  planet
+  port
+  port then planet
+hoard fuel (if port fuel source)
+  buy as needed
+  drain port
+  upgrade port
+buy shields
+  unlimited
+  quantity
+buy figs
+  unlimited
+  quantity

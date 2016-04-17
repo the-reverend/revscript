@@ -1,0 +1,97 @@
+/** _getunexplored v.2 **/
+_getunexplored: procedure expose (globals)
+ min=arg(1)
+ max=arg(2)
+ if max="" then max=20000
+ mode=arg(3)
+ list=""
+
+ if mode="" then do
+  call zocsend "^^?"
+  if zocwait("Interrogation Modes")=640 then call _error "timeout"
+  if zocwait(":")=640 then call _error "timeout"
+ end /*if*/
+
+ line.=""
+ done=0
+ flag=0
+ i=0
+ len=0
+
+ call zocsend "u"
+ do while \done
+  i=i+1
+  if zocwait("^M")=640 then call _error "timeout"
+  line.i=_space(_lastline(),1,";")
+  parse value reverse(line.i) with sec ";" .
+  if reverse(sec)>=min then len=len+length(line.i)+1
+  if pos(";",line.i)>0 then flag=1
+  if line.i="" then do
+   i=i-1
+   if flag then done=1
+  end /*if*/
+  else if reverse(sec)>max then done=1
+  if len>350 then done=1
+ end /*do*/
+ imax=i
+
+ if mode="" then do
+  call zocsend " q"
+  if zocwait("ENDINTERROG")=640 then call _error "timeout"
+ end /*if*/
+ else do
+  call zocsend " "
+  if zocwait(":")=640 then call _error "timeout"
+ end /*else*/
+
+ do i=1 to imax
+  do while line.i\=""
+   parse var line.i sec ";" line.i
+   if sec>=min then do
+    if list="" then list=sec
+    else list=list||";"||sec
+   end /*if*/
+   if length(list)>244 then line.i=""
+  end /*do*/
+  if length(list)>244 then leave
+ end /*do*/
+
+return list
+/*- Command [TL=00:00:00]:[1390] (?=Help)? :                                      -*/
+/*- :                                                                             -*/
+/*-     269   1751   1752   1753   1754   1756   1767   1768   1769   1773   1774 -*/
+/*-    1775   1776   1780   1785   1790   1791   1792   1794   1798   1799   1802 -*/
+/*-    1806   1811   1812   1813   1814   1816   1819   1821   1825   1832   1835 -*/
+/*-    1838   1842   1847   1856   1860   1864   1866   1871   1873   1876   1885 -*/
+/*-    1891   1892   1895   1901   1903   1909   1911   1915   1919   1920   1921 -*/
+/*-    1924   1928   1929   1930   1932   1934   1937   1944   1953   1962   1964 -*/
+/*-    1968   1972   1973   1976   1978   1980   1986   1987   1988   1990   1995 -*/
+/*-    2000   2007   2017   2019   2020   2021   2026   2034   2035   2040   2042 -*/
+/*-    2054   2056   2059   2061   2063   2064   2071   2074   2081   2083   2086 -*/
+/*-    2088   2090   2103   2104   2106   2107   2109   2112   2116   2119   2121 -*/
+/*-    2122   2123   2126   2127   2133   2139   2142   2144   2145   2151   2154 -*/
+/*-                                                                               -*/
+/*- need to fix this sub - it times out if unexplored list is only one line and   -*/
+/*- less than the min                                                             -*/
+/*-                                                                               -*/
+/*- Command [TL=00:00:00]:[944] (?=Help)? :                                       -*/
+/*- :                                                                             -*/
+/*-                                                                               -*/
+/*- Interrogation Modes                                                           -*/
+/*-                                                                               -*/
+/*- <I> Warp Display                                                              -*/
+/*- <R> Port Report                                                               -*/
+/*- <F> Warp Route                                                                -*/
+/*- <E> Explored Sectors                                                          -*/
+/*- <U> Unexplored Sectors                                                        -*/
+/*- <S> Set Avoid                                                                 -*/
+/*- <C> Clear Avoid                                                               -*/
+/*- <?> Menu                                                                      -*/
+/*- <Q> Quit                                                                      -*/
+/*-                                                                               -*/
+/*- :                                                                             -*/
+/*-    2371                                                                       -*/
+/*-                                                                               -*/
+/*- :                                                                             -*/
+/*- << script error:  timeout >>                                                  -*/
+/*- :                                                                             -*/

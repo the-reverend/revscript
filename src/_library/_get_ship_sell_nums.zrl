@@ -1,0 +1,27 @@
+/** _get_ship_sell_nums v.1 **/
+_get_ship_sell_nums: procedure expose (globals)
+ bufsize=16*1024
+ cr=d2c(13)
+ rslt=""
+ call zocreceivebuf bufsize
+ call zocsend "s"
+ ans=_waitmux("ships orbiting|sell (Q=Quit)")
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ select
+  when ans=0 then return rslt
+  when ans=1 then call zocsend "q"
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+ i=pos("---",buff)
+ if i>0 then i=pos(cr,buff,i)+1; else return rslt
+ if i>1 then j=pos(cr,buff,i);   else return rslt
+ do while i>1 
+  line=strip(substr(buff,i,j-i))
+  parse var line num .
+  if num="" then leave
+            else rslt=strip(rslt||" "||strip(num))
+  i=j+1
+  j=pos(cr,buff,i)
+ end /*do*/
+return rslt

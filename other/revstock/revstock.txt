@@ -1,0 +1,24 @@
+files included in this archive are:
+
+game information:
+  TWGS\revstock.twa - the game archive
+  TWGS\revstock.txt - this file
+
+ship descriptions:
+  TWGS\Game\ANSI\RS_pod.txt
+  TWGS\Game\ANSI\RS_cruis.txt
+  TWGS\Game\ANSI\RS_friga.txt
+  TWGS\Game\ANSI\RS_flags.txt
+  TWGS\Game\ANSI\RS_tanke.txt
+  TWGS\Game\ANSI\RS_stars.txt
+  TWGS\Game\ANSI\RS_gunbo.txt
+  TWGS\Game\ANSI\RS_inter.txt
+
+planet descriptions:
+  TWGS\Game\ANSI\RS_earth.txt
+  TWGS\Game\ANSI\RS_volca.txt
+  TWGS\Game\ANSI\RS_ocean.txt
+  TWGS\Game\ANSI\RS_mount.txt
+  TWGS\Game\ANSI\RS_sulfe.txt
+  TWGS\Game\ANSI\RS_ice.txt
+  TWGS\Game\ANSI\RS_fores.txt

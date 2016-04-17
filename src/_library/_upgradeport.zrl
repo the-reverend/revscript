@@ -1,0 +1,6 @@
+/** _upgradeport v.2 **/
+_upgradeport: procedure expose (globals)
+ call zocsend "o"||arg(1)||arg(2)||"^Mq"
+ if zocwait("Command [")=640 then call _error "timeout"
+ rslt=1
+return rslt

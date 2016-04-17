@@ -1,0 +1,8 @@
+/** _buynohaggle v.1 **/
+/*- _buynohaggle offer -*/
+/*- v.1 tested -*/
+_buynohaggle: procedure expose (globals)
+ offer=arg(1)
+ call zocsend "^M"
+ if zocwait("You have")=640 then call _error "timeout"
+return 1

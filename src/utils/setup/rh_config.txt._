@@ -1,0 +1,16 @@
+bot;      ^RUN=_bit.zrx
+>CONFIG<; ^RUN=_menu.zrx rh_config.txt
+[INFO];   ^RUN=_menu.zrx rh_info.txt
+[REPORTS];^RUN=_menu.zrx rh_reports.txt
+[BLUE];   ^RUN=_menu.zrx rh_blue.txt
+[RED];    ^RUN=_menu.zrx rh_red.txt
+[WAR];    ^RUN=_menu.zrx rh_war.txt
+login;    ^RUN=_login.zrx
+ping;     ^RUN=_ping.zrx
+%GNAME%_data.ini; ^EVENT=8155|00|%LPATH%\%LABEL%
+rh_config.txt;    ^EVENT=8155|00|%SPATH%\%LABEL%
+rh_info.txt;      ^EVENT=8155|00|%SPATH%\%LABEL%
+rh_reports.txt;   ^EVENT=8155|00|%SPATH%\%LABEL%
+rh_blue.txt;      ^EVENT=8155|00|%SPATH%\%LABEL%
+rh_red.txt;       ^EVENT=8155|00|%SPATH%\%LABEL%
+rh_war.txt;       ^EVENT=8155|00|%SPATH%\%LABEL%

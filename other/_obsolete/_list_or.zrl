@@ -1,0 +1,8 @@
+_list_or: procedure expose (globals)
+ list=arg(1)
+ if \arg(2,"E") then delim=";"; else delim=arg(2)
+ do i=1 to _dwords(list,delim)
+  n=_dword(list,i,delim)
+  if n=1 then return 1
+ end /*do*/
+return 0

@@ -1,0 +1,161 @@
+/** _findport v.6 **/
+_findport: procedure expose (globals)
+ _q.=""
+ _q.1=arg(1)||" 0 "||arg(1)
+ type=arg(2)
+ voids=arg(3)
+ if voids="" then voids=0
+ figs=arg(4)
+ if figs="" then figs=0
+ busts=arg(5)
+ if busts="" then busts=0
+ binfo=arg(6)
+ if busts & binfo="" then call _error "no bust filename."
+ mname=arg(7)
+ if mname="" then call _error "missing mapfilename."
+ reclen=arg(8)
+ if reclen="" then call _error "missing reclen."
+
+ call _newline
+ call zocwrite _ansi("bt;fcy")||"searching "
+
+ mon=_spinner(0,25)
+ i=1
+ i2=2
+ j=0
+ done=0
+ do while \done
+
+  j=1
+  row=word(_q.i,1)
+  call _mapseek mname, reclen, row
+  if j=0 then w1=row
+  else do
+   j=1
+   w1=_fpwarp(_s.row,j)
+   wtype=w1%20000
+   w1=w1//20000
+   call _mapseek mname, reclen, w1
+  end /*do*/
+
+  do while \(w1=0 | done)
+   if wtype<2 then do
+    if \_fpinq(w1,voids,busts,binfo) then do
+     if figs then do
+      if _fpmatch(_fpport(_p.w1,"type"),type) & _f.w1>0 then done=1
+     end /*if*/
+     else do
+      if _fpmatch(_fpport(_p.w1,"type"),type) then done=1
+     end /*else*/
+     _q.i2=w1||" "||word(_q.i,2)+1||" "||word(_q.i,3)||">"||w1 /* add to the queue */
+     i2=i2+1
+    end /*if*/
+   end /*if*/
+   if \done then do
+    j=j+1 /* get next warp */
+    w1=_fpwarp(_s.row,j)
+    wtype=w1%20000
+    w1=w1//20000
+    mon=_spinner(mon,25)
+    call _mapseek mname, reclen, w1
+   end /*if*/
+  end /*do*/
+
+  i=i+1
+  if i>=i2 then done=1
+ end /*do*/
+
+ call zocwrite " "
+ if w1=0 then call zocwriteln _ansi("bt;frd")||"no "||type||" ports found.  either explore or refresh your cim."
+ else do
+  call zocwriteln _ansi("bt;frd")||"nearest "||type||" port to "||word(_q.1,1)||" is in "||w1||"."
+  j=i-1
+  call zocwriteln _ansi("bt;fye")||" the shortest path ("||word(_q.j,2)+1||" hops) from sector "||word(_q.1,1)||" to sector "||w1||" is:"
+  call zocwriteln " "||word(_q.j,3)||">"||w1||" ("||left(_p.w1,3)||")"
+ end /*else*/
+
+return w1
+
+_fpinq: procedure expose (globals)
+ f=arg(1)
+ v=arg(2)
+ b=arg(3)
+ if b="" then b=0
+ binfo=arg(4)
+
+ qf=0
+
+ if f>0 then do
+
+  /* check queue */
+  qd=0
+  qi=1
+  do while \qd
+   if f=word(_q.qi,1) then do
+    qd=1
+    qf=1
+   end /*if*/
+   else qi=qi+1
+   if _q.qi="" then qd=1
+  end /*do*/
+
+  /* check void list if applicable */
+  if \qf & v then qf=_v.f
+
+  /* check bust list if applicable */
+  if \qf & b then do
+   if _bustcheck(binfo,f) then qf=1
+  end /*if*/
+
+ end /*if*/
+return qf
+
+_fpwarp: procedure expose (globals)
+ l=arg(1)
+ n=arg(2)
+ do i=1 to n
+  parse var l rslt ";" l
+  if rslt="" then leave
+ end /*do*/
+ if rslt="" then rslt=0
+return rslt
+
+_fpmatch: procedure expose (globals)
+ m1=arg(1)
+ m2=arg(2)
+ if m1="##EMPTY##" | m2="##EMPTY##" then rslt=0
+ else do
+  mm1=0
+  if left(m1,1)="X" then mm1=1
+  if left(m2,1)="X" then mm1=1
+  if left(m1,1)=left(m2,1) then mm1=1
+  mm2=0
+  if substr(m1,2,1)="X" then mm2=1
+  if substr(m2,2,1)="X" then mm2=1
+  if substr(m1,2,1)=substr(m2,2,1) then mm2=1
+  mm3=0
+  if substr(m1,3,1)="X" then mm3=1
+  if substr(m2,3,1)="X" then mm3=1
+  if substr(m1,3,1)=substr(m2,3,1) then mm3=1
+  if mm1 & mm2 & mm3 then rslt=1
+  else rslt=0
+ end /*else*/
+return rslt
+
+_fpport: procedure expose (globals)
+ l=arg(1)
+ query=arg(2)
+ if l="" then rslt="##EMPTY##"
+ else do
+  select
+   when query="type" then parse var l rslt ";" .
+   when query="fq" then parse var l . ";" rslt "," .
+   when query="fp" then parse var l . ";" . "," rslt ";" .
+   when query="oq" then parse var l . ";" . "," . ";" rslt "," .
+   when query="op" then parse var l . ";" . "," . ";" . "," . rslt ";" .
+   when query="eq" then parse var l . ";" . "," . ";" . "," . ";" rslt "," .
+   when query="ep" then parse var l . ";" . "," . ";" . "," . ";" . "," rslt .
+   otherwise nop
+  end /*select*/
+ end /*else*/
+return rslt

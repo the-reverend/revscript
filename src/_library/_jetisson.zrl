@@ -1,0 +1,6 @@
+/** _jetisson v.1 **/
+_jetisson: procedure expose (globals)
+ call zocsend "jy"
+ if zocwait("Command [")=640 then call _error "timeout"
+ rslt=1
+return rslt

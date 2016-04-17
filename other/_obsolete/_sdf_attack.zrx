@@ -1,0 +1,67 @@
+/* REXX _sdf_attack by the reverend (build 21) */
+
+call zoctimeout 240
+call zocsynctime 500
+call on halt name _halt
+
+done=0
+do while \done
+ ans=zocwaitmux(" lifts off from ", "R SDF end", "<Quit>")
+ select
+  when ans=0 then call zocsend "ay1^M"
+  when ans=1 then done=1
+  when ans=2 then do
+   call zocsend "n"
+   done=1
+  end /* when */
+  when ans=640 then call _error "timeout"
+ end /* select */
+end /* do */
+
+exit
+
+/*** THE REVEREND'S TW LIBRARY FOR ZOC/REXX ***/
+/*    last updated: 21 Aug 2001, 15:57:36     */
+
+/** _beep v.1 **/
+    _beep:
+     bpfile=arg(1)
+     if bpfile\="" then if \_fileexists(bpfile) then bpfile=""
+     if bpfile="" then call zocwrite d2c(7)
+     else do
+      bptemp=zocgetprogramoption("SoundBellWav")
+      parse var bptemp 'SoundBellWav="' bptemp '"'
+      call zocsetglobaloption('SoundBellWav="'||bpfile||'"')
+      call zocwrite d2c(7)
+      call zocsetglobaloption('SoundBellWav="'||bptemp||'"')
+     end /* else */
+    return
+
+/** _error v.3 **/
+    _error:
+     if arg(1)="" then call zocterminate
+     else errmsg="<< script error:  "||arg(1)||" >>"
+     errmail="<< if this is a serious problem, email me at: tw.the_reverend@excite.com >> "
+
+     eline=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+     if length(eline)>0 then call zocwriteln
+     call zocwriteln "^[[1;31m"||errmsg||"^[[0;35m"
+     if arg(1)\="timeout" then call zocwriteln "^[[1;33m"||errmail||"^[[0;35m"
+     if length(eline)>0 then call zocwrite eline
+     call _beep "error.wav"
+     exit
+    return
+
+/** _fileexists v.1 **/
+    _fileexists:
+     if stream(arg(1), "C", "QUERY EXISTS")="" then fer=0
+     else fer=1
+    return fer
+
+/** _halt v.1 **/
+    _halt:
+     call zocwriteln
+     call zocwriteln "^[[1;33m<< script aborted by user. >>^[[0;35m "
+     exit
+    return
+

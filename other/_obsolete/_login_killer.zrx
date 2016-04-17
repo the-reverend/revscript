@@ -1,0 +1,145 @@
+/* REXX _login_killer.zrx by the reverend (build 9)                           */
+/*-       built by rev-builder version 1.3a on 17 Oct 2003 at 12:59:26       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*-                       Copyright (C) 2003 Ron Wilson                      -*/
+/*-                                                                          -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author. Your use of    -*/
+/*- this script is governed by the terms of the REV-LICENSE.                 -*/
+/*-                                                                          -*/
+/*- This program is provided to you WITHOUT ANY WARRANTY, even the implied   -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the -*/
+/*- REV-LICENSE for more details.                                            -*/
+/*-                                                                          -*/
+/*-                A copy of the REV-LICENSE is available at:                -*/
+/*-       http://thereverend.coastgames.com/tradewars/rev-license.html       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ------------------*/ _g.!sname="_login_killer.zrx" /*------------------- -*/
+/*- ---------------*/ _g.!sbuild=9; _g.!sdate="2003-10-17" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+
+globals=_setglobals("outfile")
+call _timeout 30
+call zocsynchtime 500
+signal on halt name _exit
+player="Intrepid"
+
+parse value _countships(player) with count unmanned macro
+
+do forever
+ ans=zocwaitmux(player,"::")
+ select
+  when ans=0 then do
+   parse value _countships(player) with count unmanned macro
+   call zocsend macro
+  end
+  when ans=1 then call zocsend "'scout login killer running...^M"
+  when ans=640 then parse value _countships(player) with count unmanned macro
+  otherwise nop
+ end
+end
+
+_exit:
+exit
+
+_countships: procedure
+ p=arg(1)
+ f=300
+ c=0
+ u=0
+ m=""
+ call zocsend "aznznznznznznznznznzn"
+ if zocwait("<Attack>")=640 then exit
+ ans=zocwaitmux("(Y/N) [N]?","'s unmanned",p,"(?=Help)? :")
+ do while ans<3
+  if ans=0 then c=c+1
+  if ans=1 then u=u+1
+  if ans=2 then m="a"||copies("n",c)||"yqz"||f||"^M"
+  ans=zocwaitmux("(Y/N) [N]?","'s unmanned",p,"(?=Help)? :")
+ end
+ rslt=c u m
+return rslt
+/***                 THE REVEREND'S TW LIBRARY FOR ZOC/REXX                 ***/
+
+/** _setglobals v.4 **/
+    _setglobals: procedure expose _verbose _monthdays _monthnames _baseday. _g. _msg. (globals)
+
+     _verbose=0
+     _msg.=""; _msg.0=0
+     _monthdays="31;28;31;30;31;30;31;31;30;31;30;31"
+     _monthnames="jan;feb;mar;apr;may;jun;jul;aug;sep;oct;nov;dec"
+     _baseday.2000=730118
+     _baseday.2001=_baseday.2000+365+1
+     _baseday.2002=_baseday.2001+365
+     _baseday.2003=_baseday.2002+365
+     _baseday.2004=_baseday.2003+365
+     _baseday.2005=_baseday.2004+365+1
+     _baseday.2006=_baseday.2005+365
+     _baseday.2007=_baseday.2006+365
+     _baseday.2008=_baseday.2007+365
+
+     i=lastpos(".",_g.!sname)
+     if i=0 then _g.!sname1=_g.!sname
+            else _g.!sname1=left(_g.!sname,i-1)
+
+     rslt="_g. _ini. _s. _p. _d. _v. _f. _m. _l. _q. _sl. _ex. _qs. "
+     rslt=rslt||"_ef. _es. _et. _ep. "
+     rslt=rslt||"_path. _dist. _dtomsl. _dfrmsl. "
+     rslt=rslt||"_bg. _nwt. _nwi. _nwo. _nw. _nwt. _od. _sv. _pv. _bust. _vs. _vn. _vi. _mcic. "
+     rslt=rslt||"_olist1. _olist2. _clvlist1. _clvlist2. _msg _msg. "
+     rslt=rslt||"_verbose _monthdays _monthnames _baseday. "
+     rslt=rslt||"globals "
+     if arg(1,"E") then rslt=rslt||arg(1)
+
+     rslt=_space(rslt)
+    return rslt
+
+/** _timeout v.1 **/
+    _timeout: procedure expose (globals)
+     if _g.!timeout="_G.!TIMEOUT" then _g.!timeout=60
+     rslt=_g.!timeout
+     nt=_stripint(arg(1))
+     if arg(1,"E") & nt>0 then do
+      call zoctimeout nt
+      _g.!timeout=nt
+     end /*if*/
+    return rslt
+
+/** _space v.1 **/
+    _space: procedure expose (globals)
+     str=strip(arg(1))
+     if arg(2,"E") then n=arg(2); else n=1
+     if arg(3,"E") then pad=arg(3); else pad=" "
+     rslt=word(str,1)
+     do i=2 to words(str)
+      rslt=rslt||copies(pad,n)||word(str,i)
+     end /*do*/
+    return rslt
+
+/** _stripint v.4 **/
+    _stripint: procedure expose (globals)
+     mask=_space(translate(arg(1)," ","-0123456789,"," "),0)
+     rslt=word(_space(translate(_stripcomma(arg(1))," ",mask," ")),1)
+     if rslt="" | rslt="-" then do; call _set_msg "##NAN##", "_stripint"; rslt=0; end
+     else do
+      if left(rslt,1)="-" then neg="-"; else neg=""
+      rslt=_space(translate(rslt," ","-"),0)
+      if length(rslt)>9 then rslt=left(rslt,9)
+      rslt=neg||rslt
+     end /*else*/
+    return rslt
+
+/** _stripcomma v.1 **/
+    _stripcomma: procedure expose (globals)
+     rslt=translate(_space(translate(arg(1),", "," ,"),0)," ",",")
+    return rslt
+
+    _set_msg: procedure expose (globals)
+     i=_msg.0
+     if i="_MSG.0" then do; _msg.=""; _msg.0=0; i=0; end
+     i=i+1; _msg.0=i; _msg=""
+     if arg(1,"E") then do; _msg.i=arg(1); _msg=arg(1); end;
+     if arg(2,"E") then _msg.i.!source=arg(2)
+     if arg(3,"E") then _msg.i.!comment=arg(3)
+    return i

@@ -1,0 +1,10 @@
+_planet_get_quantity: procedure expose (globals)
+ call zocsend "d"
+ if zocwait("Fuel Ore")=640 then call _error "timeout"
+ ore=_stripint(word(_grabit("^M"),4))
+ if zocwait("Organics")=640 then call _error "timeout"
+ org=_stripint(word(_grabit("^M"),4))
+ if zocwait("Equipment")=640 then call _error "timeout"
+ equ=_stripint(word(_grabit("^M"),4))
+ rslt=ore org equ
+return rslt

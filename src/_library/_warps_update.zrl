@@ -1,0 +1,80 @@
+/** _warps_update v.1 **/
+_warps_update: procedure expose (globals)
+ sector=arg(1)
+ warps=arg(2)
+#if _debug then call zocsend "'^M" sector "->" warps "^M"
+#if _debug then call zocsend "outgoing^M"
+ /* add outgoing references to current sector */
+#if _debug then call zocsend sector "has" _s.sector.!num "," _s.sector.!wt "," _s.sector "^M"
+    if _s.sector="" then do
+#if _debug then call zocsend sector "is empty, adding" warps "^M"
+     _s.sector=warps
+     _s.sector.!num=warps
+     _s.sector.!wt=strip(copies(" 0",words(warps)))
+    end /*if*/
+    else do
+     do i=1 to words(warps)
+      n=word(warps,i)
+      found=0
+      do j=1 to words(_s.sector)
+       a=word(_s.sector.!num,j)
+       t=word(_s.sector.!wt,j)
+       if n=a then do
+        if t=2 then do
+         _s.sector.!wt=overlay("1",_s.sector.!wt,wordindex(_s.sector.!wt,j))
+         _s.sector=overlay(n+20000,_s.sector,wordindex(_s.sector,j))
+#if _debug then call zocsend n "updating warptype to 1^M"
+        end /*if*/
+        found=1
+        leave
+       end /*if*/
+      end /*do*/
+      if \found then do
+       _s.sector=_s.sector n
+       _s.sector.!wt=_s.sector.!wt 0
+       _s.sector.!num=_s.sector.!num n
+#if _debug then call zocsend n "not found, adding it to" sector "^M"
+      end /*if*/
+     end /*do*/
+    end /*else*/
+#if _debug then call zocsend sector "has" _s.sector.!num "," _s.sector.!wt "," _s.sector "^M"
+
+ /* add incoming references to adjacent sectors */
+#if _debug then call zocsend "incoming^M"
+    do i=1 to words(warps)
+     n=word(warps,i)
+#if _debug then call zocsend n "has" _s.n.!num "," _s.n.!wt "," _s.n "^M"
+     if _s.n="" then do
+#if _debug then call zocsend n "is empty, adding" sector "^M"
+      _s.n=sector+40000
+      _s.n.!num=sector
+      _s.n.!wt=2
+     end /*if*/
+     else do
+      found=0
+      do j=1 to words(_s.n)
+       a=word(_s.n.!num,j)
+       t=word(_s.n.!wt,j)
+       if sector=a then do
+        if t=0 then do
+         _s.n.!wt=overlay("1",_s.n.!wt,wordindex(_s.n.!wt,j))
+         _s.n=_space(_s.n,5)
+         _s.n=overlay(sector+20000,_s.n,wordindex(_s.n,j))
+         _s.n=_space(_s.n)
+#if _debug then call zocsend sector "updating warptype to 1^M"
+        end /*if*/
+        found=1
+        leave
+       end /*if*/
+      end /*do*/
+      if \found then do
+       _s.n=_s.n sector+40000
+       _s.n.!wt=_s.n.!wt 2
+       _s.n.!num=_s.n.!num sector
+#if _debug then call zocsend sector "not found, adding it to" n "->" _s.n.!num "^M"
+      end /*if*/
+     end /*else*/
+#if _debug then call zocsend n "has" _s.n.!num "," _s.n.!wt "," _s.n "^M"
+    end /*do*/
+#if _debug then call zocsend "^M"
+return 1

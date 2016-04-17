@@ -1,0 +1,35 @@
+/** _mapinit v.5 **/
+_mapinit: procedure expose (globals)
+ fname=arg(1)
+ if arg(2,"E") then m=arg(2); else m=0
+ select
+  when m=0 then nop
+  when m=1 then drop _p. _s. _dist. _path. _dtomsl. _dfrmsl. _bg. _bd. _nwt. _nwi. _nwo. _nw. _od. _sv. _pv.
+  otherwise nop
+ end /*select*/
+ if _f.0="_F.0" then _f.=0
+ if _l.0="_L.0" then _l.=0
+ if _m.0="_M.0" then _m.=0
+ if _s.0="_S.0" then _s.=""
+ if _p.0="_P.0" then _p.=""
+ if _dist.0.0="_DIST.0.0" then _dist.=255
+ if _path.0.0="_PATH.0.0" then _path.=""
+ if _dtomsl.0="_DTOMSL.0" then _dtomsl.=255
+ if _dfrmsl.0="_DFRMSL.0" then _dfrmsl.=255
+ if _bg.0="_BG.0" then _bg.=0
+ if _bd.0="_BD.0" then _bd.=0 /* bubble door, results from _mapbubbles */
+ if _nwt.0="_NWT.0" then _nwt.=0
+ if _nwi.0="_NWI.0" then _nwi.=0
+ if _nwo.0="_NWO.0" then _nwo.=0
+ if _nw.0="_NW.0" then _nw.=0
+ if _od.0="_OD.0" then _od.=0
+ if _sv.0="_SV.0" then _sv.=0
+ if _pv.0="_PV.0" then _pv.=0
+ if _sl.0="_SL.0" then _sl.=0
+ if _ex.0="_EX.0" then _ex.=0
+ if _v.0="_V.0" then _v.=0
+ if _vs.0="_VS.0" then _vs.=0
+ if _vn.0="_VN.0" then _vn.="(na)"
+ if \_fileopenr(fname) then call _error "unable to open map file: "||fname
+ recordlen=c2d(charin(fname))
+return recordlen

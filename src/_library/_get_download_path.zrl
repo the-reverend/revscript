@@ -1,0 +1,10 @@
+/** _get_download_path v.2 **/
+/*- _get_download_path -*/
+/*- v.2 tested -*/
+_get_download_path: procedure expose (globals)
+ parse value zocgetglobaloption("DownloadAltPath") with . '="' dpath '"'
+ if left(zocgetinfo("VERSION"),1)>4 then dpath = zocfilename("RESOLV", dpath)
+ dpath=dosfname(dpath)
+ if right(dpath,1)\="\" then dpath=dpath||"\"
+ if \dosisdir(dpath) then call _error "invalid path in _get_download_path"
+return dpath

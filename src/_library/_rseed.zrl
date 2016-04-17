@@ -1,0 +1,11 @@
+/** _rseed v.7 **/
+/*- _rseed [width] -*/
+/*- v.7 tested -*/
+_rseed: procedure expose (globals)
+ if arg(1,"E") then width=min(max(arg(1),2),86400)
+ else width=1000
+ parse value time("L") with r1 ":" r2 ":" r3 "." r4
+ r4=strip(left(r4,5))
+ seed=r4||copies(0,5-length(r4))
+ rslt=random(0, 99999, seed)//width
+return rslt

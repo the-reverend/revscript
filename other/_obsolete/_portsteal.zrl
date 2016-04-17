@@ -1,0 +1,90 @@
+/** _portsteal v.3 **/
+_portsteal: procedure expose (globals)
+ prod=arg(1)
+ max=arg(2)
+
+ msg="##OK##"
+ exp=0
+ amount=0
+ avail=0
+ holds=0
+ turns=0
+
+ if prod="" then call _error "specify product to steal [1,2,3]"
+ if \_in("123",prod) then call _error "specify product to steal [1,2,3]"
+ if max="" then call _error "specify # holds to steal"
+ if max<=0 then call _error "specify # holds to steal"
+
+ select
+  when prod=1 then prodn="Fuel Ore "
+  when prod=2 then prodn="Organics "
+  when prod=3 then prodn="Equipment"
+ end /*select*/
+
+ call zocsend "pr"
+
+ prans=_waitmux("One turn deducted, |[Pause]")
+ select
+  when prans=0 then do
+   if _wait(" turns left.")=640 then call _error "timeout"
+   turns=_stripint(_lastline())
+  end /*when*/
+  when prans=1 then turns=10000
+  when prans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+
+ call zocsend "^Ms"
+ fake=_waitmux(prodn||"|Suddenly you're Busted!")
+ if prod=3 then prodn="Equipment "
+ select
+  when fake=0 then do
+
+   if _wait("^M")=640 then call _error "timeout"
+   avail=_stripint(substr(_lastline(),17,8))
+
+   call zocsend prod
+   if _wait(prodn||"to swipe? [")=640 then call _error "timeout"
+   if _wait("]")=640 then call _error "timeout"
+   holds=_stripint(_lastline())
+
+   amount=min(holds, max, avail)
+   call zocsend amount||"^M"
+
+   ans=_waitmux("Success!|Busted!|There aren't that many holds")
+   select
+    when ans=0 then do
+     if _wait("and you receive ")=640 then call _error "timeout"
+     if _wait("experience point(s).")=640 then call _error "timeout"
+     exp=_stripint(_lastline())
+    end /*when*/
+    when ans=1 then do
+     if _wait("and you LOSE ")=640 then call _error "timeout"
+     if _wait("experience point(s).")=640 then call _error "timeout"
+     exp=_stripint(_lastline())
+     amount=0
+     msg="##BUST##"
+    end /*when*/
+    when ans=2 then msg="##HOLDS##"
+    when ans=640 then call _error "timeout"
+   end /*select*/
+
+  end /*when*/
+
+  when fake=1 then do
+   if _wait("and you LOSE ")=640 then call _error "timeout"
+   if _wait("experience point(s).")=640 then call _error "timeout"
+   exp=_stripint(_lastline())
+   msg="##FAKE##"
+  end /*when*/
+
+  when fake=640 then call _error "timeout"
+
+  otherwise nop
+
+ end /*select*/
+
+ if _wait("Command [")=640 then call _error "timeout"
+ rslt=msg||";"||exp||";"||amount||";"||avail||";"||holds||";"||turns
+
+return rslt

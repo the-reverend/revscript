@@ -1,0 +1,55 @@
+/** _transport v.4 **/
+_transport: procedure expose (globals)
+ ship=arg(1)
+ if arg(2)="quiet" then quiet=1
+ else quiet=0
+ success=1
+
+ if quiet then call zocsend "x "
+ else call zocsend "x"
+
+ if _wait("<Transport to Ship>")=640 then call _error "timeout"
+
+ done=0
+ do while \done
+  ans=_waitmux("[Pause]|ship to beam to (Q=Quit)|WARNING!")
+  select
+   when ans=0 then do
+    if quiet then call zocsend "  "
+    else call zocsend "^M"
+   end /*when*/
+   when ans=1 then done=1
+   when ans=2 then nop
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ if quiet then call zocsend ship||"^M "
+ else call zocsend ship||"^M"
+
+ ans=_waitmux("Security code accepted|not an available ship")
+ select
+  when ans=0 then success=1
+  when ans=1 then success=0
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+
+ done=0
+ do while \done
+  ans=_waitmux("[Pause]|ship to beam to (Q=Quit)")
+  select
+   when ans=0 then do
+    if quiet then call zocsend "  "
+    else call zocsend "^M"
+   end /*when*/
+   when ans=1 then done=1
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ call zocsend "q"
+ if _wait("Command [")=640 then call _error "timeout"
+
+return success

@@ -1,0 +1,98 @@
+/** _online_watch v.1 **/
+_online_watch: procedure expose (globals)
+
+ /* setup first run */
+    if \_undef(_online.!reset) then do
+     _online.="##UNDEF##"
+     call _online_load_rank_names
+    end /*if*/
+
+ /* gather lines */
+    call zocsend "#"
+    ans=_waitmux("#|  Who's Playing  ")
+    select
+     when ans=0 then do; call zocsend "^H"; return 0; end
+     when ans=640 then call _error "timeout"
+     otherwise nop
+    end /*select*/
+    if _wait("^M")=640 then call _error "timeout"
+    c=0; flag=0
+    do until ans>0
+     ans=_waitmux("^M|are on the move!")
+     c=c+1
+     line.c=_lastline()
+     if line.c="" & flag then leave
+     if line.c\="" & \flag then flag=1
+    end /*do*/
+    if ans=640 then call _error "timeout"
+   
+ /* analyze list */
+    list=""
+    n=0
+    do i=1 to c
+     select
+      when line.i="" then nop
+      when line.i="are on the move!" then nop
+      otherwise do
+
+       parse value _online_split_rank_name(line.i) with rank ";" name
+       parse value _online_split_name_corp(name) with name ";" num
+   
+       /* track rank/corp */
+          if \_undef(_online.name.!rank) & rank\=_online.name.!rank then do
+           n=n+1
+           msg.n="RANK :" name ":" word("DOWN UP",(rank>_online.name.!rank)+1) "TO"
+           if rank<0 then do; temp=-rank;  msg.n=msg.n _online.!red.temp;  end
+                     else do; temp=rank+1; msg.n=msg.n _online.!blue.temp; end
+          end /*if*/
+          if \_undef(_online.name.!corp) & corp\=_online.name.!corp then do
+           n=n+1
+           msg.n="CORP :" name ":" _online.name.!corp "-->" corp
+          end /*if*/
+          _online.name.!rank=rank
+          _online.name.!corp=corp
+
+       /* build list */
+          if list="" then list=name; else list=list||";"||name
+   
+      end /*otherwise*/
+     end /*select*/
+    end /*do*/
+
+ /* find player changes */
+    if \_undef(_online.!list) then do
+     do i=1 to _dwords(list,";")
+      found=0
+      name=_dword(list,i,";")
+      do j=1 to _dwords(_online.!list,";")
+       if name=_dword(_online.!list,j,";") then do; found=1; leave; end
+      end /*do*/
+      if \found then do
+       n=n+1
+       msg.n="IN : "||name
+      end /*if*/
+     end /*do*/
+     do i=1 to _dwords(_online.!list,";")
+      found=0
+      name=_dword(_online.!list,i,";")
+      do j=1 to _dwords(list,";")
+       if name=_dword(list,j,";") then do; found=1; leave; end
+      end /*do*/
+      if \found then do
+       n=n+1
+       msg.n="OUT : "||name
+      end /*if*/
+     end /*do*/
+    end /*if*/
+    _online.!list=list
+    
+ /* report player changes */
+    if n>0 then do
+     call _beep "alert.wav"
+     call zocsend "'^M"
+     do i=1 to n
+      call zocsend " "||msg.i||"^M"
+     end /*do*/
+     call zocsend "^M"
+    end /*if*/
+return 1

@@ -1,0 +1,18 @@
+/** _getfigs v.15 **/
+/*- _getfigs fname [, mode] -*/
+_getfigs: procedure expose (globals)
+ fname=arg(1)
+ mode=arg(2)
+ report=arg(3)
+ _f.=0
+ c=0
+ if lower(mode)="file" then parse value _figs_load(fname) with c m
+ else do
+  parse value _figs_get(fname) with c m cf pf df of tf tot dif
+  call _figs_save fname, m
+ end /*else*/
+select
+ when report=0 then return c
+ when report=1 then return c cf pf df of tf tot dif
+ otherwise return c
+end /*select*/

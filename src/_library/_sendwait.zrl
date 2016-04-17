@@ -1,0 +1,15 @@
+/** _sendwait v.1 **/
+/*- _sendwait sendtext, waittext [, mode] -*/
+/*- v.1 tested -*/
+_sendwait: procedure expose (globals)
+ if \arg(1,"E") | \arg(2,"E") then call _error "missing parameter in _sendwait"
+ call zocsend arg(1)
+ rslt=_wait(arg(2))
+ select
+  when \arg(3,"E") | arg(3)=""             then nop
+  when lower(arg(3))="timeout"  & rslt=640 then call _error "timeout"
+  when lower(arg(3))="lastline" & rslt=640 then call _error "timeout"
+  when lower(arg(3))="lastline"            then rslt=_lastline()
+  otherwise nop
+ end /*select*/
+return rslt

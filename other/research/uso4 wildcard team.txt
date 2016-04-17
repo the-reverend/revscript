@@ -1,0 +1,42 @@
+firstname: Jason
+lastname: Marshall
+email: jmarshall@samuelstrapping.com
+loginname: Deimos
+tradername: Deimos
+password: killer
+
+firstname: Kevin
+lastname: Henry
+email: severian@cablerocket.com
+loginname: severian
+tradername: severian
+password: seminole
+
+firstname: Dan
+lastname: Westerman
+email: Carnage582@yahoo.com
+loginname: arucard
+tradername: arucard
+password: dracula
+
+firstname: Mathew
+lastname: Smiley
+email: mathew_smiley@hotmail.com
+loginname: Shyenkur
+tradername: Shyenkur
+password: x3vfh1
+
+firstname: Timothy
+lastname: Lindsey
+email: timl@lycos.com
+loginname: Underlord
+tradername: Underlord
+password: a36q
+
+firstname: David
+lastname: Dinkins
+email: ddink@kc.rr.com
+loginname: Alani
+tradername: Alani
+password: everquest
+ 

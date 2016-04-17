@@ -1,0 +1,31 @@
+/** _stripansi v.4 **/
+/*- _stripansi str -*/
+/*- v.4 tested -*/
+_stripansi: procedure expose (globals)
+ if arg(1,"E") then line=arg(1)
+ else call _error "missing parameter in _stripansi"
+ line=_striplf(line)
+ esc=d2c(27)
+ incode=0
+ caret=0
+ rslt=""
+ i=1
+ do while i<=length(line)
+  ch=substr(line,i,1)
+  select
+   when \caret & ch="^" then caret=1
+   when ch=esc | (caret & ch="[") then do
+    incode=1
+    caret=0
+   end /*when*/
+   when incode & \caret & verify(ch,"[1234567890;") then incode=0
+   when incode then nop
+   otherwise do
+    if caret then rslt=rslt||"^"||ch
+    else rslt=rslt||ch
+    caret=0
+   end /*otherwise*/
+  end /*select*/
+  i=i+1
+ end /*do*/
+return rslt

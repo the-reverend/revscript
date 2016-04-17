@@ -1,0 +1,59 @@
+/** _ini_load_settings v.1 **/
+_ini_load_settings: procedure expose (globals)
+
+ parse value zocgetoption("CaptDefaultName") with . '="' ldefault '"'
+ if left(zocgetinfo("VERSION"),1)>4 then ldefault = zocfilename("RESOLV", ldefault)
+ parse value zocgetglobaloption("WindowTitle") with . '="' gname '"'
+
+ lpath=_get_log_path()
+ spath=_get_script_path()
+ dpath=_get_download_path()
+
+ if gname="" | gname="%ZOCORHOST% %OPTIONS%" then gname=_setgame()
+ if gname="" | gname="%ZOCORHOST% %OPTIONS%" then exit
+ dname=dosfname(lpath||gname||"_data.ini")
+
+ _ini.="##UNDEF##"
+
+ sectionlist=""
+ if _fileopenr(dname) then do
+  insection=0
+  do while \_fileeof(dname)
+   line=strip(linein(dname))
+   if _ini_is_section(line) then do
+    insection=1
+    parse var line "[" section "]"
+    section=strip(section)
+    if sectionlist="" then sectionlist=section; else sectionlist=sectionlist||";"||section
+   end /*if*/
+   else do
+    if insection then do
+     parse var line k "=" v
+     v=_ini_format_value(v)
+     k="!"||section||".!"||strip(k)
+     if k\="!"||section||".!" then _ini.k=strip(v)
+    end /*if*/
+   end /*else*/
+  end /*while*/
+  call _fileclose dname
+ end /*if*/
+
+ call _iniv "!settings", "!ldefault", ldefault
+ call _iniv "!settings", "!lpath",  lpath
+ call _iniv "!settings", "!spath",  spath
+ call _iniv "!settings", "!dpath",  dpath
+ call _iniv "!settings", "!dname",  dname
+ call _iniv "!settings", "!gname",  gname
+ call _iniv "!settings", "!lname",  lpath||gname||"_log.txt"
+ call _iniv "!settings", "!fname",  lpath||gname||"_figs.txt"
+ call _iniv "!settings", "!vname",  lpath||gname||"_voids.txt"
+ call _iniv "!settings", "!vwname", lpath||gname||"_view.txt"
+ call _iniv "!settings", "!pname",  lpath||gname||".prt"
+ call _iniv "!settings", "!sname",  lpath||gname||".sct"
+ call _iniv "!settings", "!rpname", lpath||gname||"_ref.prt"
+ call _iniv "!settings", "!rsname", lpath||gname||"_ref.sct"
+ call _iniv "!settings", "!mname",  lpath||gname||".map"
+ call _iniv "!settings", "!zname",  lpath||gname||".ztm"
+ call _iniv "!settings", "!nfname", lpath||gname||"_nearfig.txt"
+
+return sectionlist

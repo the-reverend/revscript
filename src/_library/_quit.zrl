@@ -1,0 +1,28 @@
+/** _quit v.7 **/
+/*- _quit [msg] [,"nocopy"] -*/
+/*- v.7 tested -*/
+_quit: procedure expose (globals)
+ lcpy=1
+ arg1=""
+ do i=1 to 2 /* manage arguments */
+  select
+   when arg(i,"E") & lower(arg(i))="nocopy" then lcpy=0
+   when arg(i,"E") & arg1="" then arg1=arg(i)
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ line=zocgetscreen(0, zocgetinfo("CURSOR-Y"), zocgetinfo("CURSOR-X"))
+ select /* define message */
+  when  lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m^M^J"||line
+  when \lcpy & arg1="" then msg="^[[1;32m< end script >^[[0m "
+  when  lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m^M^J"||line
+  when \lcpy           then msg="^[[1;32m^M^J< end script: "||arg1||" >^[[0m "
+  otherwise nop
+ end /*select*/
+ call zocwrite msg
+ select /* choose a beep */
+  when lower(arg1)="script cancelled by user." then call _beep "cancel.wav"
+  otherwise call _beep "quit.wav"
+ end /*select*/
+ exit
+return 1

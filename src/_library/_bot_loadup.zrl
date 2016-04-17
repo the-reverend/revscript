@@ -1,0 +1,129 @@
+/** _bot_loadup v.1 **/
+_bot_loadup:
+
+/* check if online */
+   if \_isonline(1) then call _error "you must be online to use this script."
+
+/* check for correct prompt */
+   bot_prompt=_synchronize()
+   if bot_prompt="planet" then do
+    call zocsend "c ^M "
+    bot_prompt=_synchronize()
+   end /*if*/
+   select
+    when bot_prompt="command" then bot_planet=0
+    when bot_prompt="citadel" then bot_planet=_get_planet_number(bot_prompt)
+    when bot_prompt="bank"    then bot_planet=0
+    when bot_prompt="terra"   then bot_planet=0
+    when _synchronize_to_prompt("command",bot_prompt) then do; bot_planet=0; bot_prompt="command"; end
+    otherwise call _quit _g.!sname1||" : please start at the command, citadel, bank, or terra prompt."
+   end /*select*/
+
+/* load ini variables */
+   load="ns rf sf bust_clear gname fname vname mname vwname lname spath lpath ldefault dname dpath trade_percent"
+   sl=_ini_load_settings()
+   do i=1 to _dwords(sl,";")
+    s=_dword(sl,i,";")
+    globals=globals||" !"||s
+    interpret '!'||s||'="!"||s'
+   end;
+   f=0; l=""
+   do i=1 to words(load)
+    s=word(load,i)
+    x="!"||s
+    interpret s||"=_ini.!settings.x"
+    interpret 'if '||s||'="##UNDEF##" then do; l=l s; f=1; end'
+   end; if f then call _error "missing config variable(s):"||l; drop s sl x f l
+
+/* set bot name */
+   bot_name=_iniv(!settings,"!bot_name")
+   if _undef(bot_name) then do
+    bot_name=_random_pwd(2,5)
+    call _ini_write dname, "settings", "bot_name", bot_name
+   end /*if*/
+
+/* set autoreply */
+   call _add_autoreply bot_name||" bot ::", "^RUN="||_g.!sname
+
+/* announce script */
+   call zocsend "'^M"||_g.!sname1||" : loading...^Muse "||bot_name||" ::^M^M"
+
+/* load more variables */
+   bot_auth_list=_iniv(!settings,"!bot_auth_list"); if _undef(bot_auth_list) then bot_auth_list=""
+   bot_auth_timeout=_iniv(!settings,"!bot_auth_timeout"); if _undef(bot_auth_timeout) then bot_auth_timeout=7200 /* 2 hours */
+
+   warning=_iniv(!settings,"!warning"); if _undef(warning) then _g.!warnlist=""; else _g.!warnlist=warning
+   target=_iniv(!settings,"!target");   if _undef(target) then _g.!targetlist=""; else _g.!targetlist=target
+   ignore=_iniv(!settings,"!ignore");   if _undef(ignore) then _g.!ignorelist=""; else _g.!ignorelist=ignore
+
+   alpha=_iniv(!settings,"!alpha"); if _undef(alpha) then alpha=0
+   rylos=_iniv(!settings,"!rylos"); if _undef(rylos) then rylos=0
+   sd=_iniv(!settings,"!sd");       if _undef(sd) then sd=0
+
+/* define local variables */
+   locals="ans line t list i j k n s w x c sfx amt sector turns alpha rylos sd warning target ignore",
+          "bot_mode bot_user bot_users. bot_cmd bot_args bot_lock bot_cmd bot_user bot_args",
+          "bot_auth bot_auth_stamp. bot_auth_timeout bot_auth_list",
+          "bot_name bot_prompt bot_wait bot_abort bot_sector",
+          "tasks parseparams pmap code reclen count corp pwd load",
+          load
+
+/* load game data */
+   reclen=_mapinit(mname)
+   call _getfigs fname, "file"
+   call _getvoids vname, "file"
+#_bit.zrx#   call _getviews vwname
+#_bit.zrx#   _g.!runaway=0
+#_bot.zrx#   if \_negotiate_load_mcic(spath||"mcic.ini") then call _error "unable to load mcic data"
+
+/* set default bot variables */
+   bot_lock=0
+   _verbose=1
+   _g.!autoex=0
+
+/* setup starting mode */
+   select
+    when bot_mode="passive"   then bot_wait="::|"||_bot_passive("query wait")
+#_bit.zrx#    when bot_mode="finder"    then bot_wait="::|"||_bot_finder("query wait")
+#_bot.zrx#    when bot_mode="worker"    then bot_wait="::|"||_bot_worker("query wait")
+#_bat.zrx#    when bot_mode="predicter" then do
+#_bat.zrx#     bot_wait="::|"||_bot_predicter("query wait")
+#_bat.zrx#     c=_bot_predicter("build matrix", mname, reclen, ns)
+#_bat.zrx#     call zocsend "'"||_g.!sname1||" : "||bot_name||" : "||bot_mode||" : "||c||" action areas identified^M"
+#_bat.zrx#    end /*when*/
+#_bat.zrx#    when bot_mode="predrop" then do
+#_bat.zrx#     bot_wait="::|"||_bot_predrop("query wait")
+#_bat.zrx#     call _bot_predrop "setup"
+#_bat.zrx#    end /*when*/
+#_bat.zrx#    when bot_mode="reloader"  then do
+#_bat.zrx#     bot_wait="::|"||_bot_reloader("query wait")
+#_bat.zrx#     call _bot_reloader "setup"
+#_bat.zrx#    end /*when*/
+    otherwise call _error "unknown mode : "||bot_mode
+   end /*select*/
+
+/* setup user accounts */
+   call time "R"
+   bot_auth_stamp.=-bot_auth_timeout
+   bot_users.=0
+
+   bot_users.!list="##OWNER##"
+   bot_users.##OWNER##=1
+   if \_undef(_iniv(!settings,"!bot_user_stamps")) then do
+    list=_iniv(!settings,"!bot_user_stamps")
+    do i=1 to _dwords(list,";") by 2
+     bot_user=_dword(list,i,";"); n=_dword(list,i+1,";")
+     if n>-bot_auth_timeout then do
+      bot_auth_stamp.bot_user=n
+      bot_users.bot_user=1
+      bot_users.!list=_listadd(bot_user,bot_users.!list,1)
+     end /*if*/
+    end i /*do*/
+   end /*if*/
+
+/* final setup */
+   bot_abort=_cn9("query",bot_prompt)
+   bot_sector=_getinfo("sect")
+   call zocsend "'status ::^M"
+
+return

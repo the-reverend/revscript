@@ -1,0 +1,11 @@
+/** _drequestlisti v.2 **/
+/*- _drequestlisti title, list, delimiter -*/
+/*- v.2 tested -*/
+_drequestlisti: procedure expose (globals)
+ do i=1 to 3
+  if \arg(i,"E") then call _error "missing parameter in _drequestlisti"
+ end /*do*/
+ i=zocrequestlist(arg(1),translate(arg(2),"|"||arg(3),arg(3)||"|"))
+ if i<0 & lower(arg(4))="c" then call _quit "script cancelled by user.", "nocopy"
+                            else rslt=i+1
+return rslt

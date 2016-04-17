@@ -1,0 +1,77 @@
+/** _onlineget v.7 **/
+_onlineget: procedure expose (globals)
+
+ if _g.RED.0="_G.RED.0" then call _load_rank_names
+
+ bufsize=5*1024
+ call zocreceivebuf bufsize
+ blanklines=0
+
+ if _sendwait("#","  Who's Playin")=640 then call _error "timeout"
+ do while blanklines<2
+  if _waitmux("e|a|^M")=640 then call _error "timeout"
+  line=strip(_lastline())
+  if line="" then blanklines=blanklines+1
+ end /*do*/
+ buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ if length(buff)=bufsize then call _error "buffer overflow in _onlineget"
+
+ _olist2.=""
+ do i=1 to _olist1.0
+  _olist2.i=_olist1.i
+ end /*do*/
+ _olist2.0=_olist1.0
+ _olist1.=""
+ _olist1.0=0
+
+ i=max(pos("Who's Playing",buff),1)
+ i=pos(d2c(13),buff,i)+1
+ c=0
+ do while i>1
+  j=pos(d2c(13),buff,i)
+  if j>0 then line=strip(substr(buff,i,j-i))
+  i=j+1
+  if line\="" then do
+   c=c+1
+   line.c=line
+  end /*if*/
+ end /*do*/
+
+ do i=1 to c
+
+  /* split rank and name */
+  do j=1 to 23
+   k=word(_g.BLUE.0,j)
+   if left(line.i,length(_g.BLUE.k))=_g.BLUE.k then leave
+  end /*do*/
+  if j<24 then do
+   rank.i=k-1
+   name.i=substr(line.i,length(_g.BLUE.k)+2)
+  end /*if*/
+  else do
+   do j=1 to 22
+    k=word(_g.RED.0,j)
+    if left(line.i,length(_g.RED.k))=_g.RED.k then leave
+   end /*do*/
+   if j<23 then do
+    rank.i=-k
+    name.i=substr(line.i,length(_g.RED.k)+2)
+   end /*if*/
+   else k=0
+  end /*else*/
+
+  /* split name and corp */
+  parse value reverse(name.i) with temp1 "]" num "[" temp2
+  corp.i=0
+  if num="" then ,
+   if _stripint(num)=num & temp1="" & strip(temp2)\="" then do
+    corp.i=reverse(num)
+    name.i=reverse(substr(reverse(name.i),4+length(num)))
+   end /*if*/
+
+  _olist1.i=name.i||";"||corp.i||";"||rank.i
+
+ end /*do*/
+ _olist1.0=c
+
+return

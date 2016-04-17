@@ -1,0 +1,30 @@
+/** _killfurb v.1 **/
+_killfurb: procedure expose (globals)
+ figs=arg(1)
+ holds=arg(2)
+ if holds="" then holds=_getinfo("hlds")
+ call zocsend "a"
+ if _wait("<Attack>")=640 then call _error "timeout"
+ ans=_waitmux(") (Y/N)|(?=Help)? :")
+ do while ans=0
+  line=_lastline()
+  i=lastpos("-",line)+1
+  j=pos(")",line,i)
+  furbfigs=_space(translate(substr(line,i,j-i)," ",","),0)
+  select
+   when pos("]'s",line)>0 then call zocsend "n"
+   when furbfigs=0 then leave
+   otherwise call zocsend "n"
+  end /*select*/
+  ans=_waitmux(") (Y/N)|(?=Help)? :")
+ end /*do*/
+ select
+  when ans=0 then do
+   call zocsend "y"||figs||"^M"
+   rslt=_getinfo("hlds")-holds
+  end /*when*/
+  when ans=1 then rslt=0
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+return rslt

@@ -1,0 +1,28 @@
+_online_split_rank_name: procedure expose (globals)
+ line=arg(1)
+ if \_undef(_online.!reset) then call _error "rankings list not loaded"
+ do j=1 to 23
+  k=word(_online.!blue.0,j)
+  if left(line,length(_online.!blue.k))=_online.!blue.k then leave
+ end /*do*/
+ if j<24 then do
+  rank=k-1
+  name=substr(line,length(_online.!blue.k)+2)
+ end /*if*/
+ else do
+  do j=1 to 22
+   k=word(_online.!red.0,j)
+   if left(line,length(_online.!red.k))=_online.!red.k then leave
+  end /*do*/
+  if j<23 then do
+   rank=-k
+   name=substr(line,length(_online.!red.k)+2)
+  end /*if*/
+  else do
+   k=0
+   rank=0
+   name=line
+  end /*else*/
+ end /*else*/
+ rslt=rank";"name
+return rslt

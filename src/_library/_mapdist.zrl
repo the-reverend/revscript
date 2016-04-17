@@ -1,0 +1,114 @@
+/** _mapdist v.2 **/
+_mapdist: procedure expose (globals)
+/*- usage:  _mapdist start, finish, mapname, recordlen, reverse, maxdist  -*/
+/*-                  int    int     str      int     bool     int      -*/
+/*- special cases:                                                     -*/
+/*-   1) if the start sector is always the same, use reverse=0         -*/
+/*-   2) if the finish sector is always the same, use reverse=1        -*/
+/*-   3) if maxdist<255 and cases 1 or 2 apply, then there is no need  -*/
+/*-       to call mapdist any more once a result of 255 is given, i.e. -*/
+/*-       all the distances less than or equal to maxdist are already  -*/
+/*-       calculated.                                                  -*/
+ start=arg(1)
+ finish=arg(2)
+ mapname=arg(3)
+ recordlen=arg(4)
+ reverse=arg(5)
+ if reverse="" then reverse=0
+/*- if reverse then do -*/
+/*-  finish=arg(1)     -*/
+/*-  start=arg(2)      -*/
+/*- end /*if*/       -*/
+ maxdist=arg(6)
+ if maxdist="" | maxdist<1 then maxdist=255
+
+ call _mapseek mapname, recordlen, start
+ _dist.start.start=0
+ _path.start.start=start
+
+ /* initialize arrays */
+ inqueue.=0
+ queue.=""
+ queue.1=start
+ inqueue.start=1
+ tail=1
+ do i=1 to words(_s.start)
+  code=word(_s.start,i)
+  warptype=code%20000
+  sector=code//20000
+  if (warptype<2 & \reverse) | (warptype>0 & reverse) then do
+   tail=tail+1
+   queue.tail=sector
+   inqueue.sector=1
+  end /*if*/
+ end /*do*/
+ head=2
+
+ done=0
+ do while \done & tail>=head
+
+  current=queue.head
+  call _mapseek mapname, recordlen, current
+
+  do i=1 to words(_s.current)
+
+   code=word(_s.current,i)
+   warptype=code%20000
+   adjacent=code//20000
+
+   /* if adjacent not in queue, then add to tail */
+   if ((warptype<2 & \reverse) | (warptype>0 & reverse)) & \inqueue.adjacent then do
+    tail=tail+1
+    queue.tail=adjacent
+    inqueue.adjacent=1
+   end /*if*/
+
+   /* assign shortest warp distance */
+   if warptype>0 & \reverse then do
+    tdist=_dist.start.current
+    _dist.start.current=min(_dist.start.current,_dist.start.adjacent+1)
+    if tdist>_dist.start.current then _path.start.current=_path.start.adjacent||";"||current
+   end /*if*/
+
+   if warptype<2 & reverse then do
+    tdist=_dist.current.start
+    _dist.current.start=min(_dist.current.start,_dist.adjacent.start+1)
+    if tdist>_dist.current.start then _path.current.start=current||";"||_path.adjacent.start
+   end /*if*/
+
+  end /*do*/
+
+  /* have we found the destination? */
+  select
+   when current=finish then done=1
+/*-                                                                                                -*/
+/*- "early finish" math below fails for the following case:                                        -*/
+/*-                                                                                                -*/
+/*-          .-> C -> D -> E -> F -> G                                                             -*/
+/*-  A -> B <                   ^                                                                  -*/
+/*-          `------------------'                                                                  -*/
+/*-                                                                                                -*/
+/*-  _dist.A.C + _dist.C.G = 7                                                                       -*/
+/*-  but,                                                                                          -*/
+/*-  _dist.A.G=3                                                                                    -*/
+/*-                                                                                                -*/
+/*-when _dist.current.finish<255 & \reverse then do                                                 -*/
+/*- _dist.start.finish=_dist.start.current+_dist.current.finish                                       -*/
+/*- _path.start.finish=_path.start.current||substr(_path.current.finish,pos(";",_path.current.finish)) -*/
+/*- done=1                                                                                         -*/
+/*-end /*when*/                                                                                  -*/
+/*-when _dist.finish.current<255 & reverse then do                                                  -*/
+/*- _dist.finish.start=_dist.finish.current+_dist.current.start                                       -*/
+/*- _path.finish.start=_path.finish.current||substr(_path.current.start,pos(";",_path.current.start))  -*/
+/*- done=1                                                                                         -*/
+/*-end /*when*/                                                                                  -*/
+/*-                                                                                                -*/
+   when _dist.start.current>maxdist & \reverse then done=1
+   when _dist.current.start>maxdist & reverse then done=1
+   when head=tail then done=1
+   otherwise head=head+1
+  end /*select*/
+
+ end /*do*/
+
+return _dist.start.finish

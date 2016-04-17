@@ -1,0 +1,9 @@
+_get_lines_above: procedure expose(globals)
+ if arg(1,"E") then n=arg(1); else n=1
+ y=zocgetinfo("CURSOR-Y")
+ lines=""
+ do i=max(y-n,0) to y
+  lines=lines||" "||translate(strip(zocgetscreen(0,i,80),"T"),";"," ")
+ end /*do*/
+ lines=translate(strip(lines),"; "," ;")
+return lines

@@ -1,0 +1,27 @@
+/** _ztm_parse_buff v.1 **/
+_ztm_parse_buff: procedure expose (globals)
+ zb=arg(1)
+ zfr=0
+ zto=0
+ i=pos("FM",zb)
+ if i>0 then do
+  j=pos(d2c(13),zb,i)
+  do while j>0
+   line=_space(translate(substr(zb,i,j-i)," ",">:()"||d2c(0)||d2c(10)," "))
+   t=left(line,2)
+   select
+    when t="FM" then zto=0
+    when \datatype(t,"W") then nop
+    otherwise do
+     do stk=1 to words(line)
+      zfr=zto
+      zto=word(line,stk)
+      if zfr>0 then _s.zfr=_listadd(zto,_s.zfr,1," ")
+     end /*do*/
+    end /*otherwise*/
+   end /*select*/
+   i=j+1
+   j=pos(d2c(13),zb,i)
+  end /*do*/
+ end /*if*/
+return

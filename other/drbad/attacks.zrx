@@ -1,0 +1,405 @@
+/* REXX */
+/* SafeSector = 95, SafePlanet = 133, LimpetSector = 95*/
+
+/* Distance 11*/
+call bwarp 212
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 2714
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 502
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3586
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 3*/
+call bwarp 1656
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 355
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 7*/
+call bwarp 174
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 706
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1062
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 2286
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 2630
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3886
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 11*/
+call bwarp 1005
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1190
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 11*/
+call bwarp 939
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1442
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 771
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 12*/
+/* Skipped 771 - already visited */
+/* Skipped 771*/
+/* Distance 9*/
+call bwarp 144
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1490
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 1975
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1604
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 934
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 2722
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 2034
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3253
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 1584
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4504
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 3840
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 902
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 2295
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4989
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 6*/
+call bwarp 1043
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4710
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 290
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4617
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1254
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 2558
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 707
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 589
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3441
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 737
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1406
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4909
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4339
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+/* Skipped 4909 - already visited */
+/* Skipped 4909*/
+/* Distance 10*/
+call bwarp 961
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4158
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 171
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3854
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 384
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3477
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+/* Skipped 1254 - already visited */
+/* Skipped 1254*/
+/* Distance 9*/
+call bwarp 2222
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4587
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+/* Skipped 4339 - already visited */
+/* Skipped 4339*/
+/* Distance 8*/
+/* Skipped 1062 - already visited */
+/* Skipped 1062*/
+/* Distance 9*/
+call bwarp 215
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3002
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 7*/
+call bwarp 157
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4040
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 541
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4491
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 2732
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3574
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+call bwarp 973
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3415
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 11*/
+call bwarp 3818
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 2633
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 721
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3279
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+/* Skipped 2602 - already visited */
+/* Skipped 2602*/
+/* Distance 6*/
+call bwarp 1661
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1427
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4564
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 111
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3480
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 7*/
+call bwarp 53
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 3465
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+/* Skipped 744 - already visited */
+/* Skipped 744*/
+/* Distance 10*/
+call bwarp 623
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4335
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 11*/
+call bwarp 272
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1795
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+/* Skipped 4713 - already visited */
+/* Skipped 4713*/
+/* Distance 10*/
+/* Skipped 2460 - already visited */
+/* Skipped 2460*/
+/* Distance 9*/
+call bwarp 985
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 2239
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 735
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 107
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 488
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4549
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4150
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 3847
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 477
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 929
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 680
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 4813
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 366
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1743
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+call bwarp 35
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1707
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 8*/
+/* Skipped 4564 - already visited */
+/* Skipped 4564*/
+/* Distance 8*/
+call bwarp 1399
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 2606
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+/* Skipped 4150 - already visited */
+/* Skipped 4150*/
+/* Distance 7*/
+call bwarp 1418
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1070
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 9*/
+/* Skipped 3623 - already visited */
+/* Skipped 3623*/
+/* Distance 9*/
+call bwarp 2061
+Call zocsend "@"
+Call ZocWait "Interval Lag"
+Call "script\tw\SafeWarper.zrx" "dest_supplied", 1994
+Call Zocsend "M95^MYY  L  133^M  MNT^MTNT1^MC  "
+
+/* Distance 10*/
+call bwarp 95
+/* Turns Used 493; Destinations Visited = 67*/
+exit
+bwarp: /* ONLY FROM CIT PROMPT */
+    call zocsend "B" arg(1)
+    Result = ZocWaitMux("ARE YOU SURE", "Beam to what")
+    call zocsend "^M"
+    If Result = 0 Then Do
+        call zocsend "N"
+        exit
+    End
+    if arg(1) < 11 then call zocwait "Federation Beacon"
+bwarp_sa:
+    Result = ZocWaitMux("lind", "Locked", "You have marked sector")
+    If Result = 2 Then Do
+        call zocsend "Y"
+        signal bwarp_sa
+    End
+    If Result = 0 Then Do
+        call zocsend "N"
+        exit
+    End
+    call zocsend "Y^M" /* ^M deals with possible mine avoid prompt */
+RETURN(0)

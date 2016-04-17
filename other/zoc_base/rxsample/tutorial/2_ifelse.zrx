@@ -1,0 +1,29 @@
+/* REXX */
+
+/* THIS SCRIPT SHOWS HOW DECISIONS WORK IN REXX */
+
+CLS
+
+/* show a nice request window to the user */
+answer= ZocRequest("Do you like ZOC?", "YES", "NO")
+
+/* here comes a decision with one alternative */
+IF answer="##CANCEL##" THEN DO
+    SIGNAL endit    /* jump to the end */
+END
+
+
+/* here comes a decision with two alternatives */
+IF answer="YES" THEN DO 
+    SAY "Nice to hear that!"
+END
+ELSE DO 
+    /* ANSWER=NO */
+    SAY "Oops, are you really sure about that?"
+    SAY "(maybe you mixed it up with Hyper Terminal)"
+END
+
+
+endit:    /* target for the SIGNAL command above */
+EXIT
+

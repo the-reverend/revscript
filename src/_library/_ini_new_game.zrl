@@ -1,0 +1,50 @@
+/** _ini_new_game v.3 **/
+/*- _ini_new_game -*/
+/*- v.3 tested -*/
+_ini_new_game: procedure expose (globals)
+
+ parse value zocgetglobaloption("CapturePath") with . '="' lpath '"'
+ if left(zocgetinfo("VERSION"),1)>4 then lpath = zocfilename("RESOLV", lpath)
+ lpath=dosfname(lpath)
+ if right(lpath,1)\="\" then lpath=lpath||"\"
+ if \dosisdir(lpath) then call _error "invalid log path in _load_settings"
+ list=_ini_list_games(lpath)
+
+ gname=""
+ do while gname="" | game="that game already exists"
+  gname=lower(_askstr("what name for this game?",gname,"c"))
+  badchars=_space(translate(gname," ","abcdefghijklmnopqrstuvwxyz1234567890_"),0)
+  gname=_space(translate(gname," ",badchars),0)
+  if _listin(gname,list,";") then gname="that game already exists"
+ end /*do*/
+ dname=lpath||gname||"_data.ini"
+ if _filenew(dname,"delete") then do
+  call lineout dname, "[info]"
+  call lineout dname, "created="||date("N")
+  call lineout dname, _g.!sname||"="||_g.!sbuild
+  call lineout dname, ""
+  call lineout dname, "[settings]"
+  call _fileclose dname
+ end /*if*/
+
+ call _setgame gname
+
+/* load ini variables */
+   load="gname dname"
+   sl=_ini_load_settings()
+   do i=1 to _dwords(sl,";")
+    s=_dword(sl,i,";")
+    globals=globals||" !"||s
+    interpret '!'||s||'="!"||s'
+   end;
+   f=0; l=""
+   do i=1 to words(load)
+    s=word(load,i)
+    x="!"||s
+    interpret s||"=_ini.!settings.x"
+    interpret 'if '||s||'="##UNDEF##" then do; l=l s; f=1; end'
+   end; if f then call _error "missing config variable(s):"||l; drop load s sl x f l
+
+ call _ini_write_star_screen gname, dname
+
+return

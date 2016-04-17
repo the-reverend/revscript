@@ -1,0 +1,43 @@
+LEAGUE  PLAYER
+FREQUENTLY ASKED QUESTIONS
+(F.A.Q.)
+
+Q:  How come I can't get into the forum? It says "That Username doesn't exist. Please go back and try again."
+
+A:  This is because the forum and the league website are different entities.  They reside on different servers and run on different operating systems.  This means that you have to JOIN the forum just like you had to join the League website or vice versa. 
+
+Q:  How do I join a game? 
+
+A:  You must login to join a league game.  Once you have logged in you will see Join Upcoming League game as an option.  If you click on that you will see the list of games that you can join or withdraw from.  If you join a game your 'action button' will turn to drop meaning clicking this button will withdraw you from the game.  (NOTE:  You can join a game up to 7 days after it has started but you can't withdraw from a game after it has started) 
+
+Q:  How do I withdraw from a game? 
+
+A:  You should read the above question and follow it until where it says click the 'join action button'.  You should click the 'drop action button.'  You should see a list of games you are in at the bottom of the page. 
+
+Q:  How do I file a complaint?  
+
+A:   Login to the League site and choose the option to 'E-mail the League Board'.  Every member on the board will get an e-mail and your complaint will be followed up within 24 hours.   
+
+Q:  How do I vote on a server's performance? 
+
+A:  Once a game you have played in (and not withdrawn from) has been won and the sysop has submitted the winners, you will recieve an e-mail informing you of the procedure to take.  All you have to do is login and you should have the option on the menu to vote on that particular server's performance. 
+
+Q: How do I quit the league? 
+
+A:  Login and send the board an e-mail or just send an e-mail to ANY board member requesting to withdraw from the League. 
+
+Q:  When will my ratings update? 
+
+A:  Your ratings will be updated the second the sysop of your completed game has submitted the winners.  You will also recieve an e-mail telling you how you placed.
+
+Q:  How do I join the league? 
+
+A:  Click on the Join link from the menu at the top.  It will direct you to a page where you are REQUIRED to enter a username, password, and e-mail address.  You cannot use an existing username or e-mail address or it will redirect you right back to the previous form.
+
+Q:  Can I change my username? 
+
+A:  No.  However, if this is an extreme circumstance e-mail the League board and send a reason why you need your username changed.  A response will be sent back within 24 hours.
+
+Q:  How do I get my password if I forgot it? 
+
+A:  Click on the 'Login' link from the menu at the top.  Below the Submit button you will see a link that says 'Lost Password?'.  Click on that and follow the directions.  It will be e-mailed to your address on record.  If your e-mail address has changed you will need to contact the league board.

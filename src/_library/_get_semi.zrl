@@ -1,0 +1,12 @@
+/** _get_semi v.1 **/
+_get_semi: procedure expose (globals)
+ if _sendwait("c","<Computer activated>")=640 then call _error "timeout"
+ bufsize=3*1024
+ call zocreceivebuf bufsize
+ if _sendwait(";","Photon Missiles")=640 then call _error "timeout"
+ if zocwait("(?=Help)?")=640 then call _error "timeout"
+ buff=zocreceivebuf(0)
+ call zocsend "q"
+ if length(buff)=bufsize then call _error "buffer overflow in _get_semi"
+ rslt=_parse_ship_desc(translate(buff,"  ",d2c(0)||d2c(10)))
+return rslt

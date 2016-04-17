@@ -1,0 +1,12 @@
+/** _remove_duplicate_chars v.1 **/
+/*- _remove_duplicate_chars string -*/
+/*- v.1 tested -*/
+_remove_duplicate_chars: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _remove_duplicate_chars"
+ list=arg(1)
+ rslt=left(list,1)
+ do i=2 to length(list)
+  ch=substr(list,i,1)
+  if \_in(rslt,ch) then rslt=rslt||ch
+ end /*do*/
+return rslt

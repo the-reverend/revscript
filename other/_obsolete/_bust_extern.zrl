@@ -1,0 +1,43 @@
+/** _bust_extern v.2 **/
+_bust_extern: procedure expose (globals)
+ extern=arg(1)//24
+ if extern=0 then extern=24
+ extern=extern*3600
+ clearfreq=arg(2)
+ fname=arg(3)
+ call zocsend "v"
+ if zocwait("Configuration and Status")=640 then call _error "timeout"
+ if zocwait("This game has been running for ")=640 then call _error "timeout"
+ days=_grabit(" days.","s")
+ stamp=_getservertime("stamp")
+
+/* Last Bust Clear Day=12/18/2002 */
+
+ lastclear=days//clearfreq
+ estamp=(stamp%86400-lastclear)*86400 + (extern-86400)
+ if (stamp-estamp)>=clearfreq*86400 then estamp=estamp+clearfreq*86400
+
+ call _newline _ansi("bt;fwh")
+call zocwriteln extern clearfreq days lastclear stamp    estamp 
+/*              86400  1         2    0         91410803 91152000 */
+/*              3600   3         3    0         91417622 91328400 */
+/* something is wrong with the clear stamp for clearfreq>2 days... need to fix it */
+ earliest=_getbusts(fname)
+
+ if estamp>stamp then estamp=estamp-(86400*clearfreq)
+
+ if earliest<=estamp then call _bust_tool "BUST_CLR", "ALL", estamp, fname
+ daysago=(stamp%86400)-(estamp%86400)
+ secsago=(stamp//86400)-(estamp//86400)
+ if secsago<0 then do
+  daysago=daysago-1
+  secsago=secsago+86400
+ end /*if*/
+ 
+ call zocwriteln
+ call zocwriteln "clearing busts from "||daysago||" days "||_secs_to_hhmmss(secsago)||" ago."
+ call zocwriteln
+
+ earliest=_getbusts(fname)
+
+return

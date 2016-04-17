@@ -1,0 +1,6 @@
+/** _space v.2 **/
+_space:
+ spw=arg(1)
+ spr=""
+ if spw>0 then spr=copies(" ",spw)
+return spr

@@ -1,0 +1,234 @@
+/** _ansi_to_html v.4 **/
+/*- _ansi_to_html infile, outfile, title -*/
+/*- http://www3.sympatico.ca/rhwatson/dos7/v-ansi-sys.html -*/
+_ansi_to_html: procedure expose (globals)
+ do i=1 to 2
+  if arg(i,"O") | \arg(i,"E") then call _error "missing parameter in _ansi_to_html"
+ end /*do*/
+ infile=arg(1)
+ outfile=arg(2)
+ if arg(3,"E") then title=arg(3)
+ else title="REV-SCRIPT"
+ success=0
+
+ /* define constants */
+ esc=d2c(27)
+ cr=d2c(13)
+ lf=d2c(10)
+ fface='Terminal'
+ fsize=2
+ 
+ /* define colors */
+ color.=""
+ color.30='#000000' /* black   */
+ color.31='#6A0000' /* red     */
+ color.32='#006A00' /* green   */
+ color.33='#6A6A00' /* yellow  */
+ color.34='#00006A' /* blue    */
+ color.35='#800080' /* magenta */
+ color.36='#006A6A' /* cyan    */
+ color.37='#A0A0A0' /* white   */
+ color.130='#A0A0A0'
+ color.131='#D40000'
+ color.132='#00FF00'
+ color.133='#D4D400'
+ color.134='#0000D4'
+ color.135='#D400D4'
+ color.136='#00D4D4'
+ color.137='#FFFFFF'
+ do i=30 to 37
+  temp=i+10
+  color.temp=color.i
+  temp=i+110
+  color.temp=color.i
+ end /*do*/
+ 
+ /* initialize colors */
+ reset=1
+ bright=0    /* 1 */
+ underline=0 /* 4 */
+ blink=0     /* 5 */
+ reverse=0   /* 7 */
+ hidden=0    /* 8 */
+ bg=30
+ fg=37
+ 
+ /* initialize counters */
+ incode=0
+ count=0
+ ignore=0
+ lastspace=1
+ html=""
+
+ if _fileopenr(infile) then do
+  if _filenew(outfile,"delete") then do
+   call _newline
+   call zocwrite _ansi("bt;fwh;bbk")||'writing file: "'||outfile||'" '
+   mon=_spinner(0,25)
+   call lineout outfile, '<html><title>'||title||'</title>'
+   call lineout outfile, '<body bgcolor="'||color.bg||'" text="#808080" link="#FF0000" vlink="#800000" alink="#FF0000">'
+   call lineout outfile, '<font size='||fsize||' face="'||fface||'">'
+   call charout outfile, '<span style="background-color:'||color.bg||';color:'||color.fg||'">'
+   do while \_fileeof(infile)
+    ch=charin(infile)
+    select
+
+     when ch=esc then do
+      mon=_spinner(mon,25)
+      incode=1
+      count=count+1
+      codes=""
+     end /*when*/
+
+     when incode & \_in("0123456789;[",ch) then do
+      incode=0
+      select
+       when ch="H" then do              /* esc[<row>;<col>H positions cursor at row, col  */
+        call charout outfile, "<!-- ansi code ignored: reposition cursor at row "||_dword(codes,1,";")||", col "||_dword(codes,2,";")||". -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="f" then do              /* esc[<row>;<col>f positions cursor at row, col  */
+        call charout outfile, "<!-- ansi code ignored: reposition cursor at row "||_dword(codes,1,";")||", col "||_dword(codes,2,";")||". -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="A" then do              /* esc[<n>A - moves cursor up n lines             */
+        call charout outfile, "<!-- ansi code ignored: move cursor up "||_dword(codes,1,";")||" line(s) -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="B" then do              /* esc[<n>B - moves cursor down n line(s)         */
+        do i=1 to _dword(codes,1,";")
+         call charout outfile, "<br>"
+        end /*do*/
+       end /*when*/
+       when ch="C" then do              /* esc[<n>C - moves cursor right n column(s)      */
+        do i=1 to _dword(codes,1,";")
+         call charout outfile, "&nbsp;"
+        end /*do*/
+       end /*when*/
+       when ch="D" then do              /* esc[<n>D - moves cursor left n column(s)       */
+        call charout outfile, "<!-- ansi code ignored: move cursor left "||_dword(codes,1,";")||" column(s) -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="s" then do              /* esc[s - saves current position                 */
+        call charout outfile, "<!-- ansi code ignored: save current cursor position -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="u" then do              /* esc[u - restores saved position                */
+        call charout outfile, "<!-- ansi code ignored: restore saved cursor position -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="J" then do              /* esc[<n>J - clears the screen for any integer n */
+        call charout outfile, "<br><!-- ansi code ignored: clear screen -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="K" then do              /* esc[K - clears from cursor to eoln             */
+        call charout outfile, "<!-- ansi code ignored: clear to end-of-line -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="h" then do              /* esc[<num>h - changes display mode              */
+        call charout outfile, "<!-- ansi code ignored: display mode -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="l" then do              /* esc[<num>l - changes display mode              */
+        call charout outfile, "<!-- ansi code ignored: display mode -->"
+        ignore=ignore+1
+       end /*when*/
+       when ch="m" then do              /* esc[<num>m - changes text and background color */
+        do i=1 to _dwords(codes,";")
+         c=_dword(codes,i,";")
+         select
+          when c=0 then do
+           reset=1
+           bright=0    /* 1 */
+           underline=0 /* 4 */
+           blink=0     /* 5 */
+           reverse=0   /* 7 */
+           hidden=0    /* 8 */
+           bg=40
+           fg=37
+          end /*when*/
+          when c=1 then bright=1
+          when c=4 then underline=1
+          when c=5 then blink=1
+          when c=7 then reverse=1
+          when c=8 then hidden=1
+          when c>=30 & c<=37 then do
+           fg=c
+           reset=0
+          end /*when*/
+          when c>=40 & c<=47 then bg=c
+          otherwise nop
+         end /*select*/
+        end /*do*/
+        if bright & \reset then fg=(fg//100)+100
+        if hidden then visibility="hidden"
+        else visibility="visible"
+        select
+         when blink then textdec="blink"
+         when underline then textdec="underline"
+         otherwise textdec="none"
+        end /*select*/
+        bg1=bg
+        fg1=fg
+        if reverse then do
+         bg1=(87-(bg//100))+100
+         fg1=(67-(fg//100))+100
+        end /*if*/
+        html='</span><span style="background-color:'||color.bg1||';color:'||color.fg1||';text-decoration:'||textdec||';visibility:'||visibility||'">'
+       end /*if*/
+       otherwise do
+        call charout outfile, "<!-- ansi code ignored: unknown -->"
+        ignore=ignore+1
+       end /*otherwise*/
+      end /*select*/
+     end /*when*/
+
+     when incode & ch\="[" then codes=codes||ch
+
+     when \incode then do
+      ch=translate(ch,"¶¶¶¶¶¶¶++¶¶++++++--+-+¶¶++--¶-+----++++++++¶_¶¶Ø", ,
+                      "∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ")
+
+      if html\="" & ch\=lf then call charout outfile, html
+      html=""
+
+      select
+       when ch=lf then nop
+       when ch=cr then do
+        call lineout outfile, "<br>"
+        lastspace=1
+       end /*when*/
+       when ch="<" then call charout outfile, "&lt;"
+       when ch=">" then call charout outfile, "&gt;"
+       when ch="&" then call charout outfile, "&amp;"
+       when ch='"' then call charout outfile, "&quot;"
+       when ch=" " & lastspace then call charout outfile, "&nbsp;"
+       when ch=" " then do
+        call charout outfile, " "
+        lastspace=1
+       end /*when*/
+       otherwise call charout outfile, ch
+      end /*select*/
+      if ch\=" " & ch\=cr & ch\=lf then lastspace=0
+     end /*when*/
+
+     otherwise nop
+
+    end /*select*/
+   end /*do*/
+   call lineout outfile, "</span></font><br><br>"
+   call lineout outfile, '<div align="center"><font size='||fsize||' face="'||fface||'">Copyright (C) 2001 Ron Wilson</font></div>'
+   call lineout outfile, '<div align="center"><a href="http://thereverend.coastgames.com/tradewars/rev-license.html"><font size='||fsize||' face="'||fface||'">REV-LICENSE</font></a></div>'
+   call charout outfile, "</body></html>"
+   call _fileclose outfile
+   call zocwriteln d2c(27)||"[1D."
+   call zocwriteln " "||count||" ansi codes converted."
+   call zocwriteln " "||ignore||" ansi codes discarded."
+   success=1
+  end /*if*/
+  else call zocwriteln 'unable to create file: "'||outfile||'"'
+  call _fileclose infile
+ end /*if*/
+ else call zocwriteln 'unable to open file: "'||infile||'"'
+ 
+return success

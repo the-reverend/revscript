@@ -1,0 +1,303 @@
+/** _bot_worker v.2 **/
+_bot_worker: procedure expose (globals)
+ select
+  when lower(arg(1))="query wait" then return "INACTIVITY WARNING|launched a P-Missile in sector|] (?=Help)? :|defending this sector?|Script terminated: scripts\1_Login"
+  otherwise nop
+ end /*select*/
+ ans=arg(1)
+ line=arg(2)
+ user=arg(3)
+ cmd=arg(4)
+ args=arg(5)
+ name=arg(6)
+ mode=arg(7)
+ prompt=arg(8)
+ sector=arg(9)
+ planet=arg(10)
+ auth=arg(11)
+ abort=arg(12)
+ gname=arg(13)
+ dpath=arg(14)
+ dname=arg(15)
+ fname=arg(16)
+ vname=arg(17)
+ lname=arg(18)
+ spath=arg(19)
+ lpath=arg(20)
+ ldefault=arg(21)
+ mname=arg(22)
+ reclen=arg(23)
+ ns=arg(24)
+ sf=arg(25)
+ rf=arg(26)
+ sd=arg(27)
+ alpha=arg(28)
+ rylos=arg(29)
+ tradepercent=arg(30)
+ pre=_g.!sname1||" : "||name
+ select
+
+  /* user commands */
+     when ans=0 & auth then do
+      select
+
+       /* status */
+          when cmd="status" then nop
+
+       /* buy */
+          when cmd="buy" then do
+           prompt=_synchronize()
+           select
+            when prompt="citadel" then do
+             p=0; mode.="##UNDEF##"; runs.=0
+             do i=1 to words(args)
+              v=lower(word(args,i))
+              select
+               when left(v,1)="f" then p=1
+               when left(v,1)="o" then p=2
+               when left(v,1)="e" then p=3
+               when p=0 then nop
+               when left(v,1)="b" then do; mode.p=left(v,1); runs.p=0; end
+               when left(v,1)="w" then do; mode.p=left(v,1); runs.p=0; end
+               when left(v,1)="s" then do; mode.p=left(v,1); runs.p=0; end
+               when _stripint(v)>0 then runs.p=_stripint(v)
+               when _stripint(v)<0 then runs.p=_roundup(abs(_stripint(v))/_getinfo("hlds"))
+               otherwise p=0
+              end /*select*/
+             end /*do*/
+             do p=3 to 1 by -1
+              if _undef(mode.p) then iterate
+              if runs.p=0 then runs.p=999
+              if abort\="##ALLKEYS##" then abort=_cn9("allkeys",prompt)
+              if _buydown(prompt,p,mode.p,runs.p,dname) then do
+               call zocsend "tt"||_qs.!creds||"^M"; _qs.!creds=0
+               sector=_qs.!sect
+               turns=_qs.!turns
+              end /*if*/
+              else call zocsend "'"||pre||" : "||cmd||" : failed : "||_msg||"^M"
+             end /*do*/
+            end /*when*/
+            otherwise call zocsend "'"||pre||" : "||cmd||" : failed, owner at "||prompt||" prompt.^M"
+           end /*select*/
+          end /*when*/
+
+       /* mega */
+          when (cmd="mega" | cmd="rob") & _qs.!aln>-100 then call zocsend "'"||pre||" : "||cmd||" : owner alignment is "||_qs.!aln||".^M"
+          when cmd="mega" | cmd="rob" then do
+           prompt=_synchronize()
+           sector=_getinfo("sect")
+           select
+            when prompt="citadel" then do
+             if abort\="##SPACES##" then abort=_cn9("spaces",prompt)
+             planet=_get_planet_number(prompt)
+             amount=0
+             call zocsend "qqd"
+             if _waitmux("Ports   :|Warps to Sector(s) :")>0 then call zocsend "'"||pre||" : "||cmd||" : no port^M"
+             else do
+              if cmd="mega" then do; min=3310000; max=6000000; end
+                            else do; min=0; max=trunc((3/(rf/100))*_qs.!exp); end
+              rob=_portrob(min, max, 0.9)
+              parse var rob msg ";" exp ";" amount ";" avail ";" turns ";" .
+              select
+               when msg="##OK##" then do
+                call zocsend "'"||pre||" : "||cmd||" : success : "||amount||" stolen : "||avail-amount||" left^M"
+                last=sector
+               end /*when*/
+               when msg="##BUST##" then do
+                call zocsend "'"||pre||" : "||cmd||" : bust^M"
+                stamp=_getservertime("stamp")
+                call _ini_write dname, "bust", sector, stamp
+                call _iniv "!bust", "!"||sector, stamp
+                if _qs.!corp>0 then call zocsend "ttREV-CMD : bust_clr : "||sector||" : "||stamp||" ::^M^Mq"
+                last=last||" "||sector
+               end /*when*/
+               when msg="##FAKE##"  then call zocsend "'"||pre||" : "||cmd||" : fake bust^M"
+               when msg="##CREDS##" then call zocsend "'"||pre||" : "||cmd||" : tried to steal too many credits^M"
+               when msg="##QUIT##"  then call zocsend "'"||pre||" : "||cmd||" : not enough credits on the port ("||min-avail||" short)^M"
+              end /*select*/
+             end /*if*/
+             call zocsend "l"||planet||"^Mctt"||amount||"^M"
+             call _ini_write dname, "bust", "last", last
+             call _iniv "!bust", "!last", last
+            end /*when*/
+            otherwise call zocsend "'"||pre||" : "||cmd||" : failure, owner at "||prompt||" prompt.^M"
+           end /*select*/
+          end /*when*/
+
+       /* product negotiation */
+          when cmd="neg" & args="" then call zocsend "'"||pre||" : "||cmd||" : missing parameters.^M'help neg ::^M"
+          when cmd="neg" then do
+           prompt=_synchronize()
+           if prompt="citadel" | prompt="planet" then do
+            if prompt="citadel" then call zocsend "s^M"
+            sector=_getinfo("sect")
+            planet=_get_planet_number(prompt)
+            dop.=""
+            args=translate(lower(args),"123","foe")
+            do i=1 to words(args)
+             n=word(args,i)
+             dop.n=n
+            end /*do*/
+            if dop.1=0 & dop.2=0 & dop.3=0 then nop
+            else do
+             if prompt="citadel" then call zocsend "qq"; else call zocsend "q"
+             suc=_negotiate(planet,sector,dname,tradepercent,dop.1 dop.2 dop.3,,"1 1 1",_qs.!corp>0)
+             do while \_list_and(suc," ")
+              do i=words(suc) to 1 by -1
+               n=word(dop.1 dop.2 dop.3,i)
+               if word(suc,i) then dop.n=""
+              end /*do*/
+              suc=_negotiate(planet,sector,dname,tradepercent,dop.1 dop.2 dop.3,,"1 1 1",0)
+             end /*do*/
+             call zocsend "l ^H"||planet||"^M "
+             if prompt="citadel" then do
+              call zocsend "c tt"||_getinfo("creds")||"^M"
+             end /*if*/
+            end /*else*/
+           end /*if*/
+           else call zocsend "'"||pre||" : "||cmd||" : failure, owner at "||prompt||" prompt.^M"
+          end /*when*/
+
+       /* product mover */
+          when cmd="pm" then do
+           prompt=_synchronize()
+           abort=_cn9("allkeys",prompt)
+           select
+            when words(args)<5                                  then call zocsend "'"||pre||" : "||cmd||" : not enough arguments.^M" 
+            when \_listin(left(word(args,1),1),"C;P;c;p",";")   then call zocsend "'"||pre||" : "||cmd||" : invalid argument.^M"
+            when \_listin(word(args,2),"1;2;3;f;o;e;F;O;E",";") then call zocsend "'"||pre||" : "||cmd||" : invalid argument.^M"
+            when _stripint(word(args,3))<0 & word(args,3)\=""   then call zocsend "'"||pre||" : "||cmd||" : invalid argument.^M"
+            when _stripint(word(args,4))<=0                     then call zocsend "'"||pre||" : "||cmd||" : invalid argument.^M"
+            when _stripint(word(args,5))<=0                     then call zocsend "'"||pre||" : "||cmd||" : invalid argument.^M"
+            when prompt="citadel" then do
+             parse value _getinfo("hlds;turns") with holds ";" turns
+             planet=_get_planet_number("citadel")
+             type=translate(left(word(args,1),1),"stst","cpCP")
+             prod=translate(word(args,2),"123123","foeFOE")
+             quant=_stripint(word(args,3))
+             p1=_stripint(word(args,4))
+             p2=_stripint(word(args,5))
+             cleanup=0
+             if quant=0 then cleanup=1
+             /* check whats on the first planet */
+                call zocsend "qql"||p1||"^Md"
+                w=_dword("Fuel Ore ;Organics ;Equipment",prod,";")
+                if _wait(w)=640 then call _error "timeout"
+                s=_space(_grabit("^M"))
+                parse var s s1 . . s2 .
+                if type="s" then q1=_stripint(s1); else q1=_stripint(s2)
+                if q1<quant then cleanup=1
+                if quant=0 then quant=q1; else quant=min(quant,q1)
+             runs=quant%holds
+             remain=quant//holds
+             if runs>=turns then do; runs=turns; remain=0; end
+             if _sendwait("ql"||p2||"^Mtnl1^Msnl1^Mtnl2^Mtnl3^Mqjy","<Jettison Cargo>")=640 then call _error "timeout"
+             plist=_get_planet_list()
+             select
+              when quant=0 then nop 
+              when _listin(p1,plist) & _listin(p2,plist) then do
+               do runs; call zocsend "l"||p1||"^M"||type||"nt"||prod||"^Mql"||p2||"^M"||type||"nl"||prod||"^Mq"; end
+               if remain>0 then call zocsend "l"||p1||"^M"||type||"nt"||prod||remain||"^M"
+                           else call zocsend "l"||p1||"^M"
+               if cleanup then do
+                call zocsend type||"nt"||prod||"16^M"
+                call zocsend type||"nt"||prod||"8^M"
+                call zocsend type||"nt"||prod||"4^M"
+                call zocsend type||"nt"||prod||"2^M"
+                call zocsend type||"nt"||prod||"1^M"
+                call zocsend "ql"||p2||"^M"||type||"nl"||prod||"^Mql"||p1||"^M"
+                call zocsend type||"nt"||prod||"16^M"
+                call zocsend type||"nt"||prod||"8^M"
+                call zocsend type||"nt"||prod||"4^M"
+                call zocsend type||"nt"||prod||"2^M"
+                call zocsend type||"nt"||prod||"1^Mq"
+               end /*if*/
+               else call zocsend "q"
+               call zocsend "l"||p2||"^M"||type||"nl"||prod||"^Mq"
+              end /*when*/
+              otherwise call zocsend "'"||pre||" : "||cmd||" : failure, missing planet^M" 
+             end /*select*/
+             call zocsend "l"||planet||"^Mc"
+             call zocsend "'"||pre||" : "||cmd||" : done^M" 
+            end /*when*/
+            otherwise call zocsend "'"||pre||" : "||cmd||" : failure, owner at "||prompt||" prompt.^M" 
+           end /*otherwise */
+          end /*when*/
+
+          when cmd="cs" then do
+           strt=_stripint(word(args,1))
+           if strt\=word(args,1) then strt=""
+           select
+            when strt="" & user="##OWNER##" then do
+             strt=_getinfo("sect"); sector=strt
+             srch=word(args,1)
+            end /*when*/
+            when strt="" then do
+             prompt=_synchronize()
+             if _listin(prompt,"command;citadel;corporate") then do
+              call zocsend _list_select(prompt,"command;citadel;corporate","t;x;")
+              strt=_get_corpie_ta(user)
+              call zocsend _list_select(prompt,"command;citadel;corporate","q;q;")
+              srch=word(args,1)
+             end /*if*/
+            end /*when*/
+            otherwise srch=word(args,2)
+           end /*select*/
+           select
+            when strt="" then call zocsend "'"||pre||" : invalid sector^M"
+            when strt>ns then call zocsend "'"||pre||" : invalid sector^M"
+            when strt<1  then call zocsend "'"||pre||" : invalid sector^M"
+            otherwise do
+             find=_mapfind(strt,srch,mname,reclen,255)
+             if find=0 then call zocsend "'"||pre||" : find failed : insufficient cim data^M"
+                       else call _bot_finder_report "nearest matching", strt, find, srch
+            end /*otherwise*/
+           end /*select*/
+          end /*when*/
+ 
+       /* help */     
+          when cmd="help" then do
+           select
+            when args=""         then call zocsend "'  "||mode||" commands : buy pm mega neg rob^M"
+            when args="buy"      then call zocsend "'"||pre||" : help : buy [Fuel|Org|Equ] [Speed|Best|Worst] [#runs] : buydown^M"
+            when args="pm"       then call zocsend "'"||pre||" : help : pm [Col|Prod] [F|O|E] [quan|0] [fr] [to] : move prods^M"
+            when args="mega"     then call zocsend "'"||pre||" : help : mega : megarob a port from the citadel^M"
+            when args="rob"      then call zocsend "'"||pre||" : help : rob : rob a port from the citadel^M"
+            when args="neg"      then call zocsend "'"||pre||" : help : neg [F O E] : negotiate^M"
+/*          when args="route"    then call zocsend "'"||pre||" : help : route [sxb] [next|auto] [refuel] : find optimal sell route^M" */
+            otherwise nop
+           end /*select*/
+          end /*when*/
+ 
+          otherwise nop
+      end /*select*/
+     end /*when*/
+
+  /* inactivity */
+     when ans=1 then call zocsend "^["
+     
+  /* pmissile report - flubber3 launched a P-Missile in sector 2037[ damaging your ship.] */
+     when ans=2 then call zocsend "'"||pre||" : worker : i just took a photon^M"
+
+  /* command prompt (with sector number) */
+     when ans=3 then do
+      parse var line . "]:[" sector "] (?=Help)? :"
+      _sv.sector=1
+     end /*when*/
+
+  /* laying figs */
+     when ans=4 then _f.sector=1
+
+  /* twx just logged back in */
+     when ans=5 then do
+      call _getinfo
+      if _qs.!sect=sector & prompt="citadel" & planet>0 then call zocsend "l"||planet||"^Mc"
+      else do; sector=_qs.!sect; prompt=_synchronize(); planet=0; end
+     end /*when*/
+
+     when ans=640 then call zocsend "^["
+
+  otherwise nop
+ end /*select*/
+ rslt=prompt sector planet reclen abort
+return rslt

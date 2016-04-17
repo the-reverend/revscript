@@ -1,0 +1,25 @@
+/** _sectorinfo v.1 **/
+_sectorinfo:
+ sir=""
+ call zocsend "ci"
+ if zocwait("What sector do you wish to examine? [")=640 then call _error "timeout"
+ call zocsend arg(1)||"^M"
+ sians=zocwaitmux("never visited","has warps to sector(s) :")
+ select
+  when sians=0 then if zocwait("Computer command [")=640 then call _error "timeout"
+  when sians=1 then do
+   if zocwait("^M")=640 then call _error "timeout"
+   siline=zoclastline()
+   parse var siline sir " - " siline
+   do while siline\=""
+    parse var siline sitemp " - " siline
+    sir=sir||";"||sitemp
+   end /* do */
+  end /* when */
+  when sians=640 then call _error "timeout"
+  otherwise nop
+ end /* select */
+ call zocsend "q"
+ if zocwaitmux("Citadel command", "Command [")=640 then call _error "timeout"
+return sir
+/** _error **/

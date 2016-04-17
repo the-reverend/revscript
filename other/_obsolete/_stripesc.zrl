@@ -1,0 +1,9 @@
+/** _stripesc v.4 **/
+/*- _stripesc str -*/
+/*- v.4 tested -*/
+_stripesc: procedure expose (globals)
+ if arg(1,"E") then line=arg(1)
+ else call _error "missing argument in _stripesc"
+ line=zocstring("REMOVE",line,d2c(27))
+ line=zocstring("REMOVE",line,"^^")
+return line

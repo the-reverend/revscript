@@ -1,0 +1,61 @@
+Cbs228: Well Rev, the best I can come up with is a system whereby when the script enables it checks CM messages and sends a corp memo that "I am the server." (Unless someone else has already 'said' this). When the others enable in client mode they automatically register to the server.... However, I still have the problem that the server player would need to stop listening and start the runs manually.
+
+ok syntax style:
+for MSG, the first element never a VERB.
+for CMD, the first element is always a VERB with modifiers in front.
+
+
+acknowldege a command received
+   xxx-MSG : ACK : clientid ::
+
+login commands
+   xxx-CMD : LOGIN_REQ : SDT : uniqueid ::
+   xxx-CMD : LOGIN_REQ : FURBER : uniqueid ::
+   xxx-CMD : LOGIN_WAIT ::
+   xxx-MSG : LOGIN_AUTH : uniqueid : clientid ::
+
+client and server notifications
+   xxx-MSG : SERVER_READY : SDT ::
+   xxx-MSG : CLIENT_READY : clientid : SHIP:shipnum : TURNS:num ::
+   xxx-MSG : SERVER_AWAY : LISTEN:clientid ::
+   xxx-MSG : CLIENT_AWAY : clientid ::
+   xxx-CMD : STATUS_REQUEST : clientid ::
+   xxx-CMD : STATUS_REQUEST : ALL ::
+   xxx-CMD : STATUS_REQUEST : LIST ::
+   xxx-CMD : STATUS_REQUEST : SERVER ::
+
+sdt commands
+   xxx-CMD : SDT_START : clientid : shipnum ... shipnum ::
+   xxx-CMD : SDT_STOP : clientid ::
+
+sdt messages
+   xxx-MSG : SDT_DONE : clientid ::
+   xxx-MSG : SDT_ERROR : clientid : CRASH ::
+   xxx-MSG : SDT_ERROR : clientid : XPORT:shipnum ::
+   xxx-MSG : SDT_ERROR : clientid : NO_PLANET ::
+   xxx-MSG : SDT_PARK : clientid : SHIP:shipnum ::
+   xxx-MSG : SDT_EXIT : clientid ::
+
+furber messages
+
+furb commands and messages
+   xxx-CMD : FURB_GET : SHIP:num : HOLDS:num ::
+   xxx-MSG : PRE_FURB : clientid : SHIP:shipnum : HOLDS:num ::
+   xxx-MSG : POST_FURB : clientid : SHIP:shipnum : HOLDS:num ::
+   xxx-MSG : NEED_FURB : clientid : SHIP:shipnum : HOLDS:num ::
+
+bust / lra commands
+   xxx-CMD : BUST_CLR : sector : revdate ::
+   xxx-CMD : BUST_CLR : ALL : revdate ::
+   xxx-CMD : LRA_SET : sector : revdate ::
+   xxx-CMD : BUST_REPORT : clientid ::
+
+mail reading
+   xxx-CMD : MAIL_READ : clientid ::
+
+bust messages
+   xxx-MSG : BUST_REAL : clientid : SHIP:shipnum : TURNS:num : SECT:numxx ::
+   xxx-MSG : BUST_FAKE : clientid : SHIP:shipnum : TURNS:num : SECT:numxx ::
+
+generic action commands
+   xxx-CMD : XPORT : clientid : SHIP:shipnum ::

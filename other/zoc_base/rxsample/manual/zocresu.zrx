@@ -1,0 +1,15 @@
+/* REXX */
+
+answer= ZocRequest("Are you sure?", "Yes", "No")
+
+IF answer=="Yes" THEN DO 
+   SAY "User really wants it!"
+END
+
+IF answer=="No" THEN DO
+   SAY "User isn't sure!"
+END
+
+IF answer=="##CANCEL##" THEN DO
+   SAY "User pressed the ESC key"
+END

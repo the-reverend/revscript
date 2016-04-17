@@ -1,0 +1,370 @@
+/** _mapfind_ v.6 **/
+_mapfind_: procedure expose (globals)
+/*- usage:  _mapfind start, search, mapname, reclen, maxdist           -*/
+/*-                  int    str     str      int     int               -*/
+/*- search string:                                                     -*/
+/*-   r:0/1       reverse course plot?                                 -*/
+/*-   uv:0/1      use voids in plot calculations?                      -*/
+/*-   v:0/1       find voided sectors?                                 -*/
+/*-   f:0/1       find figged sectors?                                 -*/
+/*-   e:0/1       find explored sectors?                               -*/
+/*-   sl:0/1      find listed sectors?                                 -*/
+/*-   pv:0/1      find visible ports?                                  -*/
+/*-   pb:0/1      find busted ports?                                   -*/
+/*-   d:0/1       find deadends?                                       -*/
+/*-   b:0/1       find bubbles?                                        -*/
+/*-   pt:0/1/xxx  find port type?                                      -*/
+/*-   p1:>#       find ore?                                            -*/
+/*-   p2:>#       find org?                                            -*/
+/*-   p3:>#       find equ?                                            -*/
+/*-   pp1:>#      find ore percent?                                    -*/
+/*-   pp2:>#      find org percent?                                    -*/
+/*-   pp3:>#      find equ percent?                                    -*/
+/*-   tm:>#       find # hops to msl?                                  -*/
+/*-   fm:>#       find # hops from msl?                                -*/
+/*-   vw:>#       find # seconds view stamp?                           -*/
+/*-   s:#         find a specific sector                               -*/
+/*- if criteria is missing then it is not considered in the search     -*/
+/*-                                                                    -*/
+/*- special cases:                                                     -*/
+/*-   1) if the start sector is always the same, use reverse=0         -*/
+/*-   2) if the finish sector is always the same, use reverse=1        -*/
+/*-   3) if maxdist<255 and cases 1 or 2 apply, then there is no need  -*/
+/*-       to call mapdist any more once a result of 255 is given, i.e. -*/
+/*-       all the distances less than or equal to maxdist are already  -*/
+/*-       calculated.                                                  -*/
+/*-                                                                    -*/
+ start=arg(1)
+ searchstring=arg(2)
+ mapname=arg(3)
+ reclen=arg(4)
+ if arg(5,"E") then maxdist=_stripint(arg(5)); else maxdist=255
+ if maxdist<1 then maxdist=255
+ if arg(6,"E") then useexclusions=arg(6); else useexclusions=1
+
+ usevoids=0
+ reverse=0
+ secnum=-1
+ void=-1
+ busted=-1
+ figs=-1
+ expl=-1
+ list=-1
+ pvis=-1
+ deadend=-1
+ bubble=-1
+ tomsl=-1; frmsl=-1
+ ptype=-1
+ pore=-1;  porg=-1;  pequ=-1
+ ppore=-1; pporg=-1; ppequ=-1
+ viewed=-1
+ /* parse search string */
+ do i=1 to _dwords(searchstring,";")
+  criteria=_dword(searchstring,i,";")
+  tag=_dword(criteria,1,":")
+  val=_dword(criteria,2,":")
+  select
+   when tag="r"   then reverse=val
+   when tag="s"   then secnum=val
+   when tag="uv"  then usevoids=val
+   when tag="v"   then void=val
+   when tag="f"   then figs=val
+   when tag="e"   then expl=val
+   when tag="sl"  then list=val
+   when tag="pt"  then ptype=lower(val)
+   when tag="p1"  then pore=val
+   when tag="p2"  then porg=val
+   when tag="p3"  then pequ=val
+   when tag="pp1" then ppore=val
+   when tag="pp2" then pporg=val
+   when tag="pp3" then ppequ=val
+   when tag="pv"  then pvis=val
+   when tag="pb"  then busted=val
+   when tag="d"   then deadend=val
+   when tag="b"   then bubble=val
+   when tag="tm"  then tomsl=val
+   when tag="fm"  then frmsl=val
+   when tag="vw"  then viewed=val
+   otherwise nop
+  end /*select*/
+ end /*do*/
+
+ call _mapseek mapname, reclen, start
+ _dist.start.start=0
+ _path.start.start=start
+
+ /* initialize arrays */
+ inqueue.=0
+ queue.=""
+ queue.1=start
+ inqueue.start=1
+ tail=1
+ do i=1 to words(_s.start)
+  code=word(_s.start,i)
+  warptype=code%20000
+  sector=code//20000
+  if ((warptype<2 & \reverse) | (warptype>0 & reverse)) & (usevoids\=1 | \_v.sector) then do
+   tail=tail+1
+   queue.tail=sector
+   inqueue.sector=1
+  end /*if*/
+ end /*do*/
+ head=2
+
+ done=0
+ found=0
+ do while \done & tail>=head
+
+  current=queue.head
+  call _mapseek mapname, reclen, current
+
+  do i=1 to words(_s.current)
+
+   adjacent=word(_s.current.!num,i)
+   warptype=word(_s.current.!wt,i)
+
+   /* add to tail */
+   if ((warptype<2 & \reverse) | (warptype>0 & reverse)) & (usevoids\=1 | \_v.adjacent) & \inqueue.adjacent then do
+    tail=tail+1
+    queue.tail=adjacent
+    inqueue.adjacent=1
+   end /*if*/
+
+   /* assign shortest warp distance */
+   if warptype>0 & \reverse then do
+    tdist=_dist.start.current
+    _dist.start.current=min(_dist.start.current,_dist.start.adjacent+1)
+    if tdist>_dist.start.current then _path.start.current=_path.start.adjacent||";"||current
+   end /*if*/
+
+   if warptype<2 & reverse then do
+    tdist=_dist.current.start
+    _dist.current.start=min(_dist.current.start,_dist.adjacent.start+1)
+    if tdist>_dist.current.start then _path.current.start=current||";"||_path.adjacent.start
+   end /*if*/
+
+  end /*do*/
+
+  /* evaluate the criteria */
+  found=1
+
+  if useexclusions & _ex.current                 then found=0
+  if found & secnum\=-1  & secnum\=current       then found=0
+  if found & void\=-1    & void=\_v.current      then found=0
+  if found & figs\=-1    & figs=\_f.current      then found=0
+  if found & expl\=-1    & expl=\_sv.current     then found=0
+  if found & list\=-1    & list=\_sl.current     then found=0
+  if found & pvis\=-1    & pvis=\_pv.current     then found=0
+  bstamp=_iniv("!bust", "!"||current)
+  if found & busted\=-1  & ((busted=1 & _undef(bstamp)) | (busted=0 & \_undef(bstamp))) then found=0
+  if found & deadend\=-1 & deadend=\_od.current  then found=0
+
+  if found & bubble\=-1 then do
+   if bubble & _bg.current=0 then found=0
+   if \bubble & _bg.current\=0 then found=0
+  end /*if*/
+
+  if found & viewed\=-1 then do
+   select
+    when left(viewed,2)="<=" & _vs.current>substr(viewed,3)  then found=0
+    when left(viewed,2)="<=" then nop
+    when left(viewed,2)=">=" & _vs.current<substr(viewed,3)  then found=0 
+    when left(viewed,2)=">=" then nop
+    when left(viewed,2)="\=" & _vs.current=substr(viewed,3)  then found=0 
+    when left(viewed,2)="\=" then nop
+    when left(viewed,2)="<>" & _vs.current=substr(viewed,3)  then found=0 
+    when left(viewed,2)="<>" then nop
+    when left(viewed,1)="<"  & _vs.current>=substr(viewed,2) then found=0 
+    when left(viewed,1)=">"  & _vs.current<=substr(viewed,2) then found=0 
+    when left(viewed,1)="="  & _vs.current\=substr(viewed,2) then found=0 
+    otherwise nop
+   end /*select*/
+  end /*if*/
+
+  if found & tomsl\=-1 then do
+   select
+    when left(tomsl,2)="<=" & _dtomsl.current>substr(tomsl,3)  then found=0
+    when left(tomsl,2)="<=" then nop
+    when left(tomsl,2)=">=" & _dtomsl.current<substr(tomsl,3)  then found=0 
+    when left(tomsl,2)=">=" then nop
+    when left(tomsl,2)="\=" & _dtomsl.current=substr(tomsl,3)  then found=0 
+    when left(tomsl,2)="\=" then nop
+    when left(tomsl,2)="<>" & _dtomsl.current=substr(tomsl,3)  then found=0 
+    when left(tomsl,2)="<>" then nop
+    when left(tomsl,1)="<"  & _dtomsl.current>=substr(tomsl,2) then found=0 
+    when left(tomsl,1)=">"  & _dtomsl.current<=substr(tomsl,2) then found=0 
+    when left(tomsl,1)="="  & _dtomsl.current\=substr(tomsl,2) then found=0 
+    otherwise nop
+   end /*select*/
+  end /*if*/
+
+  if found & frmsl\=-1 then do
+   select
+    when left(frmsl,2)="<=" & _dfrmsl.current>substr(frmsl,3)  then found=0
+    when left(frmsl,2)="<=" then nop
+    when left(frmsl,2)=">=" & _dfrmsl.current<substr(frmsl,3)  then found=0 
+    when left(frmsl,2)=">=" then nop
+    when left(frmsl,2)="\=" & _dfrmsl.current=substr(frmsl,3)  then found=0 
+    when left(frmsl,2)="\=" then nop
+    when left(frmsl,2)="<>" & _dfrmsl.current=substr(frmsl,3)  then found=0 
+    when left(frmsl,2)="<>" then nop
+    when left(frmsl,1)="<"  & _dfrmsl.current>=substr(frmsl,2) then found=0 
+    when left(frmsl,1)=">"  & _dfrmsl.current<=substr(frmsl,2) then found=0 
+    when left(frmsl,1)="="  & _dfrmsl.current\=substr(frmsl,2) then found=0 
+    otherwise nop
+   end /*select*/
+  end /*if*/
+
+  if found & (ptype\=-1 | pore\=-1 | porg\=-1 | pequ\=-1) then cptype=_dword(_p.current,1,";")
+
+  if found & ptype\=-1 then do
+   select
+    when ptype=0 & cptype\="" then found=0
+    when ptype=0 then nop
+    when ptype=1 & cptype="" then found=0
+    when ptype=1 then nop
+    when \_portmatch(cptype,ptype) then found=0
+    otherwise nop
+   end /*select*/
+  end /*if*/
+
+  if found & pore\=-1 then do
+   if cptype="" then found=0
+   else do
+    cpore=_dword(_dword(_p.current,2,";"),1,",")
+    select
+     when left(pore,2)="<=" & cpore>substr(pore,3)  then found=0
+     when left(pore,2)="<=" then nop
+     when left(pore,2)=">=" & cpore<substr(pore,3)  then found=0
+     when left(pore,2)=">=" then nop
+     when left(pore,2)="\=" & cpore=substr(pore,3)  then found=0 
+     when left(pore,2)="\=" then nop
+     when left(pore,2)="<>" & cpore=substr(pore,3)  then found=0 
+     when left(pore,2)="<>" then nop
+     when left(pore,1)="<"  & cpore>=substr(pore,2) then found=0 
+     when left(pore,1)=">"  & cpore<=substr(pore,2) then found=0 
+     when left(pore,1)="="  & cpore\=substr(pore,2) then found=0 
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*if*/
+
+  if found & porg\=-1 then do
+   if cptype="" then found=0
+   else do
+    cporg=_dword(_dword(_p.current,3,";"),1,",")
+    select
+     when left(porg,2)="<=" & cporg>substr(porg,3)  then found=0
+     when left(porg,2)="<=" then nop
+     when left(porg,2)=">=" & cporg<substr(porg,3)  then found=0 
+     when left(porg,2)=">=" then nop
+     when left(porg,2)="\=" & cporg=substr(porg,3)  then found=0 
+     when left(porg,2)="\=" then nop
+     when left(porg,2)="<>" & cporg=substr(porg,3)  then found=0 
+     when left(porg,2)="<>" then nop
+     when left(porg,1)="<"  & cporg>=substr(porg,2) then found=0 
+     when left(porg,1)=">"  & cporg<=substr(porg,2) then found=0 
+     when left(porg,1)="="  & cporg\=substr(porg,2) then found=0 
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*if*/
+
+  if found & pequ\=-1 then do
+   if cptype="" then found=0
+   else do
+    cpequ=_dword(_dword(_p.current,4,";"),1,",")
+    select
+     when left(pequ,2)="<=" & cpequ>substr(pequ,3)  then found=0
+     when left(pequ,2)="<=" then nop
+     when left(pequ,2)=">=" & cpequ<substr(pequ,3)  then found=0 
+     when left(pequ,2)=">=" then nop
+     when left(pequ,2)="\=" & cpequ=substr(pequ,3)  then found=0 
+     when left(pequ,2)="\=" then nop
+     when left(pequ,2)="<>" & cpequ=substr(pequ,3)  then found=0 
+     when left(pequ,2)="<>" then nop
+     when left(pequ,1)="<"  & cpequ>=substr(pequ,2) then found=0 
+     when left(pequ,1)=">"  & cpequ<=substr(pequ,2) then found=0 
+     when left(pequ,1)="="  & cpequ\=substr(pequ,2) then found=0 
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*if*/
+
+  if found & ppore\=-1 then do
+   if cptype="" then found=0
+   else do
+    cppore=_dword(_dword(_p.current,2,";"),2,",")
+    select
+     when left(ppore,2)="<=" & cppore>substr(ppore,3)  then found=0
+     when left(ppore,2)="<=" then nop
+     when left(ppore,2)=">=" & cppore<substr(ppore,3)  then found=0
+     when left(ppore,2)=">=" then nop
+     when left(ppore,2)="\=" & cppore=substr(ppore,3)  then found=0 
+     when left(ppore,2)="\=" then nop
+     when left(ppore,2)="<>" & cppore=substr(ppore,3)  then found=0 
+     when left(ppore,2)="<>" then nop
+     when left(ppore,1)="<"  & cppore>=substr(ppore,2) then found=0 
+     when left(ppore,1)=">"  & cppore<=substr(ppore,2) then found=0 
+     when left(ppore,1)="="  & cppore\=substr(ppore,2) then found=0 
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*if*/
+
+  if found & pporg\=-1 then do
+   if cptype="" then found=0
+   else do
+    cpporg=_dword(_dword(_p.current,3,";"),2,",")
+    select
+     when left(pporg,2)="<=" & cpporg>substr(pporg,3)  then found=0
+     when left(pporg,2)="<=" then nop
+     when left(pporg,2)=">=" & cpporg<substr(pporg,3)  then found=0 
+     when left(pporg,2)=">=" then nop
+     when left(pporg,2)="\=" & cpporg=substr(pporg,3)  then found=0 
+     when left(pporg,2)="\=" then nop
+     when left(pporg,2)="<>" & cpporg=substr(pporg,3)  then found=0 
+     when left(pporg,2)="<>" then nop
+     when left(pporg,1)="<"  & cpporg>=substr(pporg,2) then found=0 
+     when left(pporg,1)=">"  & cpporg<=substr(pporg,2) then found=0 
+     when left(pporg,1)="="  & cpporg\=substr(pporg,2) then found=0 
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*if*/
+
+  if found & ppequ\=-1 then do
+   if cptype="" then found=0
+   else do
+    cppequ=_dword(_dword(_p.current,4,";"),2,",")
+    select
+     when left(ppequ,2)="<=" & cppequ>substr(ppequ,3)  then found=0
+     when left(ppequ,2)="<=" then nop
+     when left(ppequ,2)=">=" & cppequ<substr(ppequ,3)  then found=0 
+     when left(ppequ,2)=">=" then nop
+     when left(ppequ,2)="\=" & cppequ=substr(ppequ,3)  then found=0 
+     when left(ppequ,2)="\=" then nop
+     when left(ppequ,2)="<>" & cppequ=substr(ppequ,3)  then found=0 
+     when left(ppequ,2)="<>" then nop
+     when left(ppequ,1)="<"  & cppequ>=substr(ppequ,2) then found=0 
+     when left(ppequ,1)=">"  & cppequ<=substr(ppequ,2) then found=0 
+     when left(ppequ,1)="="  & cppequ\=substr(ppequ,2) then found=0 
+     otherwise nop
+    end /*select*/
+   end /*else*/
+  end /*if*/
+
+  /* have we found the destination? */
+  select
+   when _dist.start.current>maxdist & \reverse then do; done=1; found=0; end
+   when _dist.current.start>maxdist &  reverse then do; done=1; found=0; end
+   when found then done=1
+   when head=tail then done=1
+   otherwise head=head+1
+  end /*select*/
+
+ end /*do*/
+
+ if \found | head=tail then current=0
+
+return current

@@ -1,0 +1,22 @@
+/* THIS IS A REXX PROGRAM THAT CAN BE USED TO PATCH BUGS OUT OF ZOC */
+/* DON'T USE WITHOUT INSTRUCTIONS FROM THE ZOC AUTHOR! */
+
+n.1= 0 
+n.2= 0 
+old= 00
+new= 00
+
+name= zoc.exe
+
+IF STREAM(name, c, OPEN)=="READY:" THEN DO 
+    DO i=1 TO 2 
+        IF (C2X(CHARIN(name, n.i, 3))==old) THEN DO
+            CALL CHAROUT name, X2C(new), n.i
+            SAY OK!
+        END 
+    END
+    CALL STREAM name, c, CLOSE
+END
+
+/* END - running this should output 'OK!' */
+

@@ -1,0 +1,46 @@
+/* REXX _twgs_login */
+
+call zoctimeout 30
+call zocsynctime 500
+
+servername="twlinks test"
+
+reconnect=0
+
+done=0
+do while \done
+ if zocgetinfo("ONLINE")\="##YES##" then call zocautoconnect servername
+ ans=zocwaitmux("Please enter your name (ENTER for none):", ,
+                "NO DUPES ALLOWED", ,
+                "Enter your choice:", ,
+                "[Pause]", ,
+                "Show today's log? (Y/N) [N]", ,
+                "Include time/date stamp? (Y/N) [N]", ,
+                "Password?", ,
+                "Do you wish to clear some avoids? (Y/N) [N]", ,
+                "Command [", ,
+                "Planet command", ,
+                " Who's Playing ")
+ select
+  when ans=0 then call zocsend "the reverend^M"
+  when ans=1 then call zocsend "m"
+  when ans=2 then call zocsend "t^M"
+  when ans=3 then call zocsend "y "
+  when ans=4 then call zocsend "n"
+  when ans=5 then call zocsend "n"
+  when ans=6 then call zocsend "mierda^M"
+  when ans=7 then call zocsend "n"
+  when ans=8 then call zocsend "psg#"
+  when ans=9 then call zocsend "c#"
+  when ans=10 then reconnect=0
+  when ans=640 then do
+   if reconnect then call zocautoconnect servername
+   else do
+    reconnect=1
+    call zocsend "#"
+   end /* else */
+  end /* when */
+  otherwise nop
+ end /* select */
+end /* do */
+exit

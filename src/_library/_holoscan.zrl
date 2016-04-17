@@ -1,0 +1,66 @@
+/** _holoscan v.5 **/
+/*- _holoscan -*/
+/*- v.5 tested -*/
+_holoscan: procedure expose (globals)
+ select
+  when \arg(1,"E") then call zocsend "sh"
+  when arg(1)="" then call zocsend "sh"
+  otherwise call zocsend arg(1)
+ end /*select*/
+ if _wait("Long Range Scan")=640 then call _error "timeout"
+ done=0
+ rslt=""
+ success=1
+ do while \done
+  ans=_waitmux("Sector  :",
+            ||"|Ports   :",
+            ||"|Fighters:",
+            ||"|Traders :",
+            ||"|Ships   :",
+            ||"|Planets :",
+            ||"|Relative Density Scan",
+            ||"|(?=Help)? :")
+  select
+   when success & ans=0 then do
+    cs=_stripint(_grabit("in"))
+    _fc.cs=0; _ef.cs=0; _efc.cs=0
+    _et.cs=0; _es.cs=0; _ep.cs=0;
+    if rslt="" then rslt=cs
+    else rslt=rslt||";"||cs
+    _sv.cs=1
+   end /*when*/
+/*- stardock (Special) _p.cs="ial" -*/
+   when success & ans=1 & _p.cs="" then _p.cs=left(right(_grabit(")"),4),3)||";"
+   when success & ans=2 then do
+    line=_grabit("^M")
+    parse var line figs "(" owner ")"
+    _fc.cs=strip(figs)
+    _f.cs=0
+    _ef.cs=0
+    _efc.cs=""
+    select
+     when owner="yours" then               _f.cs=1
+     when owner="belong to your Corp" then _f.cs=1
+     when left(owner,15)="belong to Corp#" then do
+      parse var owner "belong to Corp#" _efc.cs "," .
+      _ef.cs=1
+     end /*when*/
+     otherwise                             _ef.cs=1
+    end /*select*/
+   end/*when*/
+   when success & ans=3 then _et.cs=1
+   when success & ans=4 then _es.cs=1
+   when success & ans=5 then _ep.cs=1
+   when ans=6 & (\arg(1,"E") | arg(1)="") then do
+/*- get off of the mines menu -*/
+    call zocsend "^M"
+    success=0
+   end /*when*/
+   when ans=7 then done=1
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ if success then rslt=left(rslt,lastpos(";",rslt)-1)
+ else rslt="##NO HOLO##"
+return rslt

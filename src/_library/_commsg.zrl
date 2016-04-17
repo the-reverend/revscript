@@ -1,0 +1,32 @@
+/** _commsg v.4 **/
+_commsg: procedure expose (globals)
+ select
+  when lower(arg(1))="f" then do
+   ch="`"
+   wlong="Federation comm-link terminated."
+   wshort="Message sent on Federation comm-link."
+  end /*when*/
+  when lower(arg(1))="r" then do
+   ch="'"
+   wlong="Sub-space comm-link terminated"
+   wshort="Message sent on sub-space channel"
+  end /*when*/
+  otherwise call _error "missing message mode flag."
+ end /*select*/
+ if arg(2)\="" then do
+  if arg(3)="" then do
+   call zocsend ch||"REV-SCRIPT:  "||arg(2)||"^M"
+   if zocwait(wshort)=640 then call _error "timeout"
+  end /*do*/
+  else do
+   i=2
+   call zocsend ch||"^MREV-SCRIPT:  "
+   do while arg(i)\=""
+    call zocsend arg(i)||"^M"
+    i=i+1
+   end /*do*/
+   call zocsend "^M"
+   if zocwait(wlong)=640 then call _error "timeout"
+  end /*else*/
+ end /*if*/
+return

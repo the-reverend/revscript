@@ -1,0 +1,27 @@
+/** _spinner v.3 **/
+/*- _spinner count [, width] [, chars] -*/
+/*- v.3 tested -*/
+_spinner: procedure expose (globals)
+ if arg(1,"E") then count=arg(1)
+               else call _error "missing parameter in _spinner"
+ if arg(2,"E") then width=arg(2)
+               else width=100
+ if arg(3,"E") & length(arg(3))=5 then chs=arg(3)
+                                  else chs="-\|/."
+/* bs="^H" */
+ bs=d2c(27)||"[1D"
+ select
+  when count=-1        then call zocwrite bs||substr(chs,5,1)
+  when count<0         then count=-1
+  when count=0         then call zocwrite left(chs,1)
+  when count=width     then call zocwrite bs||substr(chs,2,1)
+  when count=(width*2) then call zocwrite bs||substr(chs,3,1)
+  when count=(width*3) then call zocwrite bs||substr(chs,4,1)
+  when count=(width*4) then do
+   call zocwrite bs||left(chs,1)
+   count=0
+  end /*when*/
+  otherwise nop
+ end /*select*/
+ count=count+1
+return count

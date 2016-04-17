@@ -1,0 +1,24 @@
+/** _cn9 v.2 **/
+_cn9: procedure expose (globals)
+ if arg(1,"E") then mod=_list_select(lower(arg(1)),"spaces;s;0;allkeys;a;1;query;q;2;toggle;t;3","spaces;spaces;spaces;allkeys;allkeys;allkeys;query;query;query;toggle;toggle;toggle",";")
+               else mod="query"
+ if mod="" then return "##UNKNOWN##"
+ if arg(2,"E") then pmt=arg(2)
+               else pmt=_synchronize()
+ if _listin(pmt,"command;citadel;computer;computer_cit") then do
+  call zocsend _list_select(pmt,"command;citadel;computer;computer_cit","cn;cn;n;n")
+  a=_waitmux("ALL KEYS|SPACE")
+  select
+   when mod="toggle"        then do; call zocsend "9"; mod=word("spaces allkeys",a+1); end
+   when a=0 & mod="spaces"  then call zocsend "9"
+   when a=0 & mod="query"   then mod="allkeys"
+   when a=1 & mod="allkeys" then call zocsend "9"
+   when a=1 & mod="query"   then mod="spaces"
+   when a=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+  call zocsend _list_select(pmt,"command;citadel;computer;computer_cit","qq;qq;q;q")
+  rslt="##"||upper(mod)||"##"
+ end /*if*/
+ else rslt="##UNKNOWN##"
+return rslt

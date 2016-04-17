@@ -1,0 +1,53 @@
+universal get to command prompt macro:
+(^H){4}      ((q^H){4}  q^M^M){2}  (q^M){4}  (z0^M){3}
+bsp prompt + lift dock + ex pmts + ex pmts + leave ports
+
+colo with port, twarp
+y1^Mqo118^Mqpt^M^Mltnl1144^Mq1^Myylt^Mn1yylsnl1^Mq
+
+o118^Mqpt^M^Mltnl1165^Mcb4441^Mypt0^M0^M^M^Mn1yyltnl3^Mq
+
+ATTACK MACROS
+
+ 1) no figs on ship
+      <Attack>
+      You don't have any fighters.
+.
+ 2) no ships in sector
+      <Attack>
+      There is nothing here to attack.
+.
+ 3) beacon in sector, no ships
+      <Attack>
+      Destroy the Marker Beacon here? No
+.
+      Command [TL=00:00:00]:[1227] (?=Help)? : A
+      <Attack>
+      Destroy the Marker Beacon here? Yes
+      You launch a fighter which quickly destroys the Beacon (and itself)
+.
+ 4) beacon in sector, plus ships
+      <Attack>
+      Destroy the Marker Beacon here? No
+      Attack rev's unmanned frigate (3,996-0) (Y/N) [N]? No
+      Attack rev's unmanned frigate (3,996-0) (Y/N) [N]? No
+.
+ 5) just ships in sector
+      <Attack>
+      Attack rev's unmanned frigate (3,996-0) (Y/N) [N]? No
+      Attack rev's unmanned frigate (3,996-0) (Y/N) [N]? No
+.
+ 6) captain zyrain in sector?
+
+ayy qz9999^M     first guy
+aznyy qz9999^M   second guy - but if beacon, you gotta add 1 to get him.
+
+aznznznznznznznznznzn - add 10
+
+note to self - ayy gets you dead if fed is in sector.
+
+use this:  ayzqz2000^My^M
+
+to destroy a port safely even if the port has already been destroyed.
+ocpaqpay9999^M^Mq^M
+pqnzqpay9999a^M

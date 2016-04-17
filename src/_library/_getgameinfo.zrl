@@ -1,0 +1,34 @@
+/** _getgameinfo v.5 **/
+/*- _getgameinfo [fname] -*/
+/*- v.5 tested -*/
+_getgameinfo: procedure expose (globals)
+ spath=_get_script_path()
+ base=spath||"script.ini"
+
+ if arg(1,"E") then fname=arg(1)
+ else fname=base
+
+ parse value zocgetglobaloption("WindowTitle") with . '="' game '"'
+ if fname\=base | game="" | game="%ZOCORHOST% %OPTIONS%" then do
+  list=_ini_getheadings(fname)
+  if list="##EOF##" then game="##EOF##"
+  else do
+   templist=""
+   do i=1 to _dwords(list,";")
+    temp=_dword(list,i,";")
+    if left(temp,1)\="*" then do
+     if templist="" then templist=temp
+     else templist=templist||";"||temp
+    end /*if*/
+   end /*do*/
+   list=templist
+   game=_drequestlist("select a game:", list, ";", "c")
+  end /*else*/
+ end /*do*/
+
+ call zocwrite _ansi("bt;fgr")||"< using "
+ if length(fname)>17 then call zocwrite "..."
+ call zocwriteln right(fname,min(length(fname),17))||" - ["||game||"] >"
+
+ rslt=spath||";"||fname||";"||game
+return rslt

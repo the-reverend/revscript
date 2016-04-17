@@ -1,0 +1,30 @@
+/* REXX sample about decisions */
+
+/* Set max wait time to 60 seconds */
+CALL ZocTimeout 60
+
+/* Wait for 'Name?' - check for success and report error */
+timeout= ZocWait("Name?")
+IF timeout=0 THEN DO /* outer IF */
+   /* received 'Name?' */
+   CALL ZocSend "Joe User^M"
+
+   /* Wait for 'Password?' - check for success and report error */
+   timeout= ZocWait("Password?")
+   IF timeout=0 THEN DO
+      /* received 'Password?' */
+      CALL ZocSend "secret^M"
+   END
+   ELSE DO /* inner IF */
+      /* Ouch, 'Password?' was not received */
+      CALL ZocWriteln "ERROR (Password)!!"
+      CALL ZocHangup
+   END /* inner IF */
+END
+ELSE DO /* outer IF */
+   /* Ouch, 'Name?' was not received */
+   CALL ZocWriteln "ERROR (Name)!!"
+   CALL ZocHangup
+END /* outer IF */
+
+EXIT

@@ -1,0 +1,78 @@
+SYSOP/SERVER RULES
+
+Terminology:
+
+GAME   = a sanctioned league game
+SYSOP  = gameop, sysop, co-sysop, etc. managing the GAME
+SERVER = TWGS server hosting the GAME
+PLAYER = a single player account registered in the GAME
+LEAGUE = league board members
+
+1. League games will start at the designated time. If they don't your game might be de-sanctioned as a League server depending on the circumstances.
+
+CHANGE TO:
+   The GAME must start within an hour of the advertized start time.  If the start is delayed more than an hour, the GAME must be delayed a full 24 hours from the original start time.
+
+2. You will report violations of player rules to the board after you have made the correct warning or taken the specified action against the violator.
+
+CHANGE TO:
+   The SYSOP must report player rule violations to the board.
+
+3. You are to close ALL League games to new players on day 7 and get a count of the total number of players in the game.  You will need this number when you go to submit the winners of your game.
+
+CHANGE TO:
+   The GAME must be closed to new players after 7 days, i.e. 168 hours after the start time.  the GAME must remain closed for its duration.
+
+4. You are to keep league games closed after day 7 and give observer status to no one. You are not to participate in any league game on your server. You may participate in a league game on a server that you are not currently the co-sysop of.
+
+CHANGE TO:
+   The SYSOP may not play a GAME on his/her own server.  The SYSOP may have an observer account for the GAME on his/her server.  No other person may have an observer account for the GAME.
+
+5. You are to keep a wary eye out for duplicate IP's playing the league game. If you have a TWGS server you are to limit the log on per IP to one while you are running a league game. Any concerns of this matter should be asked to the board.
+
+CHANGE TO:
+   The SYSOP shall take measures to prevent duplicate IPs from participating in the GAME.  The SERVER shall allow only one log-on per IP.  Players suspected of playing duplicate accounts shall have their password changed until the situation can be reviewed.  The SYSOP shall resolve such situations in a timely manner.
+
+6. Your server should remain up as much as possible during a league game. You should never disconnect a user from a game unless he explicitly asks you to in the event of a 'ghost' on your server.
+
+CHANGE TO:
+   The SYSOP shall take reasonable measures to ensure that the SERVER is available for the duration of the game.  Extended SERVER outages (more than 3 hours) should be announced in public forums if possible.  A GAME re-start after an extended outage should be announced at least 12 hours in advance.  A PLAYER may be disconnected by the SYSOP upon their explicit request.
+
+7. You will keep the version of TWGS/Trade Wars on your server that the board has designated for all league servers. If you experience any problems with this version let the board know and we may change the required version. This will normally be the most recent version of  TWGS, and failure to have this running will result in your game being de-sanctioned. 
+
+CHANGE TO:
+   Prior to the start time, the SYSOP shall announce the version of TWGS that will be used for the GAME.
+
+8. Remember that you don't need a co-sysop now, but if a player makes a complaint a member of the League Board may be asked to login as an admin and check the situation out.  If you have a problem with this your game will be de-sanctioned as you should have nothing to hide.
+
+CHANGE TO:
+   The LEAGUE shall be given admin access to the SERVER upon request and in a timely manner.
+
+9.  Intentionally inputing the wrong number of total players or submitting players in the wrong category when you are processing the game winners will result in your server being removed permanently as a League server.
+
+CHANGE TO:
+    The SYSOP shall be responsible for the accuracy of the game results he/she submits.
+
+10. You should never host more than two league games at the same time.  You currently have two league games per year you can host.
+
+CHANGE TO:
+    The SYSOP may host up to two league games simultaneously on a single SERVER.  Within those restraints, the SYSOP may host as many league games as possible in a year.
+
+11. If you experience any problems while running a league game let the board know ASAP. (You can do this by logging in and sending the board an e-mail.)  If your server goes down and you are unable to get it back up within 48 hours we will cancel the game and a rebang on your server or another game will be put in its place.
+
+CHANGE TO:
+    The SYSOP shall inform the LEAGUE of significant problems in the GAME or with the SERVER.
+
+12. Once the victory conditions for the game have been met you will close the game and login and submit the winners of that game within 48 hours. Remember that 'dead/eliminated' winners or second place recieve less points, so make sure you submit them correctly.
+
+CHANGE TO:
+    Upon satisfaction of the victory conditions, the SYSOP shall close the GAME and submit the GAME results and scores to the LEAGUE within 48 hours.
+
+13. As a sysop you should know what needs to occur to have a fair game and this isn't a way for anyone to take over your server, because we all have one of our own.
+
+DELETE
+
+14. "Grandfather Clause" - Once again this list is only a working list of rules. If you can think of anything else that will need to be addressed please let the board know. The board will consist of an impartial panel of at least 3 members and must vote in the majority for any action taken against a sysop or player if that action would be harsh. (i.e. expulsion from the league, game, or loss of rating points) 
+
+CHANGE TO:
+    The SYSOP must post the version of these rules that apply to the GAME when he/she advertizes the GAME.  The GAME will be subject to those rules until completion.  Rule changes will be posted in the appropriate public forums.

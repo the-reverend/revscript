@@ -1,0 +1,106 @@
+/** _buildmap v.1 **/
+_buildmap:
+ bmpath=arg(1)
+ bmname=arg(2)
+ bmns=arg(3)
+
+ bmmapname=bmpath||bmname||".map"
+
+ call _newline
+ call zocwrite _ansi("b", "cyan")||"loading map data for "||bmmapname||":"
+
+ bmsr.=""
+ if _fileexists(bmpath||bmname||"_ref.sct") then do
+  call _loadsectorcim bmpath||bmname||"_ref.sct"
+  do bmi=1 to bmns
+   bmsr.bmi=s.bmi
+  end /* do */
+  call _loadsectorcim bmpath||bmname||".sct"
+ end /* if */
+ else call _loadsectorcim bmpath||bmname||".sct"
+ 
+ bmpr.=""
+ if _fileexists(bmpath||bmname||"_ref.prt") then do
+  call _loadportcim bmpath||bmname||"_ref.prt"
+  do bmi=1 to bmns
+   bmpr.bmi=p.bmi
+  end /* do */
+  call _loadportcim bmpath||bmname||".prt"
+ end /* if */
+ else call _loadportcim bmpath||bmname||".prt"
+ 
+ bmreclen=22
+ 
+ call _newline
+ call zocwrite _ansi("b", "cyan")||"constructing map "||bmmapname||" "
+
+ if \_filenew(bmmapname, "delete") then call _error "unable to create file:  "||bmmapname
+ 
+ call charout bmmapname, d2c(bmreclen) /* record length   */
+ 
+ bmmon=0
+ do bmi=1 to bmns
+ 
+  bmrec.=0
+ 
+  /* set flags in record #1 */
+  if s.bmi\="" then bmrec.1=32                        /* sector explored */
+  if p.bmi\="" | bmpr.bmi\="" then bmrec.1=bmrec.1+16 /* port exists     */
+  if p.bmi\="" then bmrec.1=bmrec.1+8                 /* port available  */
+ 
+  /* set port type in record #1 */
+  if p.bmi="" then bmportinfo=bmpr.bmi
+  else bmportinfo=p.bmi
+ 
+  /* set port info in records #2-10 */
+  if bmportinfo\="" then do
+   if substr(bmportinfo,3,1)="B" then bmrec.1=bmrec.1+1 /* buy ore */
+   if substr(bmportinfo,2,1)="B" then bmrec.1=bmrec.1+2 /* buy org */
+   if substr(bmportinfo,1,1)="B" then bmrec.1=bmrec.1+4 /* buy equ */
+   parse var bmportinfo . ";" bmpq.1 "," bmpp.1 ";" bmpq.2 "," bmpp.2 ";" bmpq.3 "," bmpp.3
+   do bmj=1 to 3
+    bmk=2+(bmj-1)*3
+    bmrec.bmk=abs(bmpq.bmj)//256
+    bmk=bmk+1
+    bmrec.bmk=abs(bmpq.bmj)%256
+    bmk=bmk+1
+    bmrec.bmk=bmpp.bmj
+   end /* do */
+  end /* else */
+ 
+  /* set warp info in records #11-22 */
+  if s.bmi="" then bmseclist=bmsr.bmi
+  else bmseclist=s.bmi
+  bmj=11
+  do while bmseclist\="" & bmj<=22
+   parse var bmseclist bmsector ";" bmseclist
+   if bmsector\="" then do
+    bmrec.bmj=bmsector//256
+    bmj=bmj+1
+    bmrec.bmj=bmsector%256
+    bmj=bmj+1
+   end /* if */
+  end /* do */
+ 
+  do bmj=1 to bmreclen
+   call charout bmmapname, d2c(bmrec.bmj) 
+  end /* do */
+ 
+  bmmon=_spinner(bmmon,500)
+
+ end /* do */
+ 
+ call _fileclose bmmapname
+ 
+ call zocwriteln
+
+return
+/** _newline **/
+/** _ansi **/
+/** _fileexists **/
+/** _fileclose **/
+/** _filenew **/
+/** _loadsectorcim **/
+/** _loadportcim **/
+/** _error **/
+/** _spinner **/

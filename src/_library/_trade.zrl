@@ -1,0 +1,218 @@
+/** _trade v.2 **/
+_trade: procedure expose (globals)
+ products=arg(1) /* "0;65;65" (trade org, equ) if blank, autodetect */
+ success=0
+
+ call zocreceivebuf 3*1024
+ call zocsend "pt"
+ ans=_waitmux("empty cargo holds.",   /* port successful  */
+           ||"|There is no port",     /* no port          */
+           ||"|under construction.",  /* construction     */
+           ||"|port here?",           /* port destroyed   */
+           ||"|(A,B,C,Q,?)",          /* class 0          */
+           ||"|You don't have")       /* nothing to trade/no turns */
+
+ if ans>0 then buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+ select
+  when ans=0 then buff=translate(zocreceivebuf(3*1024),"  ",d2c(10)||d2c(0))
+  when ans=1 then call zocsend "q"
+  when ans=2 then nop
+  when ans=3 then call zocsend "n"
+  when ans=4 then call zocsend "q"
+  when ans=5 then nop
+  when ans=640 then call _error "timeout"
+  otherwise nop
+ end /*select*/
+
+ if ans=0 then do
+  i=pos("Fuel Ore   ",buff)
+  j=pos(d2c(13),buff,i)
+  if i>0 & j>0 then oreline=strip(substr(buff,i,j-i))
+  else oreline=""
+
+  i=pos("Organics   ",buff,i)
+  j=pos(d2c(13),buff,i)
+  if i>0 & j>0 then orgline=strip(substr(buff,i,j-i))
+  else orgline=""
+
+  i=pos("Equipment  ",buff,i)
+  j=pos(d2c(13),buff,i)
+  if i>0 & j>0 then equline=strip(substr(buff,i,j-i))
+  else equline=""
+
+  i=pos("You have ",buff,i)+9
+  j=pos(" credits",buff,i)
+  if i>9 & j>0 then creds=_stripint(substr(buff,i,j-i))
+  else creds=""
+
+  i=pos("credits and ",buff,i)+12
+  j=pos(" empty cargo holds.",buff,i)
+  if i>0 & j>0 then emptyholds=substr(buff,i,j-i)
+  else emptyholds=""
+
+  if oreline\="" & orgline\="" & equline\="" & creds\="" & emptyholds\="" then do
+   type=substr(oreline,12,1)||substr(orgline,12,1)||substr(equline,12,1)
+   parse var oreline . . . pore . sore .
+   parse var orgline . . porg . sorg .
+   parse var equline . . pequ . sequ .
+   holds=emptyholds+sore+sorg+sequ
+   avail=emptyholds
+
+   if products="" then do
+    tore=0; torg=0; tequ=0
+    if left(type,1)="B" then do
+     if pore<sore then tore=0
+     else tore=sore
+     avail=avail+tore
+    end /*if*/
+    if substr(type,2,1)="B" then do
+     if porg<sorg then torg=0
+     else torg=sorg
+     avail=avail+torg
+    end /*if*/
+    if substr(type,3,1)="B" then do
+     if pequ<sequ then tequ=0
+     else tequ=sequ
+     avail=avail+tequ
+    end /*if*/
+    select
+     when avail=0 then nop
+     when substr(type,3,1)="S" & pequ>=avail then tequ=avail
+     when substr(type,2,1)="S" & porg>=avail then torg=avail
+     when left(type,1)="S" & pore>=avail then tore=avail
+     otherwise nop
+    end /*select*/
+   end /*if*/
+   else do
+    parse var products tore ";" torg ";" tequ
+    if left(type,1)="B" then do
+     if tore>sore then tore=sore
+     if tore>pore then tore=0
+     avail=avail+tore
+    end /*if*/
+    if substr(type,2,1)="B" then do
+     if torg>sorg then torg=sorg
+     if torg>porg then torg=0
+     avail=avail+torg
+    end /*if*/
+    if substr(type,3,1)="B" then do
+     if tequ>sequ then tequ=sequ
+     if tequ>pore then tequ=0
+     avail=avail+tequ
+    end /*if*/
+    if left(type,1)="S" then do
+     if tore>avail then tore=avail
+     if tore>pore then tore=0
+     avail=avail-tore
+    end /*if*/
+    if substr(type,2,1)="S" then do
+     if torg>avail then torg=avail
+     if torg>porg then torg=0
+     avail=avail-torg
+    end /*if*/
+    if substr(type,3,1)="S" then do
+     if tequ>avail then tequ=avail
+     if tequ>pequ then tequ=0
+     avail=avail-tequ
+    end /*if*/
+   end /*else*/
+
+   tmacro=""
+   if left(type,1)="B" & sore>0 then do
+    if tore=0 then tmacro=tmacro||"0^M"
+    else tmacro=tmacro||tore||"^M^M"
+   end /*if*/
+   if substr(type,2,1)="B" & sorg>0 then do
+    if torg=0 then tmacro=tmacro||"0^M"
+    else tmacro=tmacro||torg||"^M^M"
+   end /*if*/
+   if substr(type,3,1)="B" & sequ>0 then do
+    if tequ=0 then tmacro=tmacro||"0^M"
+    else tmacro=tmacro||tequ||"^M^M"
+   end /*if*/
+/*
+   if left(type,1)="S" then do
+    tmacro=tmacro||tore||"^M"
+    if tore>0 then tmacro=tmacro||"^M"
+   end /*if*/
+   if substr(type,2,1)="S" then do
+    tmacro=tmacro||torg||"^M"
+    if torg>0 then tmacro=tmacro||"^M"
+   end /*if*/
+   if substr(type,3,1)="S" then do
+    tmacro=tmacro||tequ||"^M"
+    if tequ>0 then tmacro=tmacro||"^M"
+   end /*if*/
+*/
+   if left(type,1)="S" then do
+    call zocsend tore||"^M"
+    if tore>0 then do
+     if _wait("We'll sell them for ")=640 then call _error "timeout"
+     if _wait(" credits.")=640 then call _error "timeout"
+     call zocsend trunc(_stripint(_lastline())*.95)"^M^M"
+    end
+   end /*if*/
+   if substr(type,2,1)="S" then do
+    call zocsend torg||"^M"
+    if torg>0 then do
+     if _wait("We'll sell them for ")=640 then call _error "timeout"
+     if _wait(" credits.")=640 then call _error "timeout"
+     call zocsend trunc(_stripint(_lastline())*.95)"^M^M"
+    end
+   end /*if*/
+   if substr(type,3,1)="S" then do
+    call zocsend tequ||"^M"
+    if tequ>0 then do
+     if _wait("We'll sell them for ")=640 then call _error "timeout"
+     if _wait(" credits.")=640 then call _error "timeout"
+     call zocsend trunc(_stripint(_lastline())*.95)"^M^M"
+    end
+   end /*if*/
+   if _wait("Command [")=640 then call _error "timeout"
+   buff=translate(zocreceivebuf(0),"  ",d2c(10)||d2c(0))
+
+   if pos("% of best price>",buff)>0 then do
+    i=1; j=1
+    k1=pos("holds of Fuel Ore",buff)
+    k2=pos("holds of Organics",buff)
+    k3=pos("holds of Equipment",buff)
+    done34=0
+    do while \done34
+     i=pos("Your offer [",buff,j)+12
+     j=pos("] ?",buff,i)
+     if i>12 & j>0 then do
+      offer1=_stripint(substr(buff,i,j-i))
+      i=pos("Your offer [",buff,j)+12
+      j=pos("] ?",buff,i)
+      if i>12 & j>0 then do
+       offer2=_stripint(substr(buff,i,j-i))
+       i=pos("estimates your offer was",buff,j)+24
+       j=pos("% of best price>",buff,i)
+       if i>24 & j>0 then do
+        accuracy=strip(substr(buff,i,j-i))
+        select
+         when k3<j & k3>0 then prod="equ"
+         when k2<j & k2>0 then prod="org"
+         when k1<j & k1>0 then prod="ore"
+         otherwise prod="none"
+        end
+        if _fileopenw("script\psprobe.txt") then do
+         call lineout "script\psprobe.txt", sector prod offer1 trunc(offer1*.95) offer2 accuracy
+         call _fileclose "script\psprobe.txt"
+        end
+        else done34=1
+       end
+       else done34=1
+      end
+      else done34=1
+     end
+     else done34=1
+    end
+   end
+
+   if tore+torg+tequ>0 then success=1
+  end /*if*/
+
+ end /*else*/
+
+return success

@@ -1,0 +1,41 @@
+/** _ini_read v.1 **/
+/*- _ini_read fname, section, key -*/
+/*- v.1 tested -*/
+_ini_read: procedure expose (globals)
+ /* argument check */
+ do i=1 to 3
+  if \arg(i,"E") | arg(i,"O") then call _error "missing arguments in _ini_read."
+ end /*do*/
+
+ /* name arguments */
+ fname=arg(1)
+ s=strip(arg(2))
+ k=strip(arg(3))
+
+ if _fileopenr(fname) then do
+  done=0
+  found=0
+  insection=0
+  do while \done & \_fileeof(fname)
+   line=strip(linein(fname))
+   select
+    when left(line,1)=";" then nop
+    when line="["||s||"]" then insection=1
+    when insection & left(line,1)="[" then done=1
+    when insection & _dwords(line,"=")>1 then do
+     if k=strip(_dword(line,1,"=")) then do
+      v=strip(_dword(line,2,"="))
+      v=_ini_format_value(v)
+      done=1
+      found=1
+     end /*if*/
+    end /*when*/
+    otherwise nop
+   end /*select*/
+  end /*do*/
+  call _fileclose fname 
+  if \found then v="##EOF##"
+ end /*if*/
+ else v="##EOF##"
+
+return v

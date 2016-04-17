@@ -1,0 +1,135 @@
+/** _getxportinfo v.2 **/
+/* THIS SUBROUTINE NEEDS TO BE UPDATED TO USE THE "CZQ" COMMAND */
+_getxportinfo: procedure expose (globals)
+ ret=0
+
+ call zocsend "x"
+ done=0
+ do while \done
+  ans=_waitmux("[Pause]|-------")
+  select
+   when ans=0 then do
+    call zocsend "^M"
+    ret=ret+1
+   end /*when*/
+   when ans=1 then done=1
+   when ans=640 then call _error "timeout"
+   otherwise nop
+  end /*select*/
+ end /*do*/
+ if _wait("^M")=640 then call _error "timeout"
+
+ done=0
+ line.=""
+ i=1
+ do while \done
+  if _wait("^M")=640 then call _error "timeout"
+  line.i=_lastline()
+  select
+   when line.i="" then done=1
+   when line.i="[Pause]" then do
+    call zocsend "^M"
+    ret=ret+1
+   end /*when*/
+   otherwise i=i+1
+  end /*select*/
+ end /*do*/
+ if _wait("Choose which ship to beam to (Q=Quit)")=640 then call _error "timeout"
+ call zocsend "q"
+ if _wait("Command [")=640 then call _error "timeout"
+
+ i=1
+ do while line.i\=""
+
+  parse var line.i num.i sec.i name.i "Corp" figs.i shields.i hops.i type.i
+  if type="" then parse var line.i num.i sec.i name.i "Pers" figs.i shields.i hops.i type.i
+
+  num.i=_stripint(num.i)
+  sec.i=_stripint(sec.i)
+
+  if _instr("T",figs.i) then figs.i=_stripint(figs.i)*1000
+  else figs.i=_stripint(figs.i)
+  if _instr("T",shields.i) then shields.i=_stripint(shields.i)*1000
+  else shields.i=_stripint(shields.i)
+
+  hops.i=_stripint(hops.i)
+
+  i=i+1
+
+ end /*do*/
+
+ i=i-1
+
+ list=""
+ call zocwriteln _ansi("bt;fgr")
+ do j=1 to i
+  call zocwriteln "["||j||"] #"||num.j||" ("||sec.j||") - "||type.j||"- "||hops.j||" hops away."
+  if list="" then list="["||j||"] #"||num.j||" ("||sec.j||")"
+  else list=list||";"||"["||j||"] #"||num.j||" ("||sec.j||")"
+ end /*do*/
+ list=list||";end"
+ call zocwriteln _ansi("bt;frd")
+
+ rslt=""
+ done=0
+ do while \done
+  ans=("select a ship...",list,";","c")
+  if ans="end" then done=1
+  else do
+   parse var ans "[" ch "]" .
+   if rslt="" then rslt=num.ch||","||sec.ch
+   else rslt=rslt||";"||num.ch||","||sec.ch
+  end /*else*/
+  call zocwriteln "selected: "||ans
+ end /*do*/
+
+ rslt=ret||";"||rslt
+
+return rslt
+/*- Command [TL=00:00:00]:[3028] (?=Help)? : X                                     -*/
+/*-                                                                                -*/
+/*- You enter the Transporter room on your ship and warm up the imaging            -*/
+/*- coils.  Trying to forget how much you hate beaming, you activate the           -*/
+/*- primary console                                                                -*/
+/*-                                                                                -*/
+/*- <Transport to Ship>                                                            -*/
+/*-                                                                                -*/
+/*- Your Colonial Transport has a transport range of 7 hops.                       -*/
+/*-                                                                                -*/
+/*-                         --<  Available Ship Scan  >--                          -*/
+/*- Ship  Sect Name                  Fighters Shields Hops Type                    -*/
+/*- -----------------------------------------------------------------------------  -*/
+/*-    2  8910 The Merchant Ma Corp       2T     500    1  Corp Transport          -*/
+/*-    3 17376 A Ferrengi      Corp      200       0    1  Colonial Transport      -*/
+/*-    5  1979 A ship          Corp        0     100    1  Scout Marauder          -*/
+/*-   13  4249 The Merchant Ma Corp       10     100   18  Taurean Mule            -*/
+/*-   15  3028 A Ferrengi      Corp       94      3T    0  Corporate FlagShip      -*/
+/*-   20  6018 The Merchant Ma Corp      111     500    8  Merchant Freighter      -*/
+/*-   26 15056 The Merchant Ma Corp        9      10   17  CargoTran               -*/
+/*-   36  6018 Money           Corp       20     100    8  Taurean Mule            -*/
+/*-                                                                                -*/
+/*- <I> Ship details                                                               -*/
+/*- <Q> Exit Transporter                                                           -*/
+/*-                                                                                -*/
+/*- Choose which ship to beam to (Q=Quit) 2                                        -*/
+/*- Security code accepted, engaging transporter control.                          -*/
+/*-                                                                                -*/
+/*- One turn deducted, 2655 turns left.                                            -*/
+/*- Your Corp Transport has a transport range of 25 hops.                          -*/
+/*-                                                                                -*/
+/*-                         --<  Available Ship Scan  >--                          -*/
+/*- Ship  Sect Name                  Fighters Shields Hops Type                    -*/
+/*- -----------------------------------------------------------------------------  -*/
+/*-    3 17376 A Ferrengi      Corp      200       0    2  Colonial Transport      -*/
+/*-    5  1979 A ship          Corp        0     100    2  Scout Marauder          -*/
+/*-   13  4249 The Merchant Ma Corp       10     100   17  Taurean Mule            -*/
+/*-   15  3028 A Ferrengi      Corp       94      3T    1  Corporate FlagShip      -*/
+/*-   20  6018 The Merchant Ma Corp      111     500    7  Merchant Freighter      -*/
+/*-   26 15056 The Merchant Ma Corp        9      10   16  CargoTran               -*/
+/*-   36  6018 Money           Corp       20     100    7  Taurean Mule            -*/
+/*-   37  3028 A Ferrengi      Corp      200     500    1  Colonial Transport      -*/
+/*-                                                                                -*/
+/*- <I> Ship details                                                               -*/
+/*- <Q> Exit Transporter                                                           -*/
+/*-                                                                                -*/
+/*- Choose which ship to beam to (Q=Quit) Q                                        -*/

@@ -1,0 +1,13 @@
+/** _getvoids v.8 **/
+/*- _getvoids vname [, mode] -*/
+_getvoids: procedure expose (globals)
+ vname=arg(1)
+ mode=arg(2)
+ _v.=0
+ c=0
+ if lower(mode)="file" then parse value _voids_load(vname) with c m
+ else do
+  parse value _voids_get() with c m
+  call _voids_save vname, m
+ end /*else*/
+return c

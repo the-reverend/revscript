@@ -1,0 +1,10 @@
+/** _fileeof v.4 **/
+/*- _fileeof fname -*/
+/*- v.4 tested -*/
+_fileeof: procedure expose (globals)
+ select
+  when \arg(1,"E") then call _error "missing parameter in _fileeof"
+  when arg(1)="" then rslt=0
+  otherwise rslt=\lines(arg(1))
+ end /*select*/
+return rslt

@@ -1,0 +1,8 @@
+_set_msg: procedure expose (globals)
+ i=_msg.0
+ if i="_MSG.0" then do; _msg.=""; _msg.0=0; i=0; end
+ i=i+1; _msg.0=i; _msg=""
+ if arg(1,"E") then do; _msg.i=arg(1); _msg=arg(1); end;
+ if arg(2,"E") then _msg.i.!source=arg(2)
+ if arg(3,"E") then _msg.i.!comment=arg(3)
+return i

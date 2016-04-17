@@ -1,0 +1,41 @@
+/** _onlinereport v.3 **/
+_onlinereport: procedure expose (globals)
+
+ msg.=""
+ if _verbose then msg.1="REV-SCRIPT:  online update^M"
+             else msg.1=""
+ newtag="IN"
+ gonetag="OUT"
+
+ do i=1 to _olist1.0
+  found=0
+  do j=1 to _olist2.0
+   if _dword(_olist1.i,1,";")=_dword(_olist2.j,1,";") then do
+    found=1
+    leave
+   end /*if*/
+  end /*do*/
+  if \found then msg.2=msg.2||" "||newtag||": "||_dword(_olist1.i,1,";")||"^M"
+ end /*do*/
+
+ do i=1 to _olist2.0
+  found=0
+  do j=1 to _olist1.0
+   if _dword(_olist2.i,1,";")=_dword(_olist1.j,1,";") then do
+    found=1
+    leave
+   end /*if*/
+  end /*do*/
+  if \found then msg.3=msg.3||" "||gonetag||": "||_dword(_olist2.i,1,";")||"^M"
+ end /*do*/
+
+ rslt=1
+ select
+  when msg.2="" & msg.3="" then rslt=0
+  when msg.2\="" & msg.3\="" then call zocsend "'^M"||msg.1||msg.2||msg.3||"^M"
+  when msg.3="" then call zocsend "'^M"||msg.1||msg.2||"^M"
+  when msg.2="" then call zocsend "'^M"||msg.1||msg.3||"^M"
+  otherwise rslt=0
+ end /*select*/
+
+return rslt

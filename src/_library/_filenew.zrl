@@ -1,0 +1,18 @@
+/** _filenew v.4 **/
+/*- _filenew fname [,"delete"] -*/
+/*- v.4 tested -*/
+_filenew: procedure expose (globals)
+ select
+  when \arg(1,"E") then call _error "missing parameter in _filenew"
+  when arg(1)="" then rslt=0
+  otherwise do
+   if arg(2,"E") & lower(arg(2))="delete" then call dosdel arg(1)
+   if _fileexists(arg(1)) then rslt=0
+   else do
+    call stream arg(1), "C", "OPEN WRITE"
+    rslt=_fileready(arg(1))
+    if \rslt then call _fileclose arg(1)
+   end /*else*/
+  end /*otherwise*/
+ end /*select*/
+return rslt

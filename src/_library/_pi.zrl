@@ -1,0 +1,5 @@
+/** _pi v.2 **/
+/*- _pi -*/
+/*- v.2 tested -*/
+_pi: procedure expose (globals)
+return 3.14159265358979

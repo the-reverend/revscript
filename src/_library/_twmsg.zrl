@@ -1,0 +1,19 @@
+/** _twmsg v.3 **/
+_twmsg: procedure expose (globals)
+ if \arg(1,"E") then call _error "missing parameter in _twmsg."
+ select
+  when lower(arg(1))="on" then do
+   call zocsend "|"
+   ans=_waitmux("Silencing|Displaying")
+   if ans=0 then call zocsend "|"
+   if ans=640 then call _error "timeout"
+  end /*when*/
+  when lower(arg(1))="off" then do
+   call zocsend "|"
+   ans=_waitmux("Silencing|Displaying")
+   if ans=1 then call zocsend "|"
+   if ans=640 then call _error "timeout"
+  end /*when*/
+  otherwise nop
+ end /*select*/
+return

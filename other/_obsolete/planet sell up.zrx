@@ -1,0 +1,135 @@
+/* REXX (CREATED BY ZOC LEARN MODE) */
+
+CALL ZocTimeout 60
+
+SAY ""
+SAY ""
+SAY "From which planet?"
+PULL planet
+SAY "From which product? (1..3)"
+PULL product
+
+/* Changed to 10,000 from Forever */
+
+DO 10000
+
+CALL ZocSend "l"
+
+CALL ZocSend planet
+CALL ZocSend "^M"
+
+CALL ZocWait "[D]"
+CALL ZocSend "tn"
+
+CALL ZocSend "t"
+
+CALL ZocSend product
+
+CALL ZocSend "^M"
+
+CALL ZocSend "q"
+
+CALL ZocWait "Command"
+
+/* My Input */
+
+CALL ZocSend "pt^M"
+call zocwait "our offer ["
+offer1=GETITALL(0,0)
+z=SELLHAGGLE(offer1)
+
+/* End My Input */
+
+
+CALL ZocSend "0^M"
+CALL ZocSend "0^M"
+call ZocWait "Command"
+
+END
+
+/* Added Haggle Script Here */
+                                                    
+
+SELLHAGGLE:
+               
+offer1=arg(1)
+haggle106=offer1%(94/100)-1
+haggle106=trunc(haggle106,0)
+haggle105=offer1%(95/100)-1
+haggle105=trunc(haggle105,0)
+haggle104=offer1%(96/100)-1
+haggle104=trunc(haggle104,0)
+haggle103=offer1%(97/100)-1
+haggle103=trunc(haggle103,0)
+haggle102=offer1%(98/100)-1
+haggle102=trunc(haggle102,0)
+haggle101=offer1%(99/100)-1
+haggle101=trunc(haggle101,0)
+
+call zocsend haggle105
+call zocsend "^M"
+
+a=3
+DO WHILE a<>0
+result= ZocWaitMux("We'll buy them", "You have", "we're not int", "final offer")
+SELECT
+        WHEN result=0 THEN x=1
+        WHEN result=1 THEN x=2
+        WHEN result=2 THEN x=3
+        WHEN result=3 THEN x=4
+end
+
+if x=1 then DO
+        if a=4 then do
+        call zocsend haggle105
+        call zocsend "^M"
+        end
+        if a=3 then do
+        call zocsend haggle104
+        call zocsend "^M"
+        end
+        if a=2 then do
+        call zocsend haggle103
+        call zocsend "^M"
+        end
+        if a=1 then do
+        call zocsend haggle102
+        call zocsend "^M"
+        end
+        if a=0 then do
+        call zocsend haggle101
+        call zocsend "^M"
+        end
+a=a-1
+end
+
+if x=2 then do
+        a=0
+        return(0)
+        end
+if x=3 then do
+        return(0)
+        dead=1
+end
+if x=4 then do
+        call zocsend haggle103
+        call zocsend "^M"
+        return(0)
+end
+
+END
+
+RETURN(0) 
+
+
+GETITALL:
+holdfinal=""
+call zocwait "]"
+holds=zoclastline()
+DO addchar=1 to length(holds)
+        holdsit=substr(holds,addchar,1)
+        if holdsit<>"]" then DO
+          if holdsit<>"," then holdfinal=holdfinal||holdsit
+        end
+END
+RETURN holdfinal

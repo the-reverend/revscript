@@ -1,0 +1,666 @@
+/* REXX */
+
+/* sell off en-route */
+
+/* written by Dr. Bad */
+/* Last mod: 280802 */
+/* Find the next place "on the way" to a given destination to sell off at */
+
+MaximumCost=0.334 /* If it "costs" more than MaximumCost * turnsWorthOfEq to sell off, then it doesn't sell off */
+		   
+Dest=ZocAsk("Where r u heading","1234")
+
+Src=ZocAsk("StartPlotFrom (blank means here)","")
+
+call plntnum
+Call Zocsend("CCV0^MYYF"src"^M" dest "^MQ")
+Call zocwait "shortest"
+call zocwait ">"
+
+buf = strip(zoclastline())
+do forever
+	CALL zocWait("^M")
+	buf = buf strip(zocLastLine())
+	if length(zocLastLine()) < 10 THEN LEAVE
+end	
+
+/* Now parse the line */
+
+buf = buf || " >"
+
+PlotLen=1
+
+do while buf \= ""
+	parse var buf head ">" buf
+	head=strip(strip(head),,"(")
+	head=strip(head,,")")
+	sectors.Plotlen=head
+	PlotLen=PlotLen+1
+end	
+PlotLen=PlotLen-1
+
+Call ZocTimeout 3600
+
+/* Check thru path, and everything adjacent to path for suitable sectors to sell to. */
+
+call zocwriteln
+call zocwriteln Plotlen
+
+Do i=1 to Plotlen
+	nextsec=sectors.i
+	weAreThereAlready=0
+
+	numtocheck=1
+	sectocheck.1=nextsec
+getw:	
+	warps=GetWarps(nextsec)
+	if zocstring("PARTCOUNT", warps, "-")==0 then do
+		if pwarp(nextsec) then do
+			weAreThereAlready=1
+			signal getw
+		end
+		Iterate /* Can't do this sector - haven't been there, and can't get there*/
+	end
+
+	do j = 1 to zocstring("PARTCOUNT", warps, "-")
+		numtocheck=numtocheck+1
+		sectocheck.numtocheck=zocstring("PART",warps,j,"-")
+		
+/*		call zocwriteln
+		call zocwriteln warps
+		call zocwriteln zocstring("PART",warps,"-",j)
+		call zocwriteln "WarpTo"sectocheck.numtocheck*/
+	end
+
+	do j = 1 to numtocheck
+		call PortType sectocheck.j, 0
+
+		if \q_porttype.Visited then do
+			if \weAreThereAlready then weAreThereAlready=pwarp(nextsec)
+			if \weAreThereAlready then leave /* Can't get adj to holo */
+			call ZocBeep 1
+			call zocwriteln "^[[1;33m Popup here, Holo and rerun ^[[0;35m "	
+			exit
+		end
+						
+		if (q_porttype.eq="B") then do
+			/* Plot from next sec */
+			call zocsend "CF"nextsec"^M"dest"^MQ"
+			call zocwait "The shortest path ("
+			call zocwait " hops,"
+			parse value zoclastline() with CurrDist "hops,"
+			call zocsend "CF"sectocheck.j"^M"dest"^MQ"
+			call zocwait "The shortest path ("
+			call zocwait " hops,"
+			parse value zoclastline() with TestDist "hops,"
+			DistDiff = TestDist - CurrDist + 1
+			if DistDiff<0 then DistDiff=0
+				
+			Cost = 1 + 1.6*DistDiff + (1-q_porttype.eq_perc/100)*0.6*q_porttype.eq_amount/250
+			TurnsWorthSold=q_porttype.eq_amount/250
+			
+			call zocwriteln
+			call zocwriteln "Checking " sectocheck.j "Cost=" Cost "TWS = "TurnsWorthSold
+			if TurnsWorthSold > 0 then do 			
+				if Cost/TurnsWorthSold < MaximumCost then do
+					if pwarp(sectocheck.j) then do
+						call zocwriteln "^[[1;33m Trade here, and rerun if there's still gear left ^[[0;35m "
+						exit
+					end
+				end	
+			end						
+		end
+	end
+END
+
+/* REXX */
+
+exit
+
+/* Dr. Bad's library v1.22*/
+
+/* globals */
+
+/* CurrPrompt - the current prompt- sector, planet, citadel, computer, corporate */
+
+GetWarps: procedure
+/*Sector 1234 has warps to sector(s) :  2271 - 2782 - 3140 - 4014*/
+/*You have never visited sector 2563.*/
+
+	call zocsend "CI"arg(1)"^MQ"
+	
+	res=zocwaitmux("never visited", "has warps to sector(s) : ")
+	if res==0 then return("")
+	
+	call zocwait "^M"
+	ln=zoclastline()
+	
+return(ln)
+
+GetLimpets: procedure
+	l.=0
+
+	call zocsend "K2"
+	call zocwait "Deployed  Limpet  Scan"
+	call zocwait "="
+	call zocgetline
+	i=0
+	
+	do while i<2
+		i=zocwaitmux("Corporate","Personal","Total")
+		if i<2 then do
+			ln=zoclastline()
+			parse var ln with " "sector number ownership
+			l.sector=number
+		end
+	end
+	
+	/* OutToFile */
+	call dosdel "LIMPET.TXT"
+	CALL STREAM "LIMPET.TXT", "C", "OPEN WRITE"
+	
+	do i = 1 to 5000
+		if l.i > 0 then call lineout "LIMPET.TXT", i
+	end
+	CALL STREAM "LIMPET.TXT", "C", "CLOSE"
+
+return(0)
+
+
+ShipScan: procedure
+	call zocsend "CZ"
+	Call zocwait "Ship  Sect"
+	call zocwait "-"
+	call ZocGetLine
+
+	Call Zocwait "^M"
+	line=zocLastLine()
+	numships=0
+	do while length(line)>4
+		numships=numships+1
+		shipnum.numships=strip(substr(line,1,4))
+		shipsect.numships=strip(substr(line,5,6))
+		shiptype.numships=strip(substr(line,56))
+	
+		Call Zocwait "^M"
+		line=zocLastLine()
+	end
+	
+	Call Zocsend "Q"
+	/* For testing now display things */
+	
+return(0)	
+
+
+Negotiate: procedure /* <planet> <product- {"fuel","org","eq"}> */
+	call zocsend "PN"arg(1)"^M"
+	
+	if arg(2)=="fuel" then do 
+		call zocsend "^M^M0^M0^M"
+		return(0)
+	end
+	if arg(2)=="org" then do
+		res = zocwaitmux("Fuel Ore do you want", "Organics do you want")
+		if res = 0 then call zocsend "0^M"
+		call zocsend "^M^M0^M"
+		return(0)
+	end
+	res = zocwaitmux("Fuel Ore do you want", "Organics do you want","Equipment do you want")
+	if res = 0 then do 
+		call zocsend "0^M"
+		res=zocwaitmux("asdfafdsasfg", "Organics do you want","Equipment do you want")
+	end
+	if res = 1 then call zocsend "0^M"
+	call zocsend "^M^M"
+return(0)
+
+GetCurrPrompt: procedure expose CurrPrompt
+	call StreamSync
+	res=zocwaitmux("Command", "Planet command", "Citadel command", "Computer command", "Corporate command")
+	
+	Select;
+		When res=1 then CurrPrompt="sector"
+		When res=2 then CurrPrompt="planet"
+		When res=3 then CurrPrompt="citadel"
+		When res=4 then CurrPrompt="computer"
+		When res=5 then CurrPrompt="corporate"
+	end		
+return(0)
+
+StreamSync:
+	call zocsend "@"
+	call zocwait "Interval Lag"
+return(0)
+
+GetplanetInfo: procedure expose onhand.fuel onhand.orgs currplanet.class
+	call zocsend "L"arg(1)"^MQ"
+	call zocwait "Planet #"
+	call zocwait "Class "
+	call zocwait ","
+	currplanet.class = left(zoclastline(),1)
+
+	call zocwait "Fuel Ore"
+	Call zocwait "^M"
+	ln=zoclastline()
+	parse var ln with " "colos.fuel ignored prod.fuel onhand.fuel ignored2 ignored3
+	onhand.fuel=badcommas(onhand.fuel)
+
+	call zocwait "Organics"
+	Call zocwait "^M"
+	ln=zoclastline()
+	parse var ln with " "colos.orgs ignored prod.orgs onhand.orgs ignored2 ignored3
+	onhand.orgs=badcommas(onhand.orgs)
+return(0)
+
+GetSectorPlanets: procedure expose plnts.
+	i=0
+	
+	if CurrPrompt="citadel" then call zocsend "QQ"
+	if CurrPrompt="planet" then call zocsend "Q"
+	
+	call zocsend "L"arg(1)"^M"
+	if arg(1) != "Q" then call zocsend "C^M"
+
+	call zocwait "Registry#"
+
+	do while 1
+		call zocwait "<"
+		call zocwait ">"
+		i=i+1
+		plnts.i=zoclastline()
+		plnts.i = left(plnts.i, length(plnts.i)-1)
+		if left(plnts.i,1)=="Q" then do
+			plnts.count = i-1
+			return(0)
+		end
+	end		
+return (0)
+
+quickStats: procedure expose stats.
+	call zocsend "/"
+	call zocwait "Sect "
+	call zocwaitmux d2c(179), "^M"
+	
+	stats.sect=zoclastline()
+	stats.sect = left(stats.sect, length(stats.sect)-1)
+	stats.sect=BADCOMMAS(stats.sect)
+		
+	call zocwait "Figs "
+	call zocwaitmux d2c(179), "^M"
+	
+	stats.figs=zoclastline()
+	stats.figs = left(stats.figs, length(stats.figs)-1)
+	stats.figs=BADCOMMAS(stats.figs)
+
+return(0)
+
+plntnum: procedure
+ZocSend "^M"
+Call ZocWait "command"
+plnt=zoclastline()
+if plnt="Citadel command" then do
+   ZocSend "q"
+   end
+ZocSend "^M"
+Call ZocWait "Planet #"
+Call ZocWait " "
+plnt=zoclastline()
+plntl=length(plnt)
+plntl=plntl - 1
+plnt=substr(plnt,1,plntl)
+
+RETURN (plnt)
+
+A_uppa: procedure
+	val=arg(1)
+	translate(val)	
+return(val)
+
+warpsOutToWarpsIn: procedure expose numWarpsIn. warpsIn. s.
+	
+	numWarpsIn.=0
+	warpsIn.=0
+	do i = 1 to 5000
+		do j = 1 to 6
+			wt=_warp(s.i,j)
+			if wt \= 0 then do
+				numWarpsIn.wt=numWarpsIn.wt+1
+				nwi=numWarpsIn.wt
+				warpsIn.wt.nwi=i
+			end
+		end
+	end
+return(0)
+
+
+choose_adj_sector:
+	call zocsend "d"
+	
+	if zocwait("Warps to Sector(s) :")=640 then call _error "timeout"
+	if zocwait("^M")=640 then call _error "timeout"
+	wlist=zoclastline()
+	if zocwait("Command [")=640 then call _error "timeout"
+	
+	sect.2=_chooselist("which sector to trade with?", wlist, "-")
+	if sect.2="##CANCEL##" then call _quit "script cancelled by user."
+	sect.2=_stripint(sect.2)
+return(0)
+
+
+calc_zeros:
+	cz_this_sec_pt=arg(1)
+	cz_other_sec_pt=arg(2)
+
+	zeros=""
+
+	/* Are we selling anything? */
+
+	selling=0
+	
+	if cz_this_sec_pt.fuel=="B" & cz_other_sec_pt.fuel="S" then selling=1
+	if cz_this_sec_pt.org=="B" & cz_other_sec_pt.org="S" then selling=1
+	if cz_this_sec_pt.eq=="B" & cz_other_sec_eq.fuel="S" then selling=1
+
+	buying=0
+	
+	if cz_this_sec_pt.fuel=="S" & cz_other_sec_pt.fuel="B" then buying=1
+	if cz_this_sec_pt.org=="S" & cz_other_sec_pt.org="B" then buying=2
+	if cz_this_sec_pt.eq=="S" & cz_other_sec_eq.fuel="B" then buying=3
+	
+	if selling then zeros="^M^M"
+
+	if (buying=3 | buying=2) & cz_this_sec_pt.fuel=="S" then zeros=zeros||"0^M"
+	if buying=3 & cz_this_sec_pt.org=="S" then zeros=zeros||"0^M"
+	
+	if buying > 0 then zeros=zeros||"^M^M"
+return(zeros)
+
+LandFirstPlanetScanner:
+	call zocsend "L"
+	call zocwait "Registry#"
+	call zocwait "<"
+	call zocwait ">"
+	pln=zoclastline()
+	pln=left(pln,length(pln)-1)
+	call zocsend pln || "^M"
+return(0)
+
+LandFirstL1Scanner:
+	/* If there's no L1 in the sector you get what you deserve */
+
+	call zocsend "L"
+	res=0
+	call zocwait "Registry#"
+	do while res = 0 
+		call zocwait "<"	
+		call zocwait ">"
+		pln=zoclastline()
+		pln=left(pln,length(pln)-1)
+		res=zocwaitmux("None","Level")
+	end
+	call zocsend pln || "^M"
+return(pln)
+
+GetAdjacentFuel:
+	i=0
+	call dscan
+	Fnd=0
+	DO WHILE (Fnd=0) & (i<g_numadjsecs)
+		i=i+1
+		call PortType(g_adjsec.i)
+		if q_porttype.fuel="S" then Fnd=1
+	END
+	if Fnd=1 then do
+		call zocsend "M" g_adjsec.i "^M"
+		call zocsend "PT^M^M"
+		return(1)
+	end
+RETURN(0)
+
+PortType: /* sector [Use PT (rather tham CR^MQ)] */
+	if arg(2) then call zocsend "PT" 
+	else call zocsend "CR" arg(1) "^MQ"
+	res=ZocWaitMux("Commerce","You have never", "have no information")
+	q_porttype.Visited=1
+	
+	if res==1 | res == 2 then do
+		q_porttype.fuel="N"
+		q_porttype.org="N"
+		q_porttype.eq="N"
+		
+		if res==1 then q_porttype.Visited=0
+		return(q_porttype)
+	end
+	q_porttype.fuel="B"
+	q_porttype.org="B"
+	q_porttype.eq="B"
+
+	Call ZocWait "Fuel Ore"
+	res=ZocWaitMux("Buying", "Selling")
+	if res = 1 then q_porttype.fuel="S"
+	call zocwait "%"
+	parse value zoclastline() with " "q_porttype.fuel_amount q_porttype.fuel_perc"%"
+
+	Call ZocWait "Organics"
+	res=ZocWaitMux("Buying", "Selling")
+	if res = 1 then q_porttype.org="S"
+	call zocwait "%"
+	parse value zoclastline() with " "q_porttype.org_amount q_porttype.org_perc"%"
+
+	Call ZocWait "Equip"
+	res=ZocWaitMux("Buying", "Selling")
+	if res = 1 then q_porttype.eq="S"	
+	call zocwait "%"
+	parse value zoclastline() with " "q_porttype.eq_amount q_porttype.eq_perc"%"
+return(0)
+
+getFirstShipContaining:
+	Fnd=0
+	DO WHILE Fnd=0
+		Fnd=ZocWaitMux("Pause",arg(1))
+		if Fnd=0 then Call ZocSend "^M"
+	END
+	
+	ShipNum = left(ZocLastLine(),4)
+return(ShipNum)
+
+bwarp: /* ONLY FROM CIT PROMPT */
+	call zocsend "B" arg(1) 
+	result=zocwaitmux("ARE YOU SURE","Beam to what")
+	call zocsend "^M"
+	if result = 0 then do 
+		call zocsend "N"
+		exit
+	end
+	if arg(1) < 11 then call zocwait "Federation Beacon"
+bwarp_sa:
+	result=zocwaitmux("lind", "Locked","You have marked sector")
+	if result = 2 then do
+		call zocsend "Y"
+		signal bwarp_sa
+	end
+	if result=0 then do
+		call zocsend "N"
+		exit
+	end
+	call zocsend "Y^M" /* ^M deals with possible mine avoid prompt */
+RETURN(0)
+
+twarp: /* ONLY FROM COMMAND PROMPT */
+	call zocsend "M" arg(1) "^MY"
+	call zocwait "TransWarp drive?"
+	result=zocwaitmux("lind", "Locked")
+	if result=0 then do
+		call zocsend "N"
+		exit
+	end
+	call zocsend "Y"
+return(0)
+
+pwarp: procedure /* <destination> */ /* ONLY FROM CIT PROMPT */
+	call zocsend "P"arg(1)"^MY"
+	res = zocwaitmux("Blind Jump", "beam pinpointed", "You are already in that sector!")		
+	if res==2 then res = 1
+RETURN(res)
+
+GetPersonalInfo:
+	call ZocSend "/"
+	call zocwait "Sect"
+	Call zocwait "|"
+	g_CurrentSector = zoclastline()
+	g_CurrentSector=left(g_CurrentSector, len(sect)-1)
+return(0)
+
+GetSectorInfo: /* ONLY FROM COMMAND PROMPT */
+	call zocsend "D"
+	Call ZocWait "Re-Display"
+		
+	call ZocWait("Sector  :")
+	call ZocWait("in")
+	g_CurrentSector=zoclastline()
+	g_CurrentSector=left(g_CurrentSector, length(g_CurrentSector)-2)
+
+	thing=0
+	
+	/* ultimately this will be a while loop */	
+	
+	thing=zocwaitmux("Warps", "Traders :", "Ports", "Alien Tr:", "Ferrengi:") 
+		
+	if thing=2 then do /* port */
+		call zocwait "Class"
+		call zocwait "("
+		call zocwait ")"
+		g_porttype=zoclastline()
+		g_porttype=left(g_porttype, length(g_porttype)-1)
+		g_hasFuel=0
+		if left(g_porttype,1)="S" then g_hasFuel=1
+	end
+	
+return(0)
+
+BADCOMMAS:
+stin=arg(1)
+rv=""
+DO addchar=1 to length(stin)
+        holdsit=substr(stin,addchar,1)
+        if holdsit<>"," then rv=rv||holdsit
+END
+RETURN rv
+
+hscan_figs: procedure /* Hscans, returns the corp that owns the figs in arg(1) if any */
+	call zocsend "SH"
+	g_numadjsecs=0
+	res=0
+	call zocwait("Long Range Scan")
+	call zocwait("Sector  : "||arg(1))
+	res=zocwaitmux("Fighters:", "Sector")
+	if res = 1 then return(0)
+	
+	call zocwait("(belong to ")
+	res=zocwaitmux("your Corp","Corp#",")")
+	if res = 2 then do
+		call zocbeep 1
+		call zocwriteln "Personal figs encountered"
+		exit
+	end
+	if res = 0 then return(0)
+	call zocwait(",")
+	figown = zoclastline()
+	figown=left(figown, length(figown)-1)
+return(figown)
+
+dscan:
+	dscan_send=1
+	if arg(1,"E") then dscan_send = arg(1)
+	if dscan_send then call zocsend "SD"
+	
+	g_numadjsecs=0
+	res=0
+	call zocwait("Density Scan")
+	call zocwait("Sector")
+	
+	dscand.=0
+	dscand.sector.=0
+	DO while res == 0
+		g_numadjsecs=g_numadjsecs+1
+		call zocwait("==>")
+		sec = zoclastline()
+		sec=left(sec,length(sec)-3)
+		sec=strip(strip(sec),,"(")
+		adjsec=strip(sec,,")")
+		
+		g_adjsec.g_numadjsecs=adjsec
+		
+		/* ok, now density */
+		
+		call zocwait("Warps")
+		sec=zocLastLine()
+		sec=left(sec,length(sec)-5)
+		sec=strip(BADCOMMAS(sec)*1)
+		dscand.g_numadjsecs=sec
+
+		
+		dscand.sector.adjsec=sec
+		
+		/* msgbox dscand.sector.adjsec */
+
+		call zocwait("Anom")
+		dscana.g_numadjsecs=zocwaitmux("No","Yes")
+		dscana.sector.adjsec=dscana.g_numadjsecs
+		res = zocWaitMux("Sector", "ommand")			
+	end
+return(0)
+
+/* ttp wrappers */
+
+sendln:
+    call ZocSend arg(1) "^M"
+return(0)
+
+send:
+    call ZocSend(arg(1))
+return(0)
+
+wait:
+	Call ZocWait(arg(1))
+return(0)
+
+setAbortAllKeys:
+	call zocsend "CCCQ  " /* Put you in the computer from wherever; may also put you in cit... */
+	
+	call zocsend "N"
+	call zocwait "Computer command"
+	call zocwait "Abort display on keys    -"	
+	res =zocwaitmux("ALL KEYS", "SPACE")
+	if res=1 then call zocsend "9"
+	call zocsend "^MQ"
+	call zocwait "Computer command"
+	
+return(0)
+
+setAbortSpace:
+	call zocsend "CCCQ  " /* Put you in the computer from wherever; may also put you in cit... */
+	
+	call zocsend "N"
+	call zocwait "Computer command"
+	
+	call zocwait "Abort display on keys    -"
+	res =zocwaitmux("SPACE", "ALL KEYS")
+	if res=1 then call zocsend "9"
+	call zocsend "^MQ"
+	call zocwait "Computer command"
+	
+return(0)
+
+BADHAGGLE:
+               
+	offer1=arg(1)
+	haggle=offer1*(138/100)-1
+	haggle=trunc(haggle,0)
+	
+	call zocsend haggle
+	call zocsend "^M"
+
+RETURN(0) 
+
+

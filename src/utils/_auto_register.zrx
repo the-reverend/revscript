@@ -1,0 +1,100 @@
+/* REXX _auto_register.zrx by the reverend (build 77)                         */
+/*-       built by rev-builder version 1.3a on 22 Mar 2014 at 00:15:40       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author.                -*/
+/*-                                                                          -*/
+/*- This script is provided to you WITHOUT ANY WARRANTY, even the implied    -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         -*/
+/*-                                                                          -*/
+/*-                       Copyright (C) 2009 Ron Wilson                      -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ------------------*/ _g.!sname="_auto_register.zrx" /*------------------ -*/
+/*- --------------*/ _g.!sbuild=77; _g.!sdate="2014-03-22" /*--------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+/* description:                                                               */
+/* rev. 0 - created by Cherokee                                               */
+/* rev. 1 - edited by the reverend                                            */
+
+/* CONSTANTS */
+delim="(zzspacezz)"
+address="127.0.0.1:2003"
+protocol="TELNET"
+name="SYSTEM"
+password="TEDIT"
+
+/* PARSE ARGUMENTS */
+parse arg gameletter playername playerpassword .
+playername=zocstring("REPLACE",playername,delim," ")
+playerpassword=zocstring("REPLACE",playerpassword,delim," ")
+
+/* IF MISSING ARGUMENTS, ASK */
+if gameletter=""               then gameletter=left(zocask("game letter?"),1)
+if gameletter="##CANCEL##"     then exit
+if playername=""               then playername=zocask("player name?")
+if playername="##CANCEL##"     then exit
+if playerpassword=""           then playerpassword=zocask("player password?")
+if playerpassword="##CANCEL##" then exit
+
+/* SUCCESS */
+success=0 /* FALSE */
+
+_startover:
+
+/* CONNECT TO LOCAL SERVER */
+call zocsetdevice protocol
+call zocconnect address
+
+/* NEGOTIATE TEDIT */
+if zocwait("Please enter your name (ENTER for none):")=640 then signal _timeout
+call zocsend name||"^M"
+
+ans=zocwaitmux("Enter admin password:", ,
+               "Selection (? for menu):")
+select
+ when ans=0 then do
+  call zocsend password||"^M"
+  if zocwait("Selection (? for menu):")=640 then signal _timeout
+  call zocsend gameletter
+ end /*when*/
+ when ans=1 then call zocsend gameletter
+ when ans=640 then signal _timeout
+ otherwise nop
+end /*select*/
+
+ans=zocwaitmux("Password?", ,
+               "Trade Wars 2002 Editor (?=Help) [?] :")
+select
+ when ans=0 then do
+  call zocsend password||"^M"
+  if zocwait("Trade Wars 2002 Editor (?=Help) [?] :")=640 then signal _timeout
+  call zocsend "c"
+ end /*when*/
+ when ans=1 then call zocsend "c"
+ when ans=640 then signal _timeout
+ otherwise nop
+end /*select*/
+
+if zocwait("Enter User Name :")=640 then signal _timeout
+call zocsend playername||"^M"
+if zocwait("Password (case sensitive)?")=640 then signal _timeout
+call zocsend playerpassword||"^M"
+if zocwait("(Y/N) [N] :")=640 then signal _timeout
+call zocsend "yq"
+if zocwait("Selection (? for menu):")=640 then signal _timeout
+success=1 /* TRUE */
+call zocsend "q"
+
+/* DISCONNECT */
+call zocdisconnect
+if zocwait("[TELNET] INFO: DISCONNECTED")=640 then signal _timeout
+call zocterminate
+exit
+
+/* IN CASE OF TIMEOUT, START OVER IF UNSUCCESSFUL */
+_timeout:
+ call zocdisconnect
+ if \success then signal _startover
+ call zocterminate
+exit

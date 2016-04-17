@@ -1,0 +1,11 @@
+/** _lastline v.3 **/
+/*- _lastline ["raw"] -*/
+/*- v.3 tested -*/
+_lastline: procedure expose (globals)
+ rslt=zoclastline()
+ select
+  when lower(arg(1))="raw" then nop
+  when pos(d2c(7),rslt)>0  then rslt=translate(zocstring("REMOVE", rslt, d2c(7)),"  ",d2c(0)||d2c(10))
+  otherwise                     rslt=translate(rslt,"  ",d2c(0)||d2c(10))
+ end /*select*/
+return rslt

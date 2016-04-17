@@ -1,0 +1,57 @@
+/* REXX _snoop.zrx by the reverend (build 132)                                */
+/*-       built by rev-builder version 1.3a on 22 Mar 2014 at 00:15:39       -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- This script is free, and can be modified for your personal use, but you  -*/
+/*- cannot copy or distribute this script or any derivative work based upon  -*/
+/*- this script without the express permission of the author.                -*/
+/*-                                                                          -*/
+/*- This script is provided to you WITHOUT ANY WARRANTY, even the implied    -*/
+/*- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         -*/
+/*-                                                                          -*/
+/*-                       Copyright (C) 2009 Ron Wilson                      -*/
+/*- ------------------------------------------------------------------------ -*/
+/*- ----------------------*/ _g.!sname="_snoop.zrx" /*---------------------- -*/
+/*- --------------*/ _g.!sbuild=132; _g.!sdate="2014-03-22" /*-------------- -*/
+/*- ------------------------------------------------------------------------ -*/
+/* description:  just a simple but effective script to monitor who's online   */
+/*               regularly. you can run it in a twgs game, but i like to run  */
+/*               it at the twgs logon screen and wait until everyone clears   */
+/*               out before i join the game.                                  */
+/* rev. 0 - initial release                                                   */
+/* rev. 1 - added prompts                                                     */
+/* rev. 2 - major simplification                                              */
+/* rev. 3 - added hidden feature                                              */
+/* rev. 4 - updated error handling                                            */
+
+call on halt name _halt
+
+period=zocask("enter snoop interval (sec)", 5)
+if period="##CANCEL##" then exit
+
+parse var period period keys
+
+if keys="" then keys="#"
+
+do forever
+  call zocsend keys
+  call zocdelay period
+end
+
+exit
+
+/***                 THE REVEREND'S TW LIBRARY FOR ZOC/REXX                 ***/
+
+/** _halt v.4 **/
+    _halt: procedure expose (globals)
+     call off halt
+     call _cleanup
+     call zocwriteln "^[[1;33m< user abort >^[[0m "
+     exit
+    return
+
+/** _cleanup v.1 **/
+    _cleanup: procedure expose (globals)
+     /* put code here to do custom cleanup
+        for specific scripts and override
+        it in your main program */
+    return 1
